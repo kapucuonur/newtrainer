@@ -154,6 +154,10 @@ export const de: Messages = {
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',
   'map.followGroup': ' · Gruppenkarte',
   'map.lockedBanner': 'Anmelden, um Geräte zu verbinden und Wegpunkte auf der Karte zu setzen',
+  'map.stylePicker': 'Kartenstil',
+  'map.styleOutdoors': 'Outdoor',
+  'map.styleStreets': 'Straßen',
+  'map.styleLight': 'Hell',
 
   'group.title': 'Gruppenfahrt',
   'group.subtitle': 'Route teilen. Bis zu 20 Fahrer auf der farbigen Karte.',

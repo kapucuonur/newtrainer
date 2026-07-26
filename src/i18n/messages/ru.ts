@@ -155,6 +155,10 @@ export const ru: Messages = {
   'map.followBanner': 'Следование по дороге · 3D-камера',
   'map.followGroup': ' · Групповая карта',
   'map.lockedBanner': 'Войдите, чтобы подключить устройства и ставить точки на карте',
+  'map.stylePicker': 'Стиль карты',
+  'map.styleOutdoors': 'Природа',
+  'map.styleStreets': 'Улицы',
+  'map.styleLight': 'Светлая',
 
   'group.title': 'Групповая поездка',
   'group.subtitle': 'Общий маршрут. До 20 гонщиков на цветной карте.',

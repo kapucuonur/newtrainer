@@ -151,6 +151,10 @@ export const en = {
   'map.followBanner': 'Follow road · 3D ride camera',
   'map.followGroup': ' · Group map',
   'map.lockedBanner': 'Sign in to connect devices and place waypoints on the map',
+  'map.stylePicker': 'Map style',
+  'map.styleOutdoors': 'Outdoors',
+  'map.styleStreets': 'Streets',
+  'map.styleLight': 'Light',
 
   'group.title': 'Group ride',
   'group.subtitle': 'Share a route. Up to 20 riders on the colored map.',

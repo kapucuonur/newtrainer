@@ -155,6 +155,10 @@ export const se: Messages = {
   'map.followBanner': 'Följ väg · 3D-kamera',
   'map.followGroup': ' · Gruppkarta',
   'map.lockedBanner': 'Logga in för att ansluta enheter och placera vägpunkter på kartan',
+  'map.stylePicker': 'Kartstil',
+  'map.styleOutdoors': 'Utomhus',
+  'map.styleStreets': 'Gator',
+  'map.styleLight': 'Ljus',
 
   'group.title': 'Gruppridning',
   'group.subtitle': 'Dela en rutt. Upp till 20 cyklister på den färgrika kartan.',

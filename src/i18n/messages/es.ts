@@ -155,6 +155,10 @@ export const es: Messages = {
   'map.followBanner': 'Seguir carretera · cámara 3D',
   'map.followGroup': ' · Mapa de grupo',
   'map.lockedBanner': 'Inicia sesión para conectar dispositivos y colocar waypoints en el mapa',
+  'map.stylePicker': 'Estilo del mapa',
+  'map.styleOutdoors': 'Exterior',
+  'map.styleStreets': 'Calles',
+  'map.styleLight': 'Claro',
 
   'group.title': 'Salida en grupo',
   'group.subtitle': 'Comparte una ruta. Hasta 20 ciclistas en el mapa a color.',

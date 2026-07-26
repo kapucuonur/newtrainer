@@ -155,6 +155,10 @@ export const no: Messages = {
   'map.followBanner': 'Følg vei · 3D-kamera',
   'map.followGroup': ' · Gruppekart',
   'map.lockedBanner': 'Logg inn for å koble til enheter og plassere veipunkter på kartet',
+  'map.stylePicker': 'Kartstil',
+  'map.styleOutdoors': 'Utendørs',
+  'map.styleStreets': 'Gater',
+  'map.styleLight': 'Lys',
 
   'group.title': 'Gruppetur',
   'group.subtitle': 'Del en rute. Opptil 20 ryttere på det fargerike kartet.',

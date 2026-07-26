@@ -1,12 +1,17 @@
-import type { FilterSpecification, StyleSpecification } from 'maplibre-gl';
+import type { FilterSpecification, LayerSpecification, StyleSpecification } from 'maplibre-gl';
 
 /**
- * OpenFreeMap Liberty (and similar) compare `ref_length` with `<=` without a
- * null guard. MapLibre 6 evaluates that strictly. Coalesce missing values so the
+ * OpenFreeMap Bright/Liberty compare `ref_length` with `<=` without a null
+ * guard. MapLibre 6 evaluates that strictly. Coalesce missing values so the
  * filter stays false, and never leave JS `undefined` in expression arrays
  * (MapLibre wants `null`).
+ *
+ * Bright ships the Natural Earth shaded source but omits the raster layer —
+ * re-add it so low-zoom terrain isn’t flat.
  */
 export function sanitizeMapStyle(style: StyleSpecification): StyleSpecification {
+  ensureNaturalEarthShadedRelief(style);
+
   if (!style.layers) return style;
 
   for (const layer of style.layers) {
@@ -19,6 +24,44 @@ export function sanitizeMapStyle(style: StyleSpecification): StyleSpecification 
   }
 
   return style;
+}
+
+function ensureNaturalEarthShadedRelief(style: StyleSpecification): void {
+  const sources = style.sources;
+  if (!sources || !('ne2_shaded' in sources)) return;
+
+  const layers = style.layers;
+  if (!layers) return;
+  if (
+    layers.some(
+      (l) =>
+        l.id === 'natural_earth' ||
+        ('source' in l && l.source === 'ne2_shaded'),
+    )
+  ) {
+    return;
+  }
+
+  const relief: LayerSpecification = {
+    id: 'natural_earth',
+    type: 'raster',
+    source: 'ne2_shaded',
+    maxzoom: 7,
+    paint: {
+      'raster-opacity': [
+        'interpolate',
+        ['exponential', 1.5],
+        ['zoom'],
+        0,
+        0.6,
+        6,
+        0.1,
+      ],
+    },
+  };
+
+  const bgIndex = layers.findIndex((l) => l.type === 'background');
+  layers.splice(bgIndex >= 0 ? bgIndex + 1 : 0, 0, relief);
 }
 
 function patchNumericGetComparisons(expr: unknown): unknown {

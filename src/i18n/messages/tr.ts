@@ -153,6 +153,10 @@ export const tr: Messages = {
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',
   'map.followGroup': ' · Grup haritası',
   'map.lockedBanner': 'Cihaz bağlamak ve haritada ara nokta koymak için giriş yapın',
+  'map.stylePicker': 'Harita stili',
+  'map.styleOutdoors': 'Doğa',
+  'map.styleStreets': 'Sokak',
+  'map.styleLight': 'Açık',
 
   'group.title': 'Grup sürüşü',
   'group.subtitle': 'Rotayı paylaşın. Renkli haritada en fazla 20 sürücü.',

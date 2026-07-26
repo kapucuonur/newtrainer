@@ -69,4 +69,29 @@ for (const layer of shields) {
   );
 }
 
+// Bright-like: source present, raster layer missing → inject natural_earth.
+const brightLike = sanitizeMapStyle({
+  version: 8,
+  sources: {
+    ne2_shaded: {
+      type: 'raster',
+      tiles: ['https://example.test/{z}/{x}/{y}.png'],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    { id: 'background', type: 'background', paint: { 'background-color': '#fff' } },
+    {
+      id: 'highway-shield-non-us',
+      type: 'symbol',
+      source: 'openmaptiles',
+      filter: ['<=', ['get', 'ref_length'], 6],
+    },
+  ],
+} as StyleSpecification);
+assert(
+  (brightLike.layers ?? []).some((l) => l.id === 'natural_earth'),
+  'should inject natural_earth when ne2_shaded source exists',
+);
+
 console.log(`sanitizeMapStyle ok (${shields.length} shield layer(s))`);

@@ -5,7 +5,7 @@ Free browser bike trainer inspired by Zwift/Rouvy: **Web Bluetooth FTMS**, heart
 ## Stack
 
 - Vite + React + TypeScript
-- MapLibre + OpenFreeMap Liberty (colorful free tiles; no Google key required)
+- MapLibre + OpenFreeMap Bright (free outdoor tiles; no Google/Mapbox key)
 - OSRM public routing + OpenTopoData elevation
 - Web Bluetooth: FTMS `0x1826`, Heart Rate `0x180D`
 
@@ -64,7 +64,7 @@ Copy `.env.example` → `.env` to override OSRM, elevation, map style, or API UR
 
 | Variable | Default | Notes |
 |----------|---------|--------|
-| `VITE_MAP_STYLE_URL` | OpenFreeMap **liberty** (colorful) | Free. `dark` / `fiord` are grayscale-ish on purpose |
+| `VITE_MAP_STYLE_URL` | OpenFreeMap **bright** (Outdoors) | Free, no key. UI presets: Outdoors / Streets / Light. `dark` / `fiord` are grayscale-ish |
 | `VITE_API_URL` | unset | Pi API base URL. Enables register/login, profile, save ride summary |
 
 During rides, immersion uses the MapLibre pitched follow camera along the A→B polyline.

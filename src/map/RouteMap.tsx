@@ -9,13 +9,20 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
 import { routeAltColor } from '../routing/osrm';
 import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
+import {
+  MAP_STYLE_PRESETS,
+  loadStoredMapStyleId,
+  resolveStyleUrl,
+  storeMapStyleId,
+  type MapStyleId,
+} from './mapStyles';
 import { sanitizeMapStyle } from './sanitizeMapStyle';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -23,20 +30,16 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // resolves a sibling maplibre-gl-worker.mjs that never exists in production.
 setWorkerUrl(maplibreWorkerUrl);
 
-/** Colorful OpenFreeMap Liberty (free, no API key). Override with VITE_MAP_STYLE_URL. */
-const STYLE_URL =
-  import.meta.env.VITE_MAP_STYLE_URL ??
-  'https://tiles.openfreemap.org/styles/liberty';
-
-async function loadMapStyle(): Promise<string | StyleSpecification> {
+async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
+  const url = resolveStyleUrl(styleId);
   try {
-    const res = await fetch(STYLE_URL);
-    if (!res.ok) return STYLE_URL;
+    const res = await fetch(url);
+    if (!res.ok) return url;
     const json: unknown = await res.json();
-    if (!json || typeof json !== 'object') return STYLE_URL;
+    if (!json || typeof json !== 'object') return url;
     return sanitizeMapStyle(json as StyleSpecification);
   } catch {
-    return STYLE_URL;
+    return url;
   }
 }
 
@@ -74,10 +77,24 @@ function pinClassForIndex(index: number, total: number): string {
   return 'map-pin-via';
 }
 
+const BUILDING_SOURCE_LAYERS = new Set(['building', 'buildings']);
+
 function tryEnable3dBuildings(map: Map): void {
   if (map.getLayer('roadlab-3d-buildings')) return;
 
   const style = map.getStyle();
+  const layers = style?.layers ?? [];
+
+  // Liberty already ships a fill-extrusion building layer — keep it.
+  const hasExtrusion = layers.some(
+    (layer) =>
+      layer.type === 'fill-extrusion' &&
+      'source-layer' in layer &&
+      typeof layer['source-layer'] === 'string' &&
+      BUILDING_SOURCE_LAYERS.has(layer['source-layer']),
+  );
+  if (hasExtrusion) return;
+
   const sources = style?.sources ?? {};
   const sourceId = Object.keys(sources).find((id) => {
     const src = sources[id];
@@ -85,13 +102,15 @@ function tryEnable3dBuildings(map: Map): void {
   });
   if (!sourceId) return;
 
-  // Prefer hiding flat building fills so extrusion is visible.
-  for (const layer of style?.layers ?? []) {
+  let buildingSourceLayer: string | null = null;
+  for (const layer of layers) {
     if (
       layer.type === 'fill' &&
       'source-layer' in layer &&
-      layer['source-layer'] === 'building'
+      typeof layer['source-layer'] === 'string' &&
+      BUILDING_SOURCE_LAYERS.has(layer['source-layer'])
     ) {
+      buildingSourceLayer = layer['source-layer'];
       try {
         map.setLayoutProperty(layer.id, 'visibility', 'none');
       } catch {
@@ -99,12 +118,13 @@ function tryEnable3dBuildings(map: Map): void {
       }
     }
   }
+  if (!buildingSourceLayer) buildingSourceLayer = 'building';
 
   try {
     map.addLayer({
       id: 'roadlab-3d-buildings',
       source: sourceId,
-      'source-layer': 'building',
+      'source-layer': buildingSourceLayer,
       type: 'fill-extrusion',
       minzoom: 14,
       paint: {
@@ -117,7 +137,12 @@ function tryEnable3dBuildings(map: Map): void {
           14,
           0,
           14.5,
-          ['coalesce', ['get', 'render_height'], ['get', 'height'], 12],
+          [
+            'coalesce',
+            ['get', 'render_height'],
+            ['get', 'height'],
+            12,
+          ],
         ],
         'fill-extrusion-base': [
           'coalesce',
@@ -130,6 +155,62 @@ function tryEnable3dBuildings(map: Map): void {
   } catch {
     // Some styles lack building height attrs; ride view still works without extrusion.
   }
+}
+
+function ensureRouteOverlay(map: Map): void {
+  if (map.getSource('route')) return;
+
+  map.addSource('route', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+  map.addLayer({
+    id: 'route-alt-hit',
+    type: 'line',
+    source: 'route',
+    filter: ['==', ['get', 'selected'], 0],
+    paint: {
+      'line-color': '#ffffff',
+      'line-width': 18,
+      'line-opacity': 0.01,
+    },
+  });
+  map.addLayer({
+    id: 'route-alt-line',
+    type: 'line',
+    source: 'route',
+    filter: ['==', ['get', 'selected'], 0],
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': 4,
+      'line-opacity': 0.42,
+    },
+  });
+  map.addLayer({
+    id: 'route-glow',
+    type: 'line',
+    source: 'route',
+    filter: ['==', ['get', 'selected'], 1],
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': 12,
+      'line-opacity': 0.35,
+      'line-blur': 1.5,
+    },
+  });
+  map.addLayer({
+    id: 'route-line',
+    type: 'line',
+    source: 'route',
+    filter: ['==', ['get', 'selected'], 1],
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': 5.5,
+      'line-opacity': 1,
+    },
+  });
 }
 
 export function RouteMap({
@@ -160,10 +241,13 @@ export function RouteMap({
   const onSelectAlternativeRef = useRef(onSelectAlternative);
   const lastFocusedWaypointRef = useRef<string | null>(null);
   const bearingRef = useRef(0);
+  const appliedStyleIdRef = useRef<MapStyleId | null>(null);
+  const [styleId, setStyleId] = useState<MapStyleId>(() => loadStoredMapStyleId());
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
   const activePickMode = pickingEnabled && pickMode;
   const showAlternatives = !followRoad && routeAlternatives.length > 1;
+  const showStylePicker = !followRoad;
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -182,15 +266,20 @@ export function RouteMap({
   }, [onSelectAlternative]);
 
   useEffect(() => {
+    storeMapStyleId(styleId);
+  }, [styleId]);
+
+  useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     let cancelled = false;
     let map: Map | null = null;
     let resizeObserver: ResizeObserver | null = null;
     const container = containerRef.current;
+    const initialStyleId = styleId;
 
     void (async () => {
-      const style = await loadMapStyle();
+      const style = await loadMapStyle(initialStyleId);
       if (cancelled || !containerRef.current) return;
 
       map = new Map({
@@ -211,6 +300,7 @@ export function RouteMap({
       }
 
       const activeMap = map;
+      appliedStyleIdRef.current = initialStyleId;
 
       activeMap.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
       activeMap.addControl(new ScaleControl({ unit: 'metric' }));
@@ -220,59 +310,7 @@ export function RouteMap({
         onPickRef.current({ lat: e.lngLat.lat, lng: e.lngLat.lng });
       });
 
-      activeMap.on('load', () => {
-        activeMap.addSource('route', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] },
-        });
-        activeMap.addLayer({
-          id: 'route-alt-hit',
-          type: 'line',
-          source: 'route',
-          filter: ['==', ['get', 'selected'], 0],
-          paint: {
-            'line-color': '#ffffff',
-            'line-width': 18,
-            'line-opacity': 0.01,
-          },
-        });
-        activeMap.addLayer({
-          id: 'route-alt-line',
-          type: 'line',
-          source: 'route',
-          filter: ['==', ['get', 'selected'], 0],
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: {
-            'line-color': ['get', 'color'],
-            'line-width': 4,
-            'line-opacity': 0.42,
-          },
-        });
-        activeMap.addLayer({
-          id: 'route-glow',
-          type: 'line',
-          source: 'route',
-          filter: ['==', ['get', 'selected'], 1],
-          paint: {
-            'line-color': ['get', 'color'],
-            'line-width': 12,
-            'line-opacity': 0.35,
-            'line-blur': 1.5,
-          },
-        });
-        activeMap.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route',
-          filter: ['==', ['get', 'selected'], 1],
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: {
-            'line-color': ['get', 'color'],
-            'line-width': 5.5,
-            'line-opacity': 1,
-          },
-        });
-
+      const wireRouteClicks = () => {
         const onAltClick = (e: {
           features?: Array<{ properties?: { index?: number } }>;
         }) => {
@@ -289,11 +327,16 @@ export function RouteMap({
         activeMap.on('mouseleave', 'route-alt-hit', () => {
           activeMap.getCanvas().style.cursor = '';
         });
+      };
 
+      activeMap.on('load', () => {
+        ensureRouteOverlay(activeMap);
+        wireRouteClicks();
         tryEnable3dBuildings(activeMap);
       });
 
       activeMap.on('style.load', () => {
+        ensureRouteOverlay(activeMap);
         tryEnable3dBuildings(activeMap);
       });
 
@@ -318,8 +361,28 @@ export function RouteMap({
       peerMarkersRef.current.clear();
       map?.remove();
       mapRef.current = null;
+      appliedStyleIdRef.current = null;
     };
+    // Mount once; style changes use setStyle below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || appliedStyleIdRef.current === styleId) return;
+
+    let cancelled = false;
+    void (async () => {
+      const next = await loadMapStyle(styleId);
+      if (cancelled || !mapRef.current) return;
+      appliedStyleIdRef.current = styleId;
+      mapRef.current.setStyle(next);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [styleId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -414,6 +477,7 @@ export function RouteMap({
     if (!map) return;
 
     const apply = () => {
+      ensureRouteOverlay(map);
       const source = map.getSource('route') as GeoJSONSource | undefined;
       if (!source) return;
 
@@ -479,12 +543,17 @@ export function RouteMap({
 
     if (map.isStyleLoaded()) apply();
     else map.once('load', apply);
+    map.on('style.load', apply);
+    return () => {
+      map.off('style.load', apply);
+    };
   }, [
     route,
     routeAlternatives,
     selectedAlternativeIndex,
     showAlternatives,
     followRoad,
+    styleId,
   ]);
 
   useEffect(() => {
@@ -521,6 +590,24 @@ export function RouteMap({
       } ${!pickingEnabled ? 'route-map-locked' : ''}`}
     >
       <div ref={containerRef} className="route-map-canvas" />
+      {showStylePicker && (
+        <div className="map-style-picker" role="group" aria-label={t('map.stylePicker')}>
+          {MAP_STYLE_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className={
+                styleId === preset.id
+                  ? 'map-style-picker-btn map-style-picker-btn-active'
+                  : 'map-style-picker-btn'
+              }
+              onClick={() => setStyleId(preset.id)}
+            >
+              {t(preset.labelKey)}
+            </button>
+          ))}
+        </div>
+      )}
       {!pickingEnabled && !followRoad && (
         <div className="map-pick-banner map-lock-banner">{t('map.lockedBanner')}</div>
       )}

@@ -155,6 +155,10 @@ export const it: Messages = {
   'map.followBanner': 'Segui strada · camera 3D',
   'map.followGroup': ' · Mappa di gruppo',
   'map.lockedBanner': 'Accedi per collegare i dispositivi e posizionare waypoint sulla mappa',
+  'map.stylePicker': 'Stile mappa',
+  'map.styleOutdoors': 'Outdoor',
+  'map.styleStreets': 'Strade',
+  'map.styleLight': 'Chiaro',
 
   'group.title': 'Uscita di gruppo',
   'group.subtitle': 'Condividi un percorso. Fino a 20 rider sulla mappa colorata.',
