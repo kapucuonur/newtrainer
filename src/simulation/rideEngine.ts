@@ -1,4 +1,5 @@
 import type { BikeTrainer, IndoorBikeData } from '../bluetooth/types';
+import type { RideExport, TrackPoint } from '../export/types';
 import { gradeAtDistance } from '../elevation/service';
 import type { EnrichedRoute } from '../routing/types';
 
@@ -18,9 +19,13 @@ export interface RideTelemetry {
   elapsedSeconds: number;
   position: { lat: number; lng: number } | null;
   trainerResistanceHint: number;
+  /** True when a completed (or mid-finish) track is available for FIT/GPX download. */
+  hasExport: boolean;
 }
 
 export type RideTelemetryListener = (telemetry: RideTelemetry) => void;
+
+const SAMPLE_INTERVAL_MS = 1000;
 
 /**
  * Advances a virtual bike along a polyline using trainer speed/power,
@@ -41,10 +46,19 @@ export class RideEngine {
   private listeners = new Set<RideTelemetryListener>();
   private unsubTrainer: (() => void) | null = null;
 
+  private track: TrackPoint[] = [];
+  private rideStartedAtMs = 0;
+  private rideFinishedAtMs = 0;
+  private lastSampleElapsed = -1;
+
   setRoute(route: EnrichedRoute | null): void {
     this.route = route;
     this.distanceMeters = 0;
     this.elapsedSeconds = 0;
+    this.track = [];
+    this.rideStartedAtMs = 0;
+    this.rideFinishedAtMs = 0;
+    this.lastSampleElapsed = -1;
     this.phase = route ? 'ready' : 'idle';
     this.emit();
   }
@@ -70,14 +84,33 @@ export class RideEngine {
     return () => this.listeners.delete(listener);
   }
 
+  getExport(): RideExport | null {
+    if (this.track.length === 0 || this.rideStartedAtMs <= 0) return null;
+    return {
+      startedAtMs: this.rideStartedAtMs,
+      finishedAtMs: this.rideFinishedAtMs || Date.now(),
+      elapsedSeconds: this.elapsedSeconds,
+      distanceMeters: this.distanceMeters,
+      points: this.track.slice(),
+    };
+  }
+
   async start(): Promise<void> {
     if (!this.route || this.route.samples.length < 2) {
       throw new Error('Select a route before starting');
     }
     if (this.phase === 'riding') return;
 
+    this.distanceMeters = 0;
+    this.elapsedSeconds = 0;
+    this.track = [];
+    this.rideStartedAtMs = Date.now();
+    this.rideFinishedAtMs = 0;
+    this.lastSampleElapsed = -1;
+
     this.phase = 'riding';
     this.lastTick = performance.now();
+    this.recordSample(true);
     await this.trainer?.start();
     await this.applyGrade(true);
     this.loop();
@@ -86,6 +119,7 @@ export class RideEngine {
 
   async pause(): Promise<void> {
     if (this.phase !== 'riding') return;
+    this.recordSample(true);
     this.phase = 'paused';
     cancelAnimationFrame(this.raf);
     await this.trainer?.stop();
@@ -101,7 +135,22 @@ export class RideEngine {
     this.emit();
   }
 
+  /**
+   * While riding/paused: end the ride → finished (keep track for download).
+   * While finished: dismiss to ready/idle (track kept until next start/clear).
+   */
   async stop(): Promise<void> {
+    if (this.phase === 'riding' || this.phase === 'paused') {
+      cancelAnimationFrame(this.raf);
+      this.recordSample(true);
+      this.phase = 'finished';
+      this.rideFinishedAtMs = Date.now();
+      await this.trainer?.stop();
+      await this.trainer?.setSimulation({ gradePercent: 0 });
+      this.emit();
+      return;
+    }
+
     this.phase = this.route ? 'ready' : 'idle';
     cancelAnimationFrame(this.raf);
     this.distanceMeters = 0;
@@ -125,7 +174,9 @@ export class RideEngine {
     const routeLen = this.route?.distanceMeters ?? 0;
     if (routeLen > 0 && this.distanceMeters >= routeLen) {
       this.distanceMeters = routeLen;
+      this.recordSample(true);
       this.phase = 'finished';
+      this.rideFinishedAtMs = Date.now();
       cancelAnimationFrame(this.raf);
       void this.trainer?.stop();
       void this.trainer?.setSimulation({ gradePercent: 0 });
@@ -133,10 +184,52 @@ export class RideEngine {
       return;
     }
 
+    this.recordSample(false);
     void this.applyGrade(false);
     this.emit();
     this.raf = requestAnimationFrame(this.loop);
   };
+
+  private recordSample(force: boolean): void {
+    if (this.rideStartedAtMs <= 0) return;
+    if (!force && this.elapsedSeconds - this.lastSampleElapsed < SAMPLE_INTERVAL_MS / 1000) {
+      return;
+    }
+
+    const at = this.route
+      ? gradeAtDistance(this.route.samples, this.distanceMeters)
+      : null;
+    if (!at) return;
+
+    const bike = this.lastBike;
+    const speedKmh =
+      bike?.speedKmh && bike.speedKmh > 0.5
+        ? bike.speedKmh
+        : this.phase === 'riding'
+          ? this.resolveSpeedKmh()
+          : (bike?.speedKmh ?? 0);
+
+    const point: TrackPoint = {
+      timestampMs: this.rideStartedAtMs + this.elapsedSeconds * 1000,
+      lat: at.lat,
+      lng: at.lng,
+      elevationMeters: at.elevationMeters,
+      distanceMeters: this.distanceMeters,
+      speedKmh,
+      powerWatts: bike?.powerWatts ?? 0,
+      cadenceRpm: bike?.cadenceRpm ?? 0,
+      heartRateBpm: this.heartRateBpm ?? bike?.heartRateBpm ?? null,
+    };
+
+    // Avoid duplicate timestamps when forcing multiple samples in one tick.
+    const last = this.track.at(-1);
+    if (last && Math.abs(last.timestampMs - point.timestampMs) < 1) {
+      this.track[this.track.length - 1] = point;
+    } else {
+      this.track.push(point);
+    }
+    this.lastSampleElapsed = this.elapsedSeconds;
+  }
 
   private resolveSpeedKmh(): number {
     const bike = this.lastBike;
@@ -203,6 +296,7 @@ export class RideEngine {
       elapsedSeconds: this.elapsedSeconds,
       position: at ? { lat: at.lat, lng: at.lng } : null,
       trainerResistanceHint: Math.max(0, Math.min(100, 20 + gradePercent * 4)),
+      hasExport: this.track.length > 0,
     };
   }
 

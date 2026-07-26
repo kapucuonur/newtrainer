@@ -36,6 +36,7 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 3. **Build route** → wait for OSRM + elevation
 4. **Start ride** — follow-road camera pitches along the route (3D-feel); marker advances; grade updates mock resistance
 5. Drag **Demo effort** to change power/speed
+6. **Stop** or finish the route → **Ride complete** → **Download FIT** / **Download GPX**, then import manually in Garmin Connect (OAuth upload not included yet)
 
 ## Test with real hardware
 

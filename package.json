@@ -12,6 +12,7 @@
     "test:parse": "npx tsx src/bluetooth/ftms.parse.test.ts"
   },
   "dependencies": {
+    "@markw65/fit-file-writer": "^0.1.10",
     "maplibre-gl": "^6.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

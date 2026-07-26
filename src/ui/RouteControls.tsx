@@ -10,6 +10,9 @@ type Props = {
   loading: boolean;
   error: string | null;
   phase: RidePhase;
+  hasExport: boolean;
+  completedDistanceMeters: number;
+  completedElapsedSeconds: number;
   onSetPickMode: (mode: 'A' | 'B' | null) => void;
   onBuildRoute: () => void;
   onClear: () => void;
@@ -17,6 +20,8 @@ type Props = {
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
+  onDownloadFit: () => void;
+  onDownloadGpx: () => void;
 };
 
 export function RouteControls({
@@ -27,6 +32,9 @@ export function RouteControls({
   loading,
   error,
   phase,
+  hasExport,
+  completedDistanceMeters,
+  completedElapsedSeconds,
   onSetPickMode,
   onBuildRoute,
   onClear,
@@ -34,7 +42,11 @@ export function RouteControls({
   onPause,
   onResume,
   onStop,
+  onDownloadFit,
+  onDownloadGpx,
 }: Props) {
+  const showComplete = phase === 'finished' && hasExport;
+
   return (
     <section className="route-controls">
       <div className="route-controls-top">
@@ -88,6 +100,26 @@ export function RouteControls({
 
       {error && <p className="error-text">{error}</p>}
 
+      {showComplete && (
+        <div className="ride-complete" role="status">
+          <div className="ride-complete-copy">
+            <h3>Ride complete</h3>
+            <p>
+              {formatDistance(completedDistanceMeters)} · {formatDuration(completedElapsedSeconds)} —
+              download for Garmin Connect (manual import).
+            </p>
+          </div>
+          <div className="btn-row">
+            <button type="button" className="btn btn-primary" onClick={onDownloadFit}>
+              Download FIT
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onDownloadGpx}>
+              Download GPX
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="btn-row ride-actions">
         {(phase === 'ready' || phase === 'finished') && (
           <button type="button" className="btn btn-accent" onClick={onStart} disabled={!route}>
@@ -104,9 +136,14 @@ export function RouteControls({
             Resume
           </button>
         )}
-        {(phase === 'riding' || phase === 'paused' || phase === 'finished') && (
+        {(phase === 'riding' || phase === 'paused') && (
           <button type="button" className="btn btn-ghost" onClick={onStop}>
             Stop
+          </button>
+        )}
+        {phase === 'finished' && (
+          <button type="button" className="btn btn-ghost" onClick={onStop}>
+            Done
           </button>
         )}
       </div>

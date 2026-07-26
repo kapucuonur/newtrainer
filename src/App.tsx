@@ -8,6 +8,7 @@ import { enrichRouteWithElevation } from './elevation/service';
 import { RouteMap } from './map/RouteMap';
 import { fetchRoute } from './routing/osrm';
 import type { EnrichedRoute, LatLng } from './routing/types';
+import { downloadRideFit, downloadRideGpx } from './export';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
 import { ConnectionPanel } from './ui/ConnectionPanel';
 import { RideHUD } from './ui/RideHUD';
@@ -27,6 +28,7 @@ const idleTelemetry: RideTelemetry = {
   elapsedSeconds: 0,
   position: null,
   trainerResistanceHint: 20,
+  hasExport: false,
 };
 
 export default function App() {
@@ -205,6 +207,26 @@ export default function App() {
     return 'IDLE';
   }, [telemetry.phase]);
 
+  const onDownloadFit = () => {
+    const ride = engineRef.current.getExport();
+    if (!ride || ride.points.length === 0) {
+      setRouteError('No ride track to export yet');
+      return;
+    }
+    setRouteError(null);
+    downloadRideFit(ride);
+  };
+
+  const onDownloadGpx = () => {
+    const ride = engineRef.current.getExport();
+    if (!ride || ride.points.length === 0) {
+      setRouteError('No ride track to export yet');
+      return;
+    }
+    setRouteError(null);
+    downloadRideGpx(ride);
+  };
+
   return (
     <div className="app-shell">
       <ConnectionPanel
@@ -239,6 +261,9 @@ export default function App() {
             loading={loadingRoute}
             error={routeError}
             phase={telemetry.phase}
+            hasExport={telemetry.hasExport}
+            completedDistanceMeters={telemetry.distanceMeters}
+            completedElapsedSeconds={telemetry.elapsedSeconds}
             onSetPickMode={setPickMode}
             onBuildRoute={() => void buildRoute()}
             onClear={() => void clearRoute()}
@@ -246,6 +271,8 @@ export default function App() {
             onPause={() => void engineRef.current.pause()}
             onResume={() => void engineRef.current.resume()}
             onStop={() => void engineRef.current.stop()}
+            onDownloadFit={onDownloadFit}
+            onDownloadGpx={onDownloadGpx}
           />
         </div>
 
