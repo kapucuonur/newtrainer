@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Menu } from 'lucide-react';
 import {
   ApiError,
   createRoom,
@@ -1041,18 +1042,19 @@ export default function App() {
       />
 
       <header className="mobile-chrome">
-        <button
-          type="button"
-          className="btn btn-secondary mobile-chrome-btn"
-          aria-expanded={panelOpen}
-          aria-controls="connection-panel"
-          onClick={() => {
-            if (panelOpen) closePanel();
-            else openPanel();
-          }}
-        >
-          {panelOpen ? t('shell.close') : t('shell.menu')}
-        </button>
+        {panelOpen ? (
+          <button
+            type="button"
+            className="btn btn-secondary mobile-chrome-btn"
+            aria-expanded={true}
+            aria-controls="connection-panel"
+            onClick={closePanel}
+          >
+            {t('shell.close')}
+          </button>
+        ) : (
+          <span className="mobile-chrome-spacer" aria-hidden="true" />
+        )}
         <div className="mobile-chrome-brand">
           <span className="brand-mark">ROADLAB</span>
           <div className="live-pill" data-phase={telemetry.phase}>
@@ -1068,6 +1070,20 @@ export default function App() {
           {t('shell.account')}
         </button>
       </header>
+
+      {!panelOpen && (
+        <button
+          type="button"
+          className="shell-open-panel-btn"
+          aria-expanded={false}
+          aria-controls="connection-panel"
+          aria-label={t('shell.menu')}
+          onClick={openPanel}
+        >
+          <Menu className="icon-sm" aria-hidden="true" />
+          <span>{t('shell.menu')}</span>
+        </button>
+      )}
 
       <ConnectionPanel
         devicesEnabled={canUseDevices}
@@ -1119,17 +1135,6 @@ export default function App() {
 
       <main className="main-stage" id="ride-viewer" tabIndex={-1}>
         <div className="stage-top">
-          {!panelOpen && (
-            <button
-              type="button"
-              className="btn btn-secondary shell-open-panel-btn"
-              aria-expanded={false}
-              aria-controls="connection-panel"
-              onClick={openPanel}
-            >
-              {t('shell.menu')}
-            </button>
-          )}
           <div className="live-pill stage-live-pill" data-phase={telemetry.phase}>
             <span className="live-dot" />
             {rideLabel}

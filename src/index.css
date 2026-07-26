@@ -2,7 +2,7 @@
 
 :root {
   /* cache-bust: force new hashed CSS after Cloudflare edge 404s on prior hash */
-  --asset-epoch: 2026-07-26-3;
+  --asset-epoch: 2026-07-26-4;
   --bg-0: #080a0f;
   --bg-1: #0d111a;
   --bg-2: #141c28;
@@ -197,6 +197,11 @@ select {
   letter-spacing: 0.06em;
 }
 
+.mobile-chrome-spacer {
+  width: 72px;
+  flex-shrink: 0;
+}
+
 /* Connection Panel Sidebar Drawer — above backdrop so Close/controls receive clicks */
 .connection-panel {
   background: var(--panel);
@@ -233,9 +238,59 @@ select {
   pointer-events: auto;
 }
 
+/* Floating Menu chip — high contrast over Bright (light) map tiles */
 .shell-open-panel-btn {
-  display: none;
-  align-self: flex-start;
+  position: fixed;
+  top: calc(12px + var(--safe-top));
+  left: calc(12px + var(--safe-left));
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 18px;
+  border: 1px solid rgba(2, 11, 18, 0.18);
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(0, 240, 255, 0.55),
+    0 0 24px rgba(0, 240, 255, 0.35);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.shell-open-panel-btn:hover {
+  background: #33f3ff;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(0, 240, 255, 0.7),
+    0 0 32px rgba(0, 240, 255, 0.45);
+}
+
+.shell-open-panel-btn:active {
+  transform: translateY(1px);
+}
+
+.shell-open-panel-btn:focus-visible {
+  outline: 3px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+/* Keep stage chips clear of the floating Menu control */
+.app-shell:not(.panel-open) .stage-top {
+  left: calc(130px + var(--safe-left));
 }
 
 .brand-badge {
@@ -1643,10 +1698,6 @@ select {
     visibility: hidden;
     pointer-events: none;
   }
-
-  .app-shell:not(.panel-open) .shell-open-panel-btn {
-    display: inline-flex;
-  }
 }
 
 /* Responsive Rules for Mobile/Tablet */
@@ -1661,6 +1712,11 @@ select {
 
   .mobile-chrome {
     display: flex;
+  }
+
+  /* Sit below mobile chrome so the chip stays visible over the map */
+  .shell-open-panel-btn {
+    top: calc(58px + var(--safe-top));
   }
 
   .connection-panel {
