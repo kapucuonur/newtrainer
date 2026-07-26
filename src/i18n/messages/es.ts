@@ -153,8 +153,7 @@ export const es: Messages = {
 
   'map.pickBanner': 'Toca el mapa para colocar {{point}}',
   'map.followBanner': 'Seguir carretera · cámara 3D',
-  'map.followMapillary': ' · Mapillary on',
-  'map.followGroup': ' · Mapa de grupo (sin street view)',
+  'map.followGroup': ' · Mapa de grupo',
   'map.lockedBanner': 'Inicia sesión para conectar dispositivos y colocar waypoints en el mapa',
 
   'group.title': 'Salida en grupo',
@@ -176,7 +175,6 @@ export const es: Messages = {
   'group.start': 'Iniciar salida en grupo',
   'group.end': 'Cerrar sala',
   'group.leave': 'Salir',
-  'group.noMapillary': 'En grupo solo mapa + marcadores (sin Mapillary).',
   'group.created': 'Sala lista — comparte {{code}}',
   'group.joined': 'Te uniste a la sala {{code}}',
   'group.full': 'Sala llena (máx. {{max}}). Prueba otro código.',
@@ -199,16 +197,8 @@ export const es: Messages = {
   'hud.climb': 'Subida',
   'hud.descent': 'Bajada',
 
-  'street.aria': 'Vista de calle Mapillary',
-  'street.label': 'Imágenes de calle',
-  'street.alt': 'Vista de calle Mapillary a lo largo de la ruta',
-  'street.empty': 'No hay imágenes de calle aquí',
-  'street.error': 'Imágenes de calle no disponibles',
-  'street.loading': 'Cargando imágenes de calle…',
-  'street.compass': 'Captura {{capture}}° · ruta {{ride}}°',
-
   'footer.protocols':
-    'Protocolos: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protocolos: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Prueba: Chrome/Edge + rodillo FTMS · Rodillo demo sin hardware · iOS Safari: sin Web Bluetooth',
 };

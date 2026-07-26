@@ -60,15 +60,14 @@ Without `VITE_API_URL`, the app stays local-only (Bluetooth / map / FIT+GPX down
 
 ## Optional env
 
-Copy `.env.example` → `.env` to override OSRM, elevation, map style, Mapillary token, or API URL.
+Copy `.env.example` → `.env` to override OSRM, elevation, map style, or API URL.
 
 | Variable | Default | Notes |
 |----------|---------|--------|
 | `VITE_MAP_STYLE_URL` | OpenFreeMap **liberty** (colorful) | Free. `dark` / `fiord` are grayscale-ish on purpose |
-| `VITE_MAPILLARY_ACCESS_TOKEN` | unset | Free Mapillary client token from [developers dashboard](https://www.mapillary.com/dashboard/developers). Enables street-level photos during rides. Without it, ride immersion is MapLibre follow-camera only |
 | `VITE_API_URL` | unset | Pi API base URL. Enables register/login, profile, save ride summary |
 
-Street photos use **Mapillary** (CC BY-SA, free developer token). Coverage varies by city; Turkey has sparse coverage outside major corridors. Without a token or nearby images, the pitched follow camera along the A→B polyline remains primary.
+During rides, immersion uses the MapLibre pitched follow camera along the A→B polyline.
 
 ## Limitations
 
@@ -79,7 +78,6 @@ Street photos use **Mapillary** (CC BY-SA, free developer token). Coverage varie
 | ANT+ | Needs USB stick + local bridge (documented in UI / `wifiBridge.ts`) |
 | Public OSRM / OpenTopoData | Rate limits; app falls back to straight line / synthetic elevation |
 | Trainer SIM support | Varies by brand; unsupported devices get grade→resistance mapping |
-| Street-level photos | Free Mapillary when `VITE_MAPILLARY_ACCESS_TOKEN` is set; otherwise 3D follow camera only |
 
 ## Architecture (WiFi bridge)
 

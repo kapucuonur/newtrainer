@@ -151,8 +151,7 @@ export const tr: Messages = {
 
   'map.pickBanner': '{{point}} noktasını yerleştirmek için haritaya dokunun',
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',
-  'map.followMapillary': ' · Mapillary açık',
-  'map.followGroup': ' · Grup haritası (sokak görüntüsü yok)',
+  'map.followGroup': ' · Grup haritası',
   'map.lockedBanner': 'Cihaz bağlamak ve haritada ara nokta koymak için giriş yapın',
 
   'group.title': 'Grup sürüşü',
@@ -174,7 +173,6 @@ export const tr: Messages = {
   'group.start': 'Grup sürüşünü başlat',
   'group.end': 'Odayı bitir',
   'group.leave': 'Ayrıl',
-  'group.noMapillary': 'Grup sürüşlerinde yalnızca harita + sürücü işaretleri (Mapillary yok).',
   'group.created': 'Oda hazır — kodu paylaşın: {{code}}',
   'group.joined': '{{code}} odasına katıldınız',
   'group.full': 'Oda dolu (en fazla {{max}} sürücü). Başka bir kod deneyin.',
@@ -197,16 +195,8 @@ export const tr: Messages = {
   'hud.climb': 'Tırmanış',
   'hud.descent': 'İniş',
 
-  'street.aria': 'Mapillary sokak görüntüsü',
-  'street.label': 'Sokak görüntüsü',
-  'street.alt': 'Rota boyunca Mapillary sokak görüntüsü',
-  'street.empty': 'Burada sokak görüntüsü yok',
-  'street.error': 'Sokak görüntüsü yok',
-  'street.loading': 'Sokak görüntüsü yükleniyor…',
-  'street.compass': 'Çekim yönü {{capture}}° · sürüş {{ride}}°',
-
   'footer.protocols':
-    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Test: Chrome/Edge + FTMS trainer · Demo trainer donanımsız çalışır · iOS Safari: Web Bluetooth yok',
 };

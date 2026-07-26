@@ -9,16 +9,14 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
 import { routeAltColor } from '../routing/osrm';
 import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
-import { hasMapillaryToken } from './mapillary';
 import { sanitizeMapStyle } from './sanitizeMapStyle';
-import { StreetViewPanel } from './StreetViewPanel';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
@@ -66,7 +64,7 @@ type Props = {
   pickingEnabled?: boolean;
   /** Other riders on the shared route (group rides). */
   peers?: MapPeer[];
-  /** Group mode: colored map + peers only — no Mapillary / street view. */
+  /** Group mode: colored map + peer markers. */
   groupMode?: boolean;
 };
 
@@ -162,11 +160,9 @@ export function RouteMap({
   const onSelectAlternativeRef = useRef(onSelectAlternative);
   const lastFocusedWaypointRef = useRef<string | null>(null);
   const bearingRef = useRef(0);
-  const [heading, setHeading] = useState(0);
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
   const activePickMode = pickingEnabled && pickMode;
-  const streetViewEnabled = followRoad && !groupMode;
   const showAlternatives = !followRoad && routeAlternatives.length > 1;
 
   useEffect(() => {
@@ -498,7 +494,6 @@ export function RouteMap({
     const targetBearing = bearingAlongRoute(route.samples, distanceMeters);
     const nextBearing = lerpBearing(bearingRef.current, targetBearing, 0.28);
     bearingRef.current = nextBearing;
-    setHeading(nextBearing);
 
     map.easeTo({
       center: [rider.lng, rider.lat],
@@ -516,7 +511,6 @@ export function RouteMap({
     if (ridePhase === 'ready' || ridePhase === 'finished' || ridePhase === 'idle') {
       map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
       bearingRef.current = 0;
-      setHeading(0);
     }
   }, [followRoad, ridePhase]);
 
@@ -538,18 +532,9 @@ export function RouteMap({
       {followRoad && (
         <div className="map-follow-banner" role="status">
           {t('map.followBanner')}
-          {groupMode
-            ? t('map.followGroup')
-            : hasMapillaryToken()
-              ? t('map.followMapillary')
-              : ''}
+          {groupMode ? t('map.followGroup') : ''}
         </div>
       )}
-      <StreetViewPanel
-        enabled={streetViewEnabled}
-        position={rider}
-        heading={heading}
-      />
     </div>
   );
 }

@@ -1020,21 +1020,6 @@ select {
   color: var(--warn);
 }
 
-/* Street View Panel */
-.street-view-panel {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 240px;
-  height: 150px;
-  z-index: 25;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  background: var(--bg-1);
-}
-
 /* Unified Bottom Dashboard Deck Container */
 .bottom-dashboard-deck {
   position: absolute;

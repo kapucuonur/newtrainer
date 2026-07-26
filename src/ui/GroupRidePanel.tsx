@@ -158,8 +158,6 @@ export function GroupRidePanel({
               </button>
             )}
           </div>
-
-          <p className="muted-text group-mapillary-note">{t('group.noMapillary')}</p>
         </div>
       )}
 

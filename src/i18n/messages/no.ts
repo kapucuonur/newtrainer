@@ -153,8 +153,7 @@ export const no: Messages = {
 
   'map.pickBanner': 'Trykk på kartet for å plassere {{point}}',
   'map.followBanner': 'Følg vei · 3D-kamera',
-  'map.followMapillary': ' · Mapillary på',
-  'map.followGroup': ' · Gruppekart (ingen street view)',
+  'map.followGroup': ' · Gruppekart',
   'map.lockedBanner': 'Logg inn for å koble til enheter og plassere veipunkter på kartet',
 
   'group.title': 'Gruppetur',
@@ -176,7 +175,6 @@ export const no: Messages = {
   'group.start': 'Start gruppetur',
   'group.end': 'Avslutt rom',
   'group.leave': 'Forlat',
-  'group.noMapillary': 'Gruppeturer: bare kart + markører (ingen Mapillary).',
   'group.created': 'Rom klart — del {{code}}',
   'group.joined': 'Ble med i rom {{code}}',
   'group.full': 'Rommet er fullt (maks {{max}}). Prøv en annen kode.',
@@ -199,16 +197,8 @@ export const no: Messages = {
   'hud.climb': 'Oppover',
   'hud.descent': 'Nedover',
 
-  'street.aria': 'Mapillary gatevisning',
-  'street.label': 'Gatebilder',
-  'street.alt': 'Mapillary gatevisning langs ruten',
-  'street.empty': 'Ingen gatebilder her',
-  'street.error': 'Gatebilder utilgjengelig',
-  'street.loading': 'Laster gatebilder…',
-  'street.compass': 'Opptak {{capture}}° · sykling {{ride}}°',
-
   'footer.protocols':
-    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Test: Chrome/Edge + FTMS-trainer · Demo-trainer uten maskinvare · iOS Safari: ingen Web Bluetooth',
 };

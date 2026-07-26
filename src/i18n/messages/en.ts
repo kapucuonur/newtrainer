@@ -149,8 +149,7 @@ export const en = {
 
   'map.pickBanner': 'Tap the map to place {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',
-  'map.followMapillary': ' · Mapillary on',
-  'map.followGroup': ' · Group map (no street view)',
+  'map.followGroup': ' · Group map',
   'map.lockedBanner': 'Sign in to connect devices and place waypoints on the map',
 
   'group.title': 'Group ride',
@@ -172,7 +171,6 @@ export const en = {
   'group.start': 'Start group ride',
   'group.end': 'End room',
   'group.leave': 'Leave',
-  'group.noMapillary': 'Group rides use the map + rider markers only (no Mapillary).',
   'group.created': 'Room ready — share code {{code}}',
   'group.joined': 'Joined room {{code}}',
   'group.full': 'Room is full (max {{max}} riders). Try another code.',
@@ -195,16 +193,8 @@ export const en = {
   'hud.climb': 'Climb',
   'hud.descent': 'Descent',
 
-  'street.aria': 'Mapillary street view',
-  'street.label': 'Street imagery',
-  'street.alt': 'Mapillary street-level view along the route',
-  'street.empty': 'No street imagery here',
-  'street.error': 'Street imagery unavailable',
-  'street.loading': 'Loading street imagery…',
-  'street.compass': 'Capture bearing {{capture}}° · ride {{ride}}°',
-
   'footer.protocols':
-    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no Web Bluetooth',
 } as const;

@@ -153,8 +153,7 @@ export const ru: Messages = {
 
   'map.pickBanner': 'Нажмите на карту, чтобы поставить {{point}}',
   'map.followBanner': 'Следование по дороге · 3D-камера',
-  'map.followMapillary': ' · Mapillary вкл.',
-  'map.followGroup': ' · Групповая карта (без street view)',
+  'map.followGroup': ' · Групповая карта',
   'map.lockedBanner': 'Войдите, чтобы подключить устройства и ставить точки на карте',
 
   'group.title': 'Групповая поездка',
@@ -176,7 +175,6 @@ export const ru: Messages = {
   'group.start': 'Начать групповую поездку',
   'group.end': 'Завершить комнату',
   'group.leave': 'Выйти',
-  'group.noMapillary': 'В группе только карта и маркеры (без Mapillary).',
   'group.created': 'Комната готова — код {{code}}',
   'group.joined': 'Вы в комнате {{code}}',
   'group.full': 'Комната заполнена (макс. {{max}}). Другой код.',
@@ -199,16 +197,8 @@ export const ru: Messages = {
   'hud.climb': 'Подъём',
   'hud.descent': 'Спуск',
 
-  'street.aria': 'Уличные кадры Mapillary',
-  'street.label': 'Уличные кадры',
-  'street.alt': 'Уличный вид Mapillary вдоль маршрута',
-  'street.empty': 'Здесь нет уличных кадров',
-  'street.error': 'Уличные кадры недоступны',
-  'street.loading': 'Загрузка уличных кадров…',
-  'street.compass': 'Съёмка {{capture}}° · езда {{ride}}°',
-
   'footer.protocols':
-    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Тест: Chrome/Edge + FTMS · Демо-тренажёр без железа · iOS Safari: нет Web Bluetooth',
 };

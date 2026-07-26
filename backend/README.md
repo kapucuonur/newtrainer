@@ -3,7 +3,7 @@
 Self-hosted Node.js + Fastify + SQLite backend for user profiles and **light ride summaries**.
 Frontend (Vercel) talks to this API over Cloudflare Tunnel.
 
-**Pi storage rule:** the API keeps only workout summary rows (date, duration, distance, avg/max power & HR, speed, route label, optional elevation gain). Full GPS tracks, Mapillary, and FIT/GPX files stay on the client — the server does **not** store track points or activity files.
+**Pi storage rule:** the API keeps only workout summary rows (date, duration, distance, avg/max power & HR, speed, route label, optional elevation gain). Full GPS tracks and FIT/GPX files stay on the client — the server does **not** store track points or activity files.
 
 ## Stack
 
@@ -164,7 +164,7 @@ If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save su
 
 ## Group rides
 
-Shared A→B rooms for up to **20** riders. Host creates a room from a built route; others join by code; host starts; clients send light telemetry over WebSocket (~1–2 Hz) and receive peer positions for map markers. No Mapillary/street imagery in group mode (frontend).
+Shared A→B rooms for up to **20** riders. Host creates a room from a built route; others join by code; host starts; clients send light telemetry over WebSocket (~1–2 Hz) and receive peer positions for map markers.
 
 WebSocket (same host as REST — works behind Cloudflare Tunnel HTTP→`localhost:8788`):
 

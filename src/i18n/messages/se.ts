@@ -153,8 +153,7 @@ export const se: Messages = {
 
   'map.pickBanner': 'Tryck på kartan för att placera {{point}}',
   'map.followBanner': 'Följ väg · 3D-kamera',
-  'map.followMapillary': ' · Mapillary på',
-  'map.followGroup': ' · Gruppkarta (ingen street view)',
+  'map.followGroup': ' · Gruppkarta',
   'map.lockedBanner': 'Logga in för att ansluta enheter och placera vägpunkter på kartan',
 
   'group.title': 'Gruppridning',
@@ -176,7 +175,6 @@ export const se: Messages = {
   'group.start': 'Starta gruppridning',
   'group.end': 'Avsluta rum',
   'group.leave': 'Lämna',
-  'group.noMapillary': 'Gruppridning: bara karta + markörer (ingen Mapillary).',
   'group.created': 'Rum klart — dela {{code}}',
   'group.joined': 'Gick med i rum {{code}}',
   'group.full': 'Rummet är fullt (max {{max}}). Prova annan kod.',
@@ -199,16 +197,8 @@ export const se: Messages = {
   'hud.climb': 'Stigning',
   'hud.descent': 'Nedför',
 
-  'street.aria': 'Mapillary gatuvy',
-  'street.label': 'Gatubilder',
-  'street.alt': 'Mapillary gatuvy längs rutten',
-  'street.empty': 'Inga gatubilder här',
-  'street.error': 'Gatubilder otillgängliga',
-  'street.loading': 'Laddar gatubilder…',
-  'street.compass': 'Bildriktning {{capture}}° · cykling {{ride}}°',
-
   'footer.protocols':
-    'Protokoll: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protokoll: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
   'footer.test':
     'Test: Chrome/Edge + FTMS-trainer · Demo-trainer utan hårdvara · iOS Safari: ingen Web Bluetooth',
 };
