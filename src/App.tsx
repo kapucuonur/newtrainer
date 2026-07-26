@@ -950,6 +950,12 @@ export default function App() {
             isRoundTrip={isRoundTrip}
             onOpenAccount={onOpenAccount}
             onSetPickMode={onSetPickMode}
+            onSetPointA={(pt) => {
+              setPointA(pt);
+            }}
+            onSetPointB={(pt) => {
+              setPointB(pt);
+            }}
             onToggleRoundTrip={(nextRoundTrip) => {
               setIsRoundTrip(nextRoundTrip);
               if (pointA && pointB) void buildRoute(nextRoundTrip);

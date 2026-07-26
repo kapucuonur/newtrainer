@@ -574,6 +574,117 @@ select {
   flex-wrap: wrap;
 }
 
+/* Location Search Inputs in Route Controls */
+.route-search-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.location-search-box {
+  position: relative;
+  width: 100%;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+}
+
+.search-point-badge {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  outline: none;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.search-icon,
+.search-spinner {
+  color: var(--muted);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(13, 17, 26, 0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  list-style: none;
+  margin: 0;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.search-dropdown-item:hover {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--accent);
+}
+
+.dropdown-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .route-header-brand {
   display: flex;
   align-items: center;

@@ -256,7 +256,13 @@ export function RouteMap({
     syncMarker(markerA, pointA, 'map-pin-a', 'A START');
     syncMarker(markerB, pointB, 'map-pin-b', 'B FINISH');
     syncMarker(markerRider, rider, 'map-pin-rider', '🚴');
-  }, [pointA, pointB, rider]);
+
+    if (pointA && !route) {
+      map.easeTo({ center: [pointA.lng, pointA.lat], zoom: 13, duration: 700 });
+    } else if (pointB && !route) {
+      map.easeTo({ center: [pointB.lng, pointB.lat], zoom: 13, duration: 700 });
+    }
+  }, [pointA, pointB, rider, route]);
 
   useEffect(() => {
     const map = mapRef.current;

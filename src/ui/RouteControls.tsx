@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import type { EnrichedRoute, LatLng } from '../routing/types';
 import type { RidePhase } from '../simulation/rideEngine';
+import { searchLocation, type GeocodedPlace } from '../routing/geocoding';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
 import {
@@ -15,6 +17,8 @@ import {
   Mountain,
   Compass,
   Repeat,
+  Search,
+  Loader2,
 } from 'lucide-react';
 
 type Props = {
@@ -33,6 +37,8 @@ type Props = {
   isRoundTrip: boolean;
   onOpenAccount: () => void;
   onSetPickMode: (mode: 'A' | 'B' | null) => void;
+  onSetPointA?: (point: LatLng) => void;
+  onSetPointB?: (point: LatLng) => void;
   onToggleRoundTrip: (isRoundTrip: boolean) => void;
   onBuildRoute: () => void;
   onClear: () => void;
@@ -76,6 +82,97 @@ const PRESET_ROUTES = [
   },
 ];
 
+function LocationSearchBox({
+  badge,
+  placeholder,
+  point,
+  disabled,
+  onSelectPoint,
+}: {
+  badge: string;
+  placeholder: string;
+  point: LatLng | null;
+  disabled?: boolean;
+  onSelectPoint?: (point: LatLng) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<GeocodedPlace[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!query || query.trim().length < 3) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSearching(true);
+      searchLocation(query).then((items) => {
+        setResults(items);
+        setSearching(false);
+        setOpen(items.length > 0);
+      });
+    }, 380);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  return (
+    <div className="location-search-box">
+      <div className="search-input-wrapper">
+        <span className="search-point-badge">{badge}</span>
+        <input
+          type="text"
+          className="search-input"
+          value={query}
+          disabled={disabled}
+          placeholder={
+            point
+              ? `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`
+              : placeholder
+          }
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            if (results.length > 0) setOpen(true);
+          }}
+          onBlur={() => {
+            // Delay close so click event triggers
+            setTimeout(() => setOpen(false), 200);
+          }}
+        />
+        {searching ? (
+          <Loader2 className="icon-xs search-spinner" />
+        ) : (
+          <Search className="icon-xs search-icon" />
+        )}
+      </div>
+
+      {open && results.length > 0 && (
+        <ul className="search-dropdown">
+          {results.map((place, idx) => (
+            <li
+              key={idx}
+              className="search-dropdown-item"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                if (onSelectPoint) onSelectPoint({ lat: place.lat, lng: place.lng });
+                const firstPart = place.displayName.split(',')[0];
+                setQuery(firstPart);
+                setOpen(false);
+              }}
+            >
+              <MapPin className="icon-xs icon-accent" />
+              <span className="dropdown-text">{place.displayName}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function RouteControls({
   pointA,
   pointB,
@@ -92,6 +189,8 @@ export function RouteControls({
   isRoundTrip,
   onOpenAccount,
   onSetPickMode,
+  onSetPointA,
+  onSetPointB,
   onToggleRoundTrip,
   onBuildRoute,
   onClear,
@@ -173,6 +272,26 @@ export function RouteControls({
           </button>
         </div>
       </div>
+
+      {/* Address / Location Search Bar Row */}
+      {routePlanningEnabled && (
+        <div className="route-search-row">
+          <LocationSearchBox
+            badge="Start A"
+            placeholder="Search city, address or mountain (e.g. Alpe d'Huez)"
+            point={pointA}
+            disabled={locked}
+            onSelectPoint={onSetPointA}
+          />
+          <LocationSearchBox
+            badge="Finish B"
+            placeholder="Search destination address or city"
+            point={pointB}
+            disabled={locked}
+            onSelectPoint={onSetPointB}
+          />
+        </div>
+      )}
 
       {/* Preset Routes Quick Chips */}
       {routePlanningEnabled && !route && (
