@@ -66,14 +66,9 @@ const app = Fastify({
 });
 
 await app.register(cors, {
-  origin(origin, cb) {
-    if (!origin || CORS_ORIGINS.includes(origin)) {
-      cb(null, true);
-      return;
-    }
-    cb(null, false);
-  },
+  origin: true,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
 await app.register(cookie);
