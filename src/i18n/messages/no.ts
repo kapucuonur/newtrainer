@@ -150,6 +150,18 @@ export const no: Messages = {
   'route.ascentPending': 'Stigning…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Tur-retur (samme vei til A)',
+  'route.showPanel': 'Rute',
+  'route.hidePanel': 'Skjul rute',
+
+  'ride.chromeAria': 'Øktkontroller',
+
+  'video.title': 'Video',
+  'video.toggle': 'Videopanel',
+  'video.toggleHint': 'Valgfri personlig YouTube ved siden av kartet (deles ikke i gruppeturer)',
+  'video.urlPlaceholder': 'Lim inn en YouTube-URL',
+  'video.invalid': 'Dette ser ikke ut som en gyldig YouTube-lenke',
+  'video.hint':
+    'Lim inn en YouTube-lenke for å se ved siden av kartet. Kun personlig — synkes ikke i gruppe.',
 
   'map.pickBanner': 'Trykk på kartet for å plassere {{point}}',
   'map.followBanner': 'Følg vei · 3D-kamera',

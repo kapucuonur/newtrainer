@@ -146,6 +146,17 @@ export const en = {
   'route.ascentPending': 'Ascent…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Round trip (same road back to A)',
+  'route.showPanel': 'Route',
+  'route.hidePanel': 'Hide route',
+
+  'ride.chromeAria': 'Ride controls',
+
+  'video.title': 'Video',
+  'video.toggle': 'Video panel',
+  'video.toggleHint': 'Optional personal YouTube beside the map (not shared in group rides)',
+  'video.urlPlaceholder': 'Paste a YouTube URL',
+  'video.invalid': 'That does not look like a valid YouTube link',
+  'video.hint': 'Paste a YouTube link to watch beside the map. Personal only — not synced in group rides.',
 
   'map.pickBanner': 'Tap the map to place {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',

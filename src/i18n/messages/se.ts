@@ -150,6 +150,18 @@ export const se: Messages = {
   'route.ascentPending': 'Stigning…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Tur och retur (samma väg till A)',
+  'route.showPanel': 'Rutt',
+  'route.hidePanel': 'Dölj rutt',
+
+  'ride.chromeAria': 'Passkontroller',
+
+  'video.title': 'Video',
+  'video.toggle': 'Videopanel',
+  'video.toggleHint': 'Valfri personlig YouTube bredvid kartan (delas inte i grupprundor)',
+  'video.urlPlaceholder': 'Klistra in en YouTube-URL',
+  'video.invalid': 'Det ser inte ut som en giltig YouTube-länk',
+  'video.hint':
+    'Klistra in en YouTube-länk för att titta bredvid kartan. Endast personligt — synkas inte i grupp.',
 
   'map.pickBanner': 'Tryck på kartan för att placera {{point}}',
   'map.followBanner': 'Följ väg · 3D-kamera',

@@ -29,6 +29,7 @@ import {
   Loader2,
   Plus,
   Undo2,
+  Film,
 } from 'lucide-react';
 
 type Props = {
@@ -69,6 +70,10 @@ type Props = {
   hideStart?: boolean;
   /** Direct preset route selector callback */
   onSelectPresetRoute?: (waypoints: LatLng[]) => void;
+  videoPanelOpen?: boolean;
+  onToggleVideoPanel?: () => void;
+  /** Hide start/pause/stop row (e.g. ride chrome owns those controls). */
+  hideRideActions?: boolean;
 };
 
 // Preset iconic cycling routes for instant indoor training
@@ -224,6 +229,9 @@ export function RouteControls({
   onSaveToProfile,
   hideStart = false,
   onSelectPresetRoute,
+  videoPanelOpen = false,
+  onToggleVideoPanel,
+  hideRideActions = false,
 }: Props) {
   const t = useT();
   const showComplete = phase === 'finished' && hasExport;
@@ -301,6 +309,19 @@ export function RouteControls({
             <RotateCcw className="icon-xs" />
             {t('route.clear')}
           </button>
+
+          {onToggleVideoPanel && (
+            <button
+              type="button"
+              className={`btn ${videoPanelOpen ? 'btn-accent' : 'btn-secondary'}`}
+              onClick={onToggleVideoPanel}
+              aria-pressed={videoPanelOpen}
+              title={t('video.toggleHint')}
+            >
+              <Film className="icon-xs" />
+              {t('video.toggle')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -470,42 +491,44 @@ export function RouteControls({
         </div>
       )}
 
-      <div className="btn-row ride-actions">
-        {!hideStart && (phase === 'ready' || phase === 'finished') && (
-          <button
-            type="button"
-            className="btn btn-accent btn-large btn-glow"
-            onClick={onStart}
-            disabled={!route}
-          >
-            <Play className="icon-sm" />
-            {t('route.start')}
-          </button>
-        )}
-        {phase === 'riding' && (
-          <button type="button" className="btn btn-secondary btn-large" onClick={onPause}>
-            <Pause className="icon-sm" />
-            {t('route.pause')}
-          </button>
-        )}
-        {phase === 'paused' && (
-          <button type="button" className="btn btn-accent btn-large btn-glow" onClick={onResume}>
-            <Play className="icon-sm" />
-            {t('route.resume')}
-          </button>
-        )}
-        {(phase === 'riding' || phase === 'paused') && (
-          <button type="button" className="btn btn-danger btn-large" onClick={onStop}>
-            <Square className="icon-sm" />
-            {t('route.stop')}
-          </button>
-        )}
-        {phase === 'finished' && (
-          <button type="button" className="btn btn-ghost" onClick={onStop}>
-            {t('route.done')}
-          </button>
-        )}
-      </div>
+      {!hideRideActions && (
+        <div className="btn-row ride-actions">
+          {!hideStart && (phase === 'ready' || phase === 'finished') && (
+            <button
+              type="button"
+              className="btn btn-accent btn-large btn-glow"
+              onClick={onStart}
+              disabled={!route}
+            >
+              <Play className="icon-sm" />
+              {t('route.start')}
+            </button>
+          )}
+          {phase === 'riding' && (
+            <button type="button" className="btn btn-secondary btn-large" onClick={onPause}>
+              <Pause className="icon-sm" />
+              {t('route.pause')}
+            </button>
+          )}
+          {phase === 'paused' && (
+            <button type="button" className="btn btn-accent btn-large btn-glow" onClick={onResume}>
+              <Play className="icon-sm" />
+              {t('route.resume')}
+            </button>
+          )}
+          {(phase === 'riding' || phase === 'paused') && (
+            <button type="button" className="btn btn-danger btn-large" onClick={onStop}>
+              <Square className="icon-sm" />
+              {t('route.stop')}
+            </button>
+          )}
+          {phase === 'finished' && (
+            <button type="button" className="btn btn-ghost" onClick={onStop}>
+              {t('route.done')}
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

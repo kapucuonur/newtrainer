@@ -150,6 +150,18 @@ export const ru: Messages = {
   'route.ascentPending': 'Набор…',
   'route.ascent': '↑{{gain}}м',
   'route.roundTrip': 'Туда-обратно (тем же путём в A)',
+  'route.showPanel': 'Маршрут',
+  'route.hidePanel': 'Скрыть маршрут',
+
+  'ride.chromeAria': 'Управление заездом',
+
+  'video.title': 'Видео',
+  'video.toggle': 'Видеопанель',
+  'video.toggleHint': 'Личный YouTube рядом с картой (не шарится в групповых заездах)',
+  'video.urlPlaceholder': 'Вставьте ссылку YouTube',
+  'video.invalid': 'Это не похоже на действительную ссылку YouTube',
+  'video.hint':
+    'Вставьте ссылку YouTube, чтобы смотреть рядом с картой. Только лично — без синхронизации в группе.',
 
   'map.pickBanner': 'Нажмите на карту, чтобы поставить {{point}}',
   'map.followBanner': 'Следование по дороге · 3D-камера',

@@ -148,6 +148,18 @@ export const tr: Messages = {
   'route.ascentPending': 'Tırmanış…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Gidiş-dönüş (aynı yoldan A’ya)',
+  'route.showPanel': 'Rota',
+  'route.hidePanel': 'Rotayı gizle',
+
+  'ride.chromeAria': 'Sürüş kontrolleri',
+
+  'video.title': 'Video',
+  'video.toggle': 'Video paneli',
+  'video.toggleHint': 'İsteğe bağlı kişisel YouTube (grup sürüşünde paylaşılmaz)',
+  'video.urlPlaceholder': 'YouTube bağlantısı yapıştırın',
+  'video.invalid': 'Geçerli bir YouTube bağlantısı gibi görünmüyor',
+  'video.hint':
+    'Haritanın yanında izlemek için YouTube bağlantısı yapıştırın. Yalnızca kişisel — grup sürüşünde senkron değil.',
 
   'map.pickBanner': '{{point}} noktasını yerleştirmek için haritaya dokunun',
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',

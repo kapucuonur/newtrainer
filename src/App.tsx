@@ -42,8 +42,10 @@ import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
 import { ElevationProfile } from './ui/ElevationProfile';
 import { GroupRidePanel } from './ui/GroupRidePanel';
+import { RideChrome } from './ui/RideChrome';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
+import { VideoPanel } from './ui/VideoPanel';
 
 const idleTelemetry: RideTelemetry = {
   phase: 'idle',
@@ -128,6 +130,9 @@ export default function App() {
   const [groupBusy, setGroupBusy] = useState(false);
   const [groupMessage, setGroupMessage] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [routePeekOpen, setRoutePeekOpen] = useState(false);
+  const [videoPanelOpen, setVideoPanelOpen] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const roomSocketRef = useRef<RoomSocket | null>(null);
   const roomRef = useRef<Room | null>(null);
   const groupStartRef = useRef(false);
@@ -659,6 +664,7 @@ export default function App() {
 
   useEffect(() => {
     if (immersiveRide) setPanelOpen(false);
+    else setRoutePeekOpen(false);
   }, [immersiveRide]);
 
   useEffect(() => {
@@ -988,10 +994,14 @@ export default function App() {
     return out;
   }, [enrichedByAlt]);
 
+  const showRoutePanel = !immersiveRide || routePeekOpen;
+  const toggleVideoPanel = () => setVideoPanelOpen((open) => !open);
+
   const shellClass = [
     'app-shell',
     panelOpen ? 'panel-open' : '',
     immersiveRide ? 'app-shell-immersive' : '',
+    videoPanelOpen ? 'app-shell-video' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -1086,83 +1096,111 @@ export default function App() {
             <span className="live-dot" />
             {rideLabel}
           </div>
-          <RouteControls
-            waypoints={waypoints}
-            pickMode={pickMode}
-            route={route}
-            routeAlternatives={routeAlternatives}
-            selectedAlternativeIndex={selectedAltIndex}
-            elevByAlternative={elevByAlternative}
-            elevatingAlternative={elevatingAlt}
-            onSelectAlternative={onSelectAlternative}
-            loading={loadingRoute}
-            error={routeError}
-            phase={telemetry.phase}
-            hasExport={telemetry.hasExport}
-            completedDistanceMeters={telemetry.distanceMeters}
-            completedElapsedSeconds={telemetry.elapsedSeconds}
-            routePlanningEnabled={canPlanRoute && !inGroup}
-            gateMessage={gateMessage}
-            isRoundTrip={isRoundTrip}
-            onOpenAccount={onOpenAccount}
-            onSetPickMode={onSetPickMode}
-            onAddWaypoint={addWaypoint}
-            onRemoveLastWaypoint={removeLastWaypoint}
-            onToggleRoundTrip={(nextRoundTrip) => {
-              setIsRoundTrip(nextRoundTrip);
-              if (canBuildRoute(waypoints)) void buildRoute(nextRoundTrip);
-            }}
-            onBuildRoute={() => void buildRoute()}
-            onClear={() => void clearRoute()}
-            onStart={() => void engineRef.current.start()}
-            onPause={() => void engineRef.current.pause()}
-            onResume={() => void engineRef.current.resume()}
-            onStop={() => void engineRef.current.stop()}
-            onDownloadFit={onDownloadFit}
-            onDownloadGpx={onDownloadGpx}
-            canSaveToProfile={canSaveToProfile}
-            saveBusy={saveBusy}
-            saveMessage={saveMessage}
-            onSaveToProfile={() => void onSaveToProfile()}
-            hideStart={hideSoloStart}
-            onSelectPresetRoute={(pts) => void handleSelectPreset(pts)}
-          />
+          {immersiveRide && (
+            <RideChrome
+              phase={telemetry.phase}
+              routePeekOpen={routePeekOpen}
+              videoPanelOpen={videoPanelOpen}
+              onPause={() => void engineRef.current.pause()}
+              onResume={() => void engineRef.current.resume()}
+              onStop={() => void engineRef.current.stop()}
+              onToggleRoutePeek={() => setRoutePeekOpen((open) => !open)}
+              onToggleVideo={toggleVideoPanel}
+            />
+          )}
+          {showRoutePanel && (
+            <RouteControls
+              waypoints={waypoints}
+              pickMode={pickMode}
+              route={route}
+              routeAlternatives={routeAlternatives}
+              selectedAlternativeIndex={selectedAltIndex}
+              elevByAlternative={elevByAlternative}
+              elevatingAlternative={elevatingAlt}
+              onSelectAlternative={onSelectAlternative}
+              loading={loadingRoute}
+              error={routeError}
+              phase={telemetry.phase}
+              hasExport={telemetry.hasExport}
+              completedDistanceMeters={telemetry.distanceMeters}
+              completedElapsedSeconds={telemetry.elapsedSeconds}
+              routePlanningEnabled={canPlanRoute && !inGroup}
+              gateMessage={gateMessage}
+              isRoundTrip={isRoundTrip}
+              onOpenAccount={onOpenAccount}
+              onSetPickMode={onSetPickMode}
+              onAddWaypoint={addWaypoint}
+              onRemoveLastWaypoint={removeLastWaypoint}
+              onToggleRoundTrip={(nextRoundTrip) => {
+                setIsRoundTrip(nextRoundTrip);
+                if (canBuildRoute(waypoints)) void buildRoute(nextRoundTrip);
+              }}
+              onBuildRoute={() => void buildRoute()}
+              onClear={() => void clearRoute()}
+              onStart={() => void engineRef.current.start()}
+              onPause={() => void engineRef.current.pause()}
+              onResume={() => void engineRef.current.resume()}
+              onStop={() => void engineRef.current.stop()}
+              onDownloadFit={onDownloadFit}
+              onDownloadGpx={onDownloadGpx}
+              canSaveToProfile={canSaveToProfile}
+              saveBusy={saveBusy}
+              saveMessage={saveMessage}
+              onSaveToProfile={() => void onSaveToProfile()}
+              hideStart={hideSoloStart}
+              onSelectPresetRoute={(pts) => void handleSelectPreset(pts)}
+              videoPanelOpen={videoPanelOpen}
+              onToggleVideoPanel={toggleVideoPanel}
+              hideRideActions={immersiveRide}
+            />
+          )}
         </div>
 
-        <div className="viewer-stage">
-          <RouteMap
-            waypoints={waypoints}
-            nextWaypointLabel={
-              canAddWaypoint(waypoints.length)
-                ? nextWaypointLabel(waypoints.length)
-                : null
-            }
-            route={route}
-            routeAlternatives={routeAlternatives}
-            selectedAlternativeIndex={selectedAltIndex}
-            onSelectAlternative={
-              canPlanRoute && !inGroup ? onSelectAlternative : undefined
-            }
-            rider={telemetry.position}
-            ridePhase={telemetry.phase}
-            distanceMeters={telemetry.distanceMeters}
-            onPick={onPick}
-            pickMode={pickMode}
-            pickingEnabled={canPlanRoute && !inGroup}
-            peers={mapPeers}
-            groupMode={groupMode}
-          />
-          <div className="bottom-dashboard-deck">
-            <ElevationProfile
+        <div
+          className={['viewer-stage', videoPanelOpen ? 'viewer-stage-split' : '']
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="viewer-map-pane">
+            <RouteMap
+              waypoints={waypoints}
+              nextWaypointLabel={
+                canAddWaypoint(waypoints.length)
+                  ? nextWaypointLabel(waypoints.length)
+                  : null
+              }
               route={route}
-              currentDistanceMeters={telemetry.distanceMeters}
-              currentElevationMeters={telemetry.elevationMeters}
+              routeAlternatives={routeAlternatives}
+              selectedAlternativeIndex={selectedAltIndex}
+              onSelectAlternative={
+                canPlanRoute && !inGroup ? onSelectAlternative : undefined
+              }
+              rider={telemetry.position}
+              ridePhase={telemetry.phase}
+              distanceMeters={telemetry.distanceMeters}
+              onPick={onPick}
+              pickMode={pickMode}
+              pickingEnabled={canPlanRoute && !inGroup}
+              peers={mapPeers}
+              groupMode={groupMode}
             />
-            <RideHUD
-              telemetry={telemetry}
-              riderWeightKg={user?.profile?.weightKg ?? 75}
-            />
+            <div className="bottom-dashboard-deck">
+              <ElevationProfile
+                route={route}
+                currentDistanceMeters={telemetry.distanceMeters}
+                currentElevationMeters={telemetry.elevationMeters}
+              />
+              <RideHUD
+                telemetry={telemetry}
+                riderWeightKg={user?.profile?.weightKg ?? 75}
+              />
+            </div>
           </div>
+          <VideoPanel
+            enabled={videoPanelOpen}
+            url={youtubeUrl}
+            onUrlChange={setYoutubeUrl}
+          />
         </div>
 
         <footer className="app-footer">

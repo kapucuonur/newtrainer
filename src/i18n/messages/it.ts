@@ -150,6 +150,18 @@ export const it: Messages = {
   'route.ascentPending': 'Salita…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Andata e ritorno (stessa strada ad A)',
+  'route.showPanel': 'Percorso',
+  'route.hidePanel': 'Nascondi percorso',
+
+  'ride.chromeAria': 'Controlli corsa',
+
+  'video.title': 'Video',
+  'video.toggle': 'Pannello video',
+  'video.toggleHint': 'YouTube personale opzionale accanto alla mappa (non condiviso nelle uscite di gruppo)',
+  'video.urlPlaceholder': 'Incolla un URL YouTube',
+  'video.invalid': 'Non sembra un link YouTube valido',
+  'video.hint':
+    'Incolla un link YouTube per guardarlo accanto alla mappa. Solo personale — non sincronizzato in gruppo.',
 
   'map.pickBanner': 'Tocca la mappa per posizionare {{point}}',
   'map.followBanner': 'Segui strada · camera 3D',

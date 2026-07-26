@@ -149,6 +149,18 @@ export const de: Messages = {
   'route.ascentPending': 'Anstieg…',
   'route.ascent': '↑{{gain}}m',
   'route.roundTrip': 'Hin und zurück (gleicher Weg nach A)',
+  'route.showPanel': 'Route',
+  'route.hidePanel': 'Route ausblenden',
+
+  'ride.chromeAria': 'Fahrsteuerung',
+
+  'video.title': 'Video',
+  'video.toggle': 'Videopanel',
+  'video.toggleHint': 'Optionales persönliches YouTube neben der Karte (nicht in Gruppenfahrten geteilt)',
+  'video.urlPlaceholder': 'YouTube-URL einfügen',
+  'video.invalid': 'Das sieht nicht nach einem gültigen YouTube-Link aus',
+  'video.hint':
+    'YouTube-Link einfügen, um neben der Karte zu schauen. Nur persönlich — nicht in Gruppenfahrten synchron.',
 
   'map.pickBanner': 'Tippen Sie auf die Karte für {{point}}',
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',
