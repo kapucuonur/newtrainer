@@ -12,7 +12,8 @@ import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { RidePhase } from '../simulation/rideEngine';
 import type { EnrichedRoute, LatLng } from '../routing/types';
 import { bearingAlongRoute, lerpBearing } from './bearing';
-import { hasGoogleStreetViewKey, StreetViewPanel } from './StreetViewPanel';
+import { hasMapillaryToken } from './mapillary';
+import { StreetViewPanel } from './StreetViewPanel';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
@@ -298,7 +299,7 @@ export function RouteMap({
       {followRoad && (
         <div className="map-follow-banner" role="status">
           Follow road · 3D ride camera
-          {hasGoogleStreetViewKey() ? ' · Street View on' : ''}
+          {hasMapillaryToken() ? ' · Mapillary on' : ''}
         </div>
       )}
       <StreetViewPanel

@@ -265,7 +265,7 @@ export default function App() {
         <footer className="app-footer">
           <span>
             Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre /
-            OpenFreeMap
+            OpenFreeMap · Mapillary
           </span>
           <span>
             Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no

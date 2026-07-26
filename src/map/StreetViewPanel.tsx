@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LatLng } from '../routing/types';
+import {
+  hasMapillaryToken,
+  MapillaryNearestClient,
+  type MapillaryImage,
+} from './mapillary';
 
 type Props = {
   enabled: boolean;
@@ -7,66 +12,103 @@ type Props = {
   heading: number;
 };
 
-const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? '';
+type PanelStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
 /**
- * Optional Google Street View Static panel.
- * Requires billing-enabled Maps API key via VITE_GOOGLE_MAPS_API_KEY.
- * Without a key this component renders nothing (free follow-camera stays primary).
+ * Free Mapillary street-level panel along the ride.
+ * Requires VITE_MAPILLARY_ACCESS_TOKEN. Without a token this renders nothing
+ * (MapLibre follow-road camera stays primary).
  */
 export function StreetViewPanel({ enabled, position, heading }: Props) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  const nextUrl = useMemo(() => {
-    if (!GOOGLE_KEY || !enabled || !position) return null;
-    const params = new URLSearchParams({
-      size: '640x360',
-      location: `${position.lat.toFixed(6)},${position.lng.toFixed(6)}`,
-      heading: String(Math.round(heading)),
-      pitch: '0',
-      fov: '85',
-      source: 'outdoor',
-      key: GOOGLE_KEY,
-    });
-    return `https://maps.googleapis.com/maps/api/streetview?${params}`;
-  }, [enabled, position, heading]);
+  const clientRef = useRef(new MapillaryNearestClient());
+  const hasImageRef = useRef(false);
+  const [image, setImage] = useState<MapillaryImage | null>(null);
+  const [status, setStatus] = useState<PanelStatus>('idle');
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
-    if (!nextUrl) {
-      setSrc(null);
-      return;
+    if (!enabled) {
+      clientRef.current.reset();
+      hasImageRef.current = false;
+      setImage(null);
+      setStatus('idle');
+      setImgFailed(false);
     }
-    const timer = window.setTimeout(() => {
-      setSrc(nextUrl);
-      setFailed(false);
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [nextUrl]);
+  }, [enabled]);
 
-  if (!GOOGLE_KEY || !enabled) return null;
+  useEffect(() => {
+    if (!hasMapillaryToken() || !enabled || !position) return;
+
+    let cancelled = false;
+    if (!hasImageRef.current) setStatus('loading');
+
+    void clientRef.current
+      .lookup(position)
+      .then(({ image: next, unchanged }) => {
+        if (cancelled || unchanged) return;
+        hasImageRef.current = Boolean(next);
+        setImage(next);
+        setImgFailed(false);
+        setStatus(next ? 'ready' : 'empty');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (!hasImageRef.current) setStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, position]);
+
+  if (!hasMapillaryToken() || !enabled) return null;
+
+  const compass = image?.compassAngle;
+  const showImage = status === 'ready' && image && !imgFailed;
 
   return (
-    <aside className="street-view-panel" aria-label="Street View">
-      <div className="street-view-label">Street View</div>
-      {src && !failed ? (
-        <img
-          src={src}
-          alt="Street-level view along the route"
-          className="street-view-image"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="street-view-fallback">
-          {failed
-            ? 'No Street View coverage here (or API key / billing issue).'
-            : 'Loading street imagery…'}
+    <aside className="street-view-panel" aria-label="Mapillary street view">
+      <div className="street-view-label">Street imagery</div>
+      {typeof compass === 'number' && (
+        <div
+          className="street-view-compass"
+          title={`Capture bearing ${Math.round(compass)}° · ride ${Math.round(heading)}°`}
+          aria-hidden
+        >
+          <span
+            className="street-view-compass-needle"
+            style={{ transform: `rotate(${compass}deg)` }}
+          />
         </div>
       )}
+      {showImage ? (
+        <img
+          key={image.id}
+          src={image.thumbUrl}
+          alt="Mapillary street-level view along the route"
+          className="street-view-image"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <div className="street-view-fallback" role="status">
+          {status === 'empty' || imgFailed
+            ? 'No street imagery here'
+            : status === 'error'
+              ? 'Street imagery unavailable'
+              : 'Loading street imagery…'}
+        </div>
+      )}
+      <div className="street-view-attribution">
+        ©{' '}
+        <a
+          href="https://www.mapillary.com/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Mapillary
+        </a>{' '}
+        · CC BY-SA
+      </div>
     </aside>
   );
-}
-
-export function hasGoogleStreetViewKey(): boolean {
-  return GOOGLE_KEY.length > 0;
 }

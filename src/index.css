@@ -467,6 +467,30 @@ input {
   text-transform: uppercase;
 }
 
+.street-view-compass {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(8, 12, 18, 0.72);
+  display: grid;
+  place-items: center;
+}
+
+.street-view-compass-needle {
+  display: block;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, #ff6b4a 50%, #e8eef6 50%);
+  transform-origin: center center;
+  transition: transform 0.35s ease;
+}
+
 .street-view-image {
   display: block;
   width: 100%;
@@ -483,6 +507,24 @@ input {
   color: var(--muted);
   font-size: 0.8rem;
   text-align: center;
+}
+
+.street-view-attribution {
+  padding: 0.28rem 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.street-view-attribution a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.street-view-attribution a:hover {
+  text-decoration: underline;
 }
 
 @keyframes banner-in {
