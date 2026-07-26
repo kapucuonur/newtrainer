@@ -14,6 +14,7 @@ import {
   Sparkles,
   Mountain,
   Compass,
+  Repeat,
 } from 'lucide-react';
 
 type Props = {
@@ -29,8 +30,10 @@ type Props = {
   completedElapsedSeconds: number;
   routePlanningEnabled: boolean;
   gateMessage: string | null;
+  isRoundTrip: boolean;
   onOpenAccount: () => void;
   onSetPickMode: (mode: 'A' | 'B' | null) => void;
+  onToggleRoundTrip: (isRoundTrip: boolean) => void;
   onBuildRoute: () => void;
   onClear: () => void;
   onStart: () => void;
@@ -86,8 +89,10 @@ export function RouteControls({
   completedElapsedSeconds,
   routePlanningEnabled,
   gateMessage,
+  isRoundTrip,
   onOpenAccount,
   onSetPickMode,
+  onToggleRoundTrip,
   onBuildRoute,
   onClear,
   onStart,
@@ -138,6 +143,18 @@ export function RouteControls({
           >
             <MapPin className="icon-xs" />
             {t('route.setB')} {pointB ? '✓' : ''}
+          </button>
+
+          {/* Out & Back Return Route Toggle */}
+          <button
+            type="button"
+            className={`btn ${isRoundTrip ? 'btn-accent' : 'btn-secondary'}`}
+            disabled={locked}
+            onClick={() => onToggleRoundTrip(!isRoundTrip)}
+            title="Return option: Ride to B and back to A (A → B → A)"
+          >
+            <Repeat className="icon-xs" />
+            {isRoundTrip ? 'Return (A→B→A)' : 'One Way (A→B)'}
           </button>
 
           <button
@@ -197,6 +214,11 @@ export function RouteControls({
         <span className="meta-badge">
           <MapPin className="icon-xs" /> B: {pointB ? `${pointB.lat.toFixed(4)}, ${pointB.lng.toFixed(4)}` : '—'}
         </span>
+        {isRoundTrip && (
+          <span className="meta-badge highlight">
+            <Repeat className="icon-xs" /> Round Trip (A → B → A)
+          </span>
+        )}
         {route && (
           <>
             <span className="meta-badge highlight">

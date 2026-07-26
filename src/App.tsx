@@ -96,6 +96,7 @@ export default function App() {
   const [pointA, setPointA] = useState<LatLng | null>(null);
   const [pointB, setPointB] = useState<LatLng | null>(null);
   const [pickMode, setPickMode] = useState<'A' | 'B' | null>(null);
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [route, setRoute] = useState<EnrichedRoute | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
@@ -435,12 +436,13 @@ export default function App() {
     [canPlanRoute],
   );
 
-  const buildRoute = async () => {
+  const buildRoute = async (roundTripOverride?: boolean) => {
     if (!canPlanRoute || !pointA || !pointB) return;
+    const roundTrip = roundTripOverride ?? isRoundTrip;
     setLoadingRoute(true);
     setRouteError(null);
     try {
-      const base = await fetchRoute(pointA, pointB);
+      const base = await fetchRoute(pointA, pointB, roundTrip);
       const enriched = await enrichRouteWithElevation(base);
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
@@ -451,15 +453,16 @@ export default function App() {
     }
   };
 
-  const handleSelectPreset = async (pA: LatLng, pB: LatLng) => {
+  const handleSelectPreset = async (pA: LatLng, pB: LatLng, roundTripOverride?: boolean) => {
     if (!canPlanRoute) return;
+    const roundTrip = roundTripOverride ?? isRoundTrip;
     setPointA(pA);
     setPointB(pB);
     setPickMode(null);
     setLoadingRoute(true);
     setRouteError(null);
     try {
-      const base = await fetchRoute(pA, pB);
+      const base = await fetchRoute(pA, pB, roundTrip);
       const enriched = await enrichRouteWithElevation(base);
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
@@ -944,8 +947,13 @@ export default function App() {
             completedElapsedSeconds={telemetry.elapsedSeconds}
             routePlanningEnabled={canPlanRoute && !inGroup}
             gateMessage={gateMessage}
+            isRoundTrip={isRoundTrip}
             onOpenAccount={onOpenAccount}
             onSetPickMode={onSetPickMode}
+            onToggleRoundTrip={(nextRoundTrip) => {
+              setIsRoundTrip(nextRoundTrip);
+              if (pointA && pointB) void buildRoute(nextRoundTrip);
+            }}
             onBuildRoute={() => void buildRoute()}
             onClear={() => void clearRoute()}
             onStart={() => void engineRef.current.start()}

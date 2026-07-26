@@ -35,8 +35,14 @@ function straightFallback(from: LatLng, to: LatLng): RouteResult {
  * Route A→B using public OSRM cycling profile (free, no API key).
  * Falls back to a straight line if the service is unreachable.
  */
-export async function fetchRoute(from: LatLng, to: LatLng): Promise<RouteResult> {
-  const path = `${from.lng},${from.lat};${to.lng},${to.lat}`;
+export async function fetchRoute(
+  from: LatLng,
+  to: LatLng,
+  isRoundTrip = false,
+): Promise<RouteResult> {
+  const path = isRoundTrip
+    ? `${from.lng},${from.lat};${to.lng},${to.lat};${from.lng},${from.lat}`
+    : `${from.lng},${from.lat};${to.lng},${to.lat}`;
   const url = `${OSRM_BASE}/route/v1/cycling/${path}?overview=full&geometries=geojson&steps=false`;
 
   try {
