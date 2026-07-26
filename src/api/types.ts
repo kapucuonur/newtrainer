@@ -12,6 +12,7 @@ export type User = {
   profile: UserProfile;
 };
 
+/** Server-stored workout summary — no GPS track or FIT/GPX files. */
 export type RideSummary = {
   id: number;
   routeName: string | null;
@@ -20,9 +21,12 @@ export type RideSummary = {
   distanceM: number;
   durationS: number;
   avgPower: number | null;
+  maxPower: number | null;
   avgHr: number | null;
-  hasFit: boolean;
-  hasGpx: boolean;
+  maxHr: number | null;
+  avgSpeedKmh: number | null;
+  maxSpeedKmh: number | null;
+  elevationGainM: number | null;
   createdAt: string;
 };
 

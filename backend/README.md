@@ -1,7 +1,9 @@
 # ROADLAB API (Raspberry Pi 5)
 
-Self-hosted Node.js + Fastify + SQLite backend for user profiles and ride history.
+Self-hosted Node.js + Fastify + SQLite backend for user profiles and **light ride summaries**.
 Frontend (Vercel) talks to this API over Cloudflare Tunnel.
+
+**Pi storage rule:** the API keeps only workout summary rows (date, duration, distance, avg/max power & HR, speed, route label, optional elevation gain). Full GPS tracks, Mapillary, and FIT/GPX files stay on the client — the server does **not** store track points or activity files.
 
 ## Stack
 
@@ -46,8 +48,9 @@ curl -s http://127.0.0.1:8788/api/health
 
 Data files (gitignored):
 
-- `backend/data/roadlab.sqlite`
-- `backend/data/rides/<userId>/<rideId>.fit|gpx`
+- `backend/data/roadlab.sqlite` — profiles, rooms, ride **summaries** only
+
+> Note: `backend/data/rides/` is **not used**. Older installs that stored `.fit` / `.gpx` there are cleaned on API startup (paths nulled, files removed). Download FIT/GPX from the browser after each ride instead.
 
 ## 3) systemd unit (optional)
 
@@ -128,7 +131,7 @@ Local Vite (optional):
 VITE_API_URL=http://127.0.0.1:8788
 ```
 
-If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save ride).
+If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save summary).
 
 ## Auth notes
 
@@ -146,10 +149,10 @@ If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save ri
 | POST | `/api/auth/logout` | no |
 | GET | `/api/me` | yes |
 | PATCH | `/api/me/profile` | yes |
-| GET | `/api/rides` | yes |
-| POST | `/api/rides` | yes (JSON or multipart + fit/gpx) |
+| GET | `/api/rides` | yes (summaries) |
+| POST | `/api/rides` | yes (JSON summary fields only) |
 | GET | `/api/rides/:id` | yes |
-| GET | `/api/rides/:id/download/:kind` | yes (`fit` \| `gpx`) |
+| GET | `/api/rides/:id/download/:kind` | yes → **410** `FILES_NOT_STORED` (no server files) |
 | POST | `/api/rooms` | yes (body: `{ route }` — host creates lobby) |
 | POST | `/api/rooms/join` | yes (body: `{ code }`) |
 | GET | `/api/rooms/:id` | yes (members only) |

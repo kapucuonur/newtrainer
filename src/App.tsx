@@ -24,7 +24,8 @@ import { MockTrainer } from './bluetooth/mockTrainer';
 import type { BikeTrainer, ConnectionState } from './bluetooth/types';
 import { probeWifiBridge } from './bluetooth/wifiBridge';
 import { enrichRouteWithElevation } from './elevation/service';
-import { buildFit, buildGpx, downloadRideFit, downloadRideGpx } from './export';
+import { downloadRideFit, downloadRideGpx } from './export';
+import type { TrackPoint } from './export/types';
 import { useT, type MessageKey } from './i18n';
 import { RouteMap, type MapPeer } from './map/RouteMap';
 import { parseRoomRoute } from './routing/fromRoomRoute';
@@ -59,6 +60,21 @@ function avg(values: number[]): number | null {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+function maxOf(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return Math.max(...values);
+}
+
+function elevationGainMeters(points: TrackPoint[]): number | null {
+  let gain = 0;
+  for (let i = 1; i < points.length; i++) {
+    const delta = points[i].elevationMeters - points[i - 1].elevationMeters;
+    if (delta > 0) gain += delta;
+  }
+  if (gain <= 0) return null;
+  return Math.round(gain);
+}
+
 export default function App() {
   const t = useT();
   const engineRef = useRef(new RideEngine());
@@ -90,6 +106,7 @@ export default function App() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [savedRideId, setSavedRideId] = useState<number | null>(null);
+  const [rideHistoryRevision, setRideHistoryRevision] = useState(0);
 
   const [room, setRoom] = useState<Room | null>(null);
   const [peers, setPeers] = useState<PeerRider[]>([]);
@@ -672,26 +689,32 @@ export default function App() {
       const hrs = ride.points
         .map((p) => p.heartRateBpm)
         .filter((v): v is number => v != null && v > 0);
-      const fitBytes = buildFit(ride);
-      const gpxText = buildGpx(ride);
-      const fitCopy = new Uint8Array(fitBytes.byteLength);
-      fitCopy.set(fitBytes);
-      const fitBlob = new Blob([fitCopy], { type: 'application/octet-stream' });
-      const gpxBlob = new Blob([gpxText], { type: 'application/gpx+xml' });
-
+      const speeds = ride.points.map((p) => p.speedKmh).filter((v) => v > 0);
       const km = (ride.distanceMeters / 1000).toFixed(1);
+      const routeLabel = `A→B · ${km} km`;
+      const avgPower = avg(powers);
+      const maxPower = maxOf(powers);
+      const avgHr = avg(hrs);
+      const maxHr = maxOf(hrs);
+      const avgSpeed = avg(speeds);
+      const maxSpeed = maxOf(speeds);
+
       const saved = await saveRide({
-        routeName: `ROADLAB ${km} km`,
+        routeName: routeLabel,
         startedAt: new Date(ride.startedAtMs).toISOString(),
         endedAt: new Date(ride.finishedAtMs).toISOString(),
         distanceM: ride.distanceMeters,
         durationS: Math.round(ride.elapsedSeconds),
-        avgPower: avg(powers),
-        avgHr: avg(hrs),
-        fit: fitBlob,
-        gpx: gpxBlob,
+        avgPower: avgPower != null ? Math.round(avgPower) : null,
+        maxPower: maxPower != null ? Math.round(maxPower) : null,
+        avgHr: avgHr != null ? Math.round(avgHr) : null,
+        maxHr: maxHr != null ? Math.round(maxHr) : null,
+        avgSpeedKmh: avgSpeed != null ? Math.round(avgSpeed * 10) / 10 : null,
+        maxSpeedKmh: maxSpeed != null ? Math.round(maxSpeed * 10) / 10 : null,
+        elevationGainM: elevationGainMeters(ride.points),
       });
       setSavedRideId(saved.id);
+      setRideHistoryRevision((n) => n + 1);
       setSaveMessage(t('route.saved', { id: saved.id }));
     } catch (error) {
       setSaveMessage(withAuthError(error));
@@ -745,6 +768,7 @@ export default function App() {
           user={user}
           busy={authBusy}
           message={authMessage}
+          historyRevision={rideHistoryRevision}
           onLogin={onLogin}
           onRegister={onRegister}
           onLogout={onLogout}

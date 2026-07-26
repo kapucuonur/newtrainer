@@ -77,6 +77,12 @@ export const se: Messages = {
   'auth.profileSaved': 'Profil sparad',
   'auth.requestFailed': 'Begäran misslyckades',
 
+  'auth.rideHistory': 'Passhistorik',
+  'auth.rideHistoryHint':
+    'Endast sammanfattningar — karta, GPS-spår och FIT/GPX stannar på din enhet.',
+  'auth.rideHistoryEmpty': 'Inga sparade sammanfattningar ännu.',
+  'auth.rideUntitled': 'Pass',
+
   'phase.idle': 'INAKTIV',
   'phase.ready': 'REDO',
   'phase.riding': 'LIVE',
@@ -96,7 +102,7 @@ export const se: Messages = {
     '{{distance}} · {{duration}} — ladda ner för Garmin Connect (manuell import).',
   'route.downloadFit': 'Ladda ner FIT',
   'route.downloadGpx': 'Ladda ner GPX',
-  'route.saveRide': 'Spara pass till profil',
+  'route.saveRide': 'Spara sammanfattning',
   'route.saving': 'Sparar…',
   'route.start': 'Starta pass',
   'route.pause': 'Pausa',
@@ -105,10 +111,10 @@ export const se: Messages = {
   'route.done': 'Klar',
   'route.buildFailed': 'Kunde inte bygga rutt',
   'route.noExport': 'Ingen spårning att exportera ännu',
-  'route.noSave': 'Ingen spårning att spara',
-  'route.loginToSave': 'Logga in för att spara pass',
-  'route.alreadySaved': 'Detta pass är redan sparat',
-  'route.saved': 'Sparat till profil (#{{id}})',
+  'route.noSave': 'Ingen sammanfattning att spara',
+  'route.loginToSave': 'Logga in för att spara sammanfattning',
+  'route.alreadySaved': 'Denna sammanfattning är redan sparad',
+  'route.saved': 'Sammanfattning sparad (#{{id}})',
   'route.gateNoApi':
     'Ruttbygge kräver ett molnkonto. Konfigurera VITE_API_URL till din Pi-API och registrera dig.',
   'route.gateLogin': 'Logga in eller registrera dig för att välja start/mål och bygga en rutt.',

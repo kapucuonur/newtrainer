@@ -1,11 +1,9 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
-import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -42,7 +40,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-me';
 const COOKIE_SECURE = String(process.env.COOKIE_SECURE || 'false') === 'true';
 const COOKIE_NAME = 'roadlab_token';
 const DATA_DIR = path.resolve(ROOT, process.env.DATA_DIR || './data');
-const RIDES_DIR = path.join(DATA_DIR, 'rides');
 
 const DEFAULT_ORIGINS = [
   'https://newtrainer.trihonor.com',
@@ -64,7 +61,8 @@ const roomHub = new RoomHub();
 
 const app = Fastify({
   logger: true,
-  bodyLimit: 12 * 1024 * 1024,
+  // Summary JSON only — no FIT/GPX uploads (keeps Pi SD card light).
+  bodyLimit: 256 * 1024,
 });
 
 await app.register(cors, {
@@ -84,13 +82,6 @@ await app.register(jwt, {
   cookie: {
     cookieName: COOKIE_NAME,
     signed: false,
-  },
-});
-await app.register(multipart, {
-  limits: {
-    fileSize: 10 * 1024 * 1024,
-    files: 2,
-    fields: 20,
   },
 });
 await app.register(rateLimit, {
@@ -330,41 +321,32 @@ app.get('/api/rides/:id', { preHandler: requireAuth }, async (request, reply) =>
   return { ride: toPublicRide(row) };
 });
 
+/**
+ * @param {Record<string, unknown>} body
+ * @param {string} camel
+ * @param {string} snake
+ */
+function optionalNumber(body, camel, snake) {
+  const raw = body[camel] ?? body[snake];
+  if (raw === undefined || raw === null || raw === '') return null;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return { error: `${camel} must be a number` };
+  return { value: num };
+}
+
 app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
   const userId = Number(request.user.sub);
-  const fields = /** @type {Record<string, string>} */ ({});
-  /** @type {{ kind: 'fit' | 'gpx'; buffer: Buffer; filename: string }[]} */
-  const files = [];
+  const body = /** @type {Record<string, unknown>} */ (request.body || {});
 
-  const isMultipart = Boolean(request.isMultipart?.());
-  if (isMultipart) {
-    const parts = request.parts();
-    for await (const part of parts) {
-      if (part.type === 'file') {
-        const buffer = await part.toBuffer();
-        const field = part.fieldname === 'gpx' ? 'gpx' : part.fieldname === 'fit' ? 'fit' : null;
-        if (!field) continue;
-        if (buffer.length === 0) continue;
-        files.push({
-          kind: field,
-          buffer,
-          filename: part.filename || `ride.${field}`,
-        });
-      } else {
-        fields[part.fieldname] = String(part.value ?? '');
-      }
-    }
-  } else {
-    Object.assign(fields, /** @type {Record<string, string>} */ (request.body || {}));
-  }
-
-  const startedAt = fields.startedAt || fields.started_at;
+  const startedAtRaw = body.startedAt ?? body.started_at;
+  const startedAt =
+    typeof startedAtRaw === 'string' ? startedAtRaw.trim() : '';
   if (!startedAt) {
     return reply.code(400).send({ error: 'startedAt is required' });
   }
 
-  const distanceM = Number(fields.distanceM ?? fields.distance_m ?? 0);
-  const durationS = Math.round(Number(fields.durationS ?? fields.duration_s ?? 0));
+  const distanceM = Number(body.distanceM ?? body.distance_m ?? 0);
+  const durationS = Math.round(Number(body.durationS ?? body.duration_s ?? 0));
   if (!Number.isFinite(distanceM) || distanceM < 0) {
     return reply.code(400).send({ error: 'distanceM must be a non-negative number' });
   }
@@ -372,31 +354,53 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
     return reply.code(400).send({ error: 'durationS must be a non-negative integer' });
   }
 
-  const endedAt = fields.endedAt || fields.ended_at || null;
-  const routeName = (fields.routeName || fields.route_name || '').trim().slice(0, 160) || null;
+  const endedAtRaw = body.endedAt ?? body.ended_at;
+  const endedAt =
+    typeof endedAtRaw === 'string' && endedAtRaw.trim()
+      ? endedAtRaw.trim()
+      : null;
+  const routeNameRaw = body.routeName ?? body.route_name;
+  const routeName =
+    typeof routeNameRaw === 'string'
+      ? routeNameRaw.trim().slice(0, 160) || null
+      : null;
 
-  const avgPowerRaw = fields.avgPower ?? fields.avg_power;
-  const avgHrRaw = fields.avgHr ?? fields.avg_hr;
-  const avgPower =
-    avgPowerRaw === undefined || avgPowerRaw === ''
-      ? null
-      : Number(avgPowerRaw);
-  const avgHr =
-    avgHrRaw === undefined || avgHrRaw === '' ? null : Number(avgHrRaw);
-
-  if (avgPower !== null && !Number.isFinite(avgPower)) {
-    return reply.code(400).send({ error: 'avgPower must be a number' });
-  }
-  if (avgHr !== null && !Number.isFinite(avgHr)) {
-    return reply.code(400).send({ error: 'avgHr must be a number' });
+  /** @type {Record<string, number | null>} */
+  const stats = {
+    avgPower: null,
+    maxPower: null,
+    avgHr: null,
+    maxHr: null,
+    avgSpeedKmh: null,
+    maxSpeedKmh: null,
+    elevationGainM: null,
+  };
+  /** @type {[keyof typeof stats, string, string][]} */
+  const optionalFields = [
+    ['avgPower', 'avgPower', 'avg_power'],
+    ['maxPower', 'maxPower', 'max_power'],
+    ['avgHr', 'avgHr', 'avg_hr'],
+    ['maxHr', 'maxHr', 'max_hr'],
+    ['avgSpeedKmh', 'avgSpeedKmh', 'avg_speed_kmh'],
+    ['maxSpeedKmh', 'maxSpeedKmh', 'max_speed_kmh'],
+    ['elevationGainM', 'elevationGainM', 'elevation_gain_m'],
+  ];
+  for (const [key, camel, snake] of optionalFields) {
+    const parsed = optionalNumber(body, camel, snake);
+    if (parsed && 'error' in parsed) {
+      return reply.code(400).send({ error: parsed.error });
+    }
+    stats[key] = parsed?.value ?? null;
   }
 
   const insert = db
     .prepare(
       `INSERT INTO rides (
          user_id, route_name, started_at, ended_at,
-         distance_m, duration_s, avg_power, avg_hr
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         distance_m, duration_s,
+         avg_power, max_power, avg_hr, max_hr,
+         avg_speed_kmh, max_speed_kmh, elevation_gain_m
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       userId,
@@ -405,32 +409,16 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
       endedAt,
       distanceM,
       durationS,
-      avgPower,
-      avgHr,
+      stats.avgPower,
+      stats.maxPower,
+      stats.avgHr,
+      stats.maxHr,
+      stats.avgSpeedKmh,
+      stats.maxSpeedKmh,
+      stats.elevationGainM,
     );
 
   const rideId = Number(insert.lastInsertRowid);
-  const userRideDir = path.join(RIDES_DIR, String(userId));
-  fs.mkdirSync(userRideDir, { recursive: true });
-
-  let fitPath = null;
-  let gpxPath = null;
-
-  for (const file of files) {
-    const dest = path.join(userRideDir, `${rideId}.${file.kind}`);
-    fs.writeFileSync(dest, file.buffer);
-    if (file.kind === 'fit') fitPath = dest;
-    if (file.kind === 'gpx') gpxPath = dest;
-  }
-
-  if (fitPath || gpxPath) {
-    db.prepare('UPDATE rides SET fit_path = ?, gpx_path = ? WHERE id = ?').run(
-      fitPath,
-      gpxPath,
-      rideId,
-    );
-  }
-
   const row = db.prepare('SELECT * FROM rides WHERE id = ?').get(rideId);
   return reply.code(201).send({ ride: toPublicRide(row) });
 });
@@ -438,29 +426,12 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
 app.get(
   '/api/rides/:id/download/:kind',
   { preHandler: requireAuth },
-  async (request, reply) => {
-    const userId = Number(request.user.sub);
-    const params = /** @type {{ id: string; kind: string }} */ (request.params);
-    const id = Number(params.id);
-    const kind = params.kind === 'fit' || params.kind === 'gpx' ? params.kind : null;
-    if (!Number.isInteger(id) || id <= 0 || !kind) {
-      return reply.code(400).send({ error: 'Invalid download request' });
-    }
-
-    const row = db.prepare('SELECT * FROM rides WHERE id = ? AND user_id = ?').get(id, userId);
-    if (!row) return reply.code(404).send({ error: 'Ride not found' });
-
-    const filePath = kind === 'fit' ? row.fit_path : row.gpx_path;
-    if (!filePath || !fs.existsSync(filePath)) {
-      return reply.code(404).send({ error: `${kind.toUpperCase()} file not found` });
-    }
-
-    const filename = `roadlab-ride-${id}.${kind}`;
-    const contentType =
-      kind === 'fit' ? 'application/octet-stream' : 'application/gpx+xml';
-    reply.header('Content-Type', contentType);
-    reply.header('Content-Disposition', `attachment; filename="${filename}"`);
-    return reply.send(fs.createReadStream(filePath));
+  async (_request, reply) => {
+    return reply.code(410).send({
+      error:
+        'FIT/GPX are not stored on the server. Download them from the browser after the ride.',
+      code: 'FILES_NOT_STORED',
+    });
   },
 );
 

@@ -77,6 +77,12 @@ export const ru: Messages = {
   'auth.profileSaved': 'Профиль сохранён',
   'auth.requestFailed': 'Запрос не выполнен',
 
+  'auth.rideHistory': 'История заездов',
+  'auth.rideHistoryHint':
+    'Только сводки — карта, GPS-трек и FIT/GPX остаются на устройстве.',
+  'auth.rideHistoryEmpty': 'Сохранённых сводок пока нет.',
+  'auth.rideUntitled': 'Заезд',
+
   'phase.idle': 'ОЖИДАНИЕ',
   'phase.ready': 'ГОТОВ',
   'phase.riding': 'В ЭФИРЕ',
@@ -96,7 +102,7 @@ export const ru: Messages = {
     '{{distance}} · {{duration}} — скачайте для Garmin Connect (ручной импорт).',
   'route.downloadFit': 'Скачать FIT',
   'route.downloadGpx': 'Скачать GPX',
-  'route.saveRide': 'Сохранить в профиль',
+  'route.saveRide': 'Сохранить сводку',
   'route.saving': 'Сохранение…',
   'route.start': 'Начать заезд',
   'route.pause': 'Пауза',
@@ -105,10 +111,10 @@ export const ru: Messages = {
   'route.done': 'Готово',
   'route.buildFailed': 'Не удалось построить маршрут',
   'route.noExport': 'Нет трека для экспорта',
-  'route.noSave': 'Нет трека для сохранения',
-  'route.loginToSave': 'Войдите, чтобы сохранять заезды',
-  'route.alreadySaved': 'Этот заезд уже сохранён',
-  'route.saved': 'Сохранено в профиль (#{{id}})',
+  'route.noSave': 'Нет сводки для сохранения',
+  'route.loginToSave': 'Войдите, чтобы сохранить сводку',
+  'route.alreadySaved': 'Эта сводка уже сохранена',
+  'route.saved': 'Сводка сохранена (#{{id}})',
   'route.gateNoApi':
     'Для маршрутов нужен облачный аккаунт. Настройте VITE_API_URL к API на Pi, затем зарегистрируйтесь.',
   'route.gateLogin': 'Войдите или зарегистрируйтесь, чтобы выбрать точки и построить маршрут.',

@@ -156,26 +156,32 @@ export type SaveRideInput = {
   distanceM: number;
   durationS: number;
   avgPower?: number | null;
+  maxPower?: number | null;
   avgHr?: number | null;
-  fit?: Blob | null;
-  gpx?: Blob | null;
+  maxHr?: number | null;
+  avgSpeedKmh?: number | null;
+  maxSpeedKmh?: number | null;
+  elevationGainM?: number | null;
 };
 
+/** Persist a light workout summary on the Pi (no track points / FIT / GPX). */
 export async function saveRide(input: SaveRideInput): Promise<RideSummary> {
-  const form = new FormData();
-  form.set('startedAt', input.startedAt);
-  form.set('distanceM', String(input.distanceM));
-  form.set('durationS', String(input.durationS));
-  if (input.endedAt) form.set('endedAt', input.endedAt);
-  if (input.routeName) form.set('routeName', input.routeName);
-  if (input.avgPower != null) form.set('avgPower', String(input.avgPower));
-  if (input.avgHr != null) form.set('avgHr', String(input.avgHr));
-  if (input.fit) form.set('fit', input.fit, 'ride.fit');
-  if (input.gpx) form.set('gpx', input.gpx, 'ride.gpx');
-
   const data = await apiRequest<{ ride: RideSummary }>('/api/rides', {
     method: 'POST',
-    body: form,
+    json: {
+      routeName: input.routeName ?? null,
+      startedAt: input.startedAt,
+      endedAt: input.endedAt ?? null,
+      distanceM: input.distanceM,
+      durationS: input.durationS,
+      avgPower: input.avgPower ?? null,
+      maxPower: input.maxPower ?? null,
+      avgHr: input.avgHr ?? null,
+      maxHr: input.maxHr ?? null,
+      avgSpeedKmh: input.avgSpeedKmh ?? null,
+      maxSpeedKmh: input.maxSpeedKmh ?? null,
+      elevationGainM: input.elevationGainM ?? null,
+    },
   });
   return data.ride;
 }

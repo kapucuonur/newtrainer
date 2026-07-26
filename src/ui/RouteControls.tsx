@@ -26,7 +26,7 @@ type Props = {
   onStop: () => void;
   onDownloadFit: () => void;
   onDownloadGpx: () => void;
-  /** When set, show “Save ride to profile” after finish. */
+  /** When set, show “Save summary” after finish. */
   canSaveToProfile?: boolean;
   saveBusy?: boolean;
   saveMessage?: string | null;

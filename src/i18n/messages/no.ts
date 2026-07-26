@@ -77,6 +77,12 @@ export const no: Messages = {
   'auth.profileSaved': 'Profil lagret',
   'auth.requestFailed': 'Forespørsel mislyktes',
 
+  'auth.rideHistory': 'Økthistorikk',
+  'auth.rideHistoryHint':
+    'Kun sammendrag — kart, GPS-spor og FIT/GPX blir på enheten din.',
+  'auth.rideHistoryEmpty': 'Ingen lagrede sammendrag ennå.',
+  'auth.rideUntitled': 'Økt',
+
   'phase.idle': 'INAKTIV',
   'phase.ready': 'KLAR',
   'phase.riding': 'LIVE',
@@ -96,7 +102,7 @@ export const no: Messages = {
     '{{distance}} · {{duration}} — last ned for Garmin Connect (manuell import).',
   'route.downloadFit': 'Last ned FIT',
   'route.downloadGpx': 'Last ned GPX',
-  'route.saveRide': 'Lagre økt til profil',
+  'route.saveRide': 'Lagre sammendrag',
   'route.saving': 'Lagrer…',
   'route.start': 'Start økt',
   'route.pause': 'Pause',
@@ -105,10 +111,10 @@ export const no: Messages = {
   'route.done': 'Ferdig',
   'route.buildFailed': 'Kunne ikke bygge rute',
   'route.noExport': 'Ingen spor å eksportere ennå',
-  'route.noSave': 'Ingen spor å lagre',
-  'route.loginToSave': 'Logg inn for å lagre økter',
-  'route.alreadySaved': 'Denne økten er allerede lagret',
-  'route.saved': 'Lagret til profil (#{{id}})',
+  'route.noSave': 'Ingen sammendrag å lagre',
+  'route.loginToSave': 'Logg inn for å lagre sammendrag',
+  'route.alreadySaved': 'Dette sammendraget er allerede lagret',
+  'route.saved': 'Sammendrag lagret (#{{id}})',
   'route.gateNoApi':
     'Rutebygging krever skykonto. Konfigurer VITE_API_URL til Pi-API-en din og registrer deg.',
   'route.gateLogin': 'Logg inn eller registrer deg for å velge start/slutt og bygge en rute.',

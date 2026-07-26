@@ -36,7 +36,7 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 3. **Build route** → wait for OSRM + elevation
 4. **Start ride** — follow-road camera pitches along the route (3D-feel); marker advances; grade updates mock resistance
 5. Drag **Demo effort** to change power/speed
-6. **Stop** or finish the route → **Ride complete** → **Download FIT** / **Download GPX**, then import manually in Garmin Connect (OAuth upload not included yet)
+6. **Stop** or finish the route → **Ride complete** → **Download FIT** / **Download GPX** locally (Garmin Connect import is manual; OAuth upload not included). Optionally **Save summary** to your Pi profile (stats only — no track/files on the server)
 
 ## Test with real hardware
 
@@ -56,7 +56,7 @@ Self-hosted API under [`backend/`](./backend) (Node + Fastify + SQLite). No Supa
 2. Tunnel hostname example: `https://newtrainer-api.trihonor.com` → `http://localhost:8788`
 3. Vercel / local env: `VITE_API_URL=https://newtrainer-api.trihonor.com`
 
-Without `VITE_API_URL`, the app stays local-only (Bluetooth / map / FIT+GPX download unchanged).
+Without `VITE_API_URL`, the app stays local-only (Bluetooth / map / FIT+GPX download unchanged). With the API, the Pi stores **ride summaries only** (date, distance, duration, power/HR/speed, route label) — not GPS tracks or FIT/GPX files.
 
 ## Optional env
 
@@ -66,7 +66,7 @@ Copy `.env.example` → `.env` to override OSRM, elevation, map style, Mapillary
 |----------|---------|--------|
 | `VITE_MAP_STYLE_URL` | OpenFreeMap **liberty** (colorful) | Free. `dark` / `fiord` are grayscale-ish on purpose |
 | `VITE_MAPILLARY_ACCESS_TOKEN` | unset | Free Mapillary client token from [developers dashboard](https://www.mapillary.com/dashboard/developers). Enables street-level photos during rides. Without it, ride immersion is MapLibre follow-camera only |
-| `VITE_API_URL` | unset | Pi API base URL. Enables register/login, profile, save ride |
+| `VITE_API_URL` | unset | Pi API base URL. Enables register/login, profile, save ride summary |
 
 Street photos use **Mapillary** (CC BY-SA, free developer token). Coverage varies by city; Turkey has sparse coverage outside major corridors. Without a token or nearby images, the pitched follow camera along the A→B polyline remains primary.
 

@@ -77,6 +77,12 @@ export const it: Messages = {
   'auth.profileSaved': 'Profilo salvato',
   'auth.requestFailed': 'Richiesta non riuscita',
 
+  'auth.rideHistory': 'Cronologia corse',
+  'auth.rideHistoryHint':
+    'Solo riepiloghi — mappe, traccia GPS e FIT/GPX restano sul dispositivo.',
+  'auth.rideHistoryEmpty': 'Nessun riepilogo salvato.',
+  'auth.rideUntitled': 'Corsa',
+
   'phase.idle': 'INATTIVO',
   'phase.ready': 'PRONTO',
   'phase.riding': 'LIVE',
@@ -96,7 +102,7 @@ export const it: Messages = {
     '{{distance}} · {{duration}} — scarica per Garmin Connect (import manuale).',
   'route.downloadFit': 'Scarica FIT',
   'route.downloadGpx': 'Scarica GPX',
-  'route.saveRide': 'Salva corsa nel profilo',
+  'route.saveRide': 'Salva riepilogo',
   'route.saving': 'Salvataggio…',
   'route.start': 'Inizia corsa',
   'route.pause': 'Pausa',
@@ -105,10 +111,10 @@ export const it: Messages = {
   'route.done': 'Fatto',
   'route.buildFailed': 'Creazione percorso non riuscita',
   'route.noExport': 'Nessuna traccia da esportare',
-  'route.noSave': 'Nessuna traccia da salvare',
-  'route.loginToSave': 'Accedi per salvare le corse',
-  'route.alreadySaved': 'Questa corsa è già salvata',
-  'route.saved': 'Salvata nel profilo (#{{id}})',
+  'route.noSave': 'Nessun riepilogo da salvare',
+  'route.loginToSave': 'Accedi per salvare il riepilogo',
+  'route.alreadySaved': 'Questo riepilogo è già salvato',
+  'route.saved': 'Riepilogo salvato (#{{id}})',
   'route.gateNoApi':
     'Per i percorsi serve un account cloud. Configura VITE_API_URL verso la tua API Pi, poi registrati.',
   'route.gateLogin': 'Accedi o registrati per scegliere inizio/fine e creare un percorso.',

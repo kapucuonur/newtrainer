@@ -3,11 +3,66 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
+ * Ensure summary-only ride columns exist; drop leftover FIT/GPX file paths + files.
+ * @param {import('better-sqlite3').Database} db
+ * @param {string} dataDir
+ */
+function migrateRidesLightStorage(db, dataDir) {
+  const cols = new Set(
+    db.prepare(`PRAGMA table_info(rides)`).all().map((c) => c.name),
+  );
+  /** @type {[string, string][]} */
+  const extras = [
+    ['max_power', 'REAL'],
+    ['max_hr', 'REAL'],
+    ['avg_speed_kmh', 'REAL'],
+    ['max_speed_kmh', 'REAL'],
+    ['elevation_gain_m', 'REAL'],
+  ];
+  for (const [name, type] of extras) {
+    if (!cols.has(name)) {
+      db.exec(`ALTER TABLE rides ADD COLUMN ${name} ${type}`);
+    }
+  }
+
+  const withFiles = db
+    .prepare(
+      `SELECT id, fit_path, gpx_path FROM rides
+       WHERE fit_path IS NOT NULL OR gpx_path IS NOT NULL`,
+    )
+    .all();
+  for (const row of withFiles) {
+    for (const filePath of [row.fit_path, row.gpx_path]) {
+      if (typeof filePath !== 'string' || !filePath) continue;
+      try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch {
+        // best-effort cleanup
+      }
+    }
+  }
+  if (withFiles.length > 0) {
+    db.prepare(
+      `UPDATE rides SET fit_path = NULL, gpx_path = NULL
+       WHERE fit_path IS NOT NULL OR gpx_path IS NOT NULL`,
+    ).run();
+  }
+
+  const ridesDir = path.join(dataDir, 'rides');
+  if (fs.existsSync(ridesDir)) {
+    try {
+      fs.rmSync(ridesDir, { recursive: true, force: true });
+    } catch {
+      // leave orphan dir if busy; paths are already cleared
+    }
+  }
+}
+
+/**
  * @param {string} dataDir
  */
 export function openDb(dataDir) {
   fs.mkdirSync(dataDir, { recursive: true });
-  fs.mkdirSync(path.join(dataDir, 'rides'), { recursive: true });
 
   const dbPath = path.join(dataDir, 'roadlab.sqlite');
   const db = new Database(dbPath);
@@ -41,6 +96,11 @@ export function openDb(dataDir) {
       duration_s INTEGER NOT NULL DEFAULT 0,
       avg_power REAL,
       avg_hr REAL,
+      max_power REAL,
+      max_hr REAL,
+      avg_speed_kmh REAL,
+      max_speed_kmh REAL,
+      elevation_gain_m REAL,
       fit_path TEXT,
       gpx_path TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -72,6 +132,8 @@ export function openDb(dataDir) {
     CREATE INDEX IF NOT EXISTS idx_rooms_code ON rooms(code);
     CREATE INDEX IF NOT EXISTS idx_room_members_room ON room_members(room_id);
   `);
+
+  migrateRidesLightStorage(db, dataDir);
 
   return db;
 }
@@ -117,6 +179,15 @@ export function toPublicUser(row) {
 }
 
 /**
+ * @param {unknown} value
+ */
+function numOrNull(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
  * @param {Record<string, unknown>} ride
  */
 export function toPublicRide(ride) {
@@ -127,10 +198,13 @@ export function toPublicRide(ride) {
     endedAt: ride.ended_at ?? null,
     distanceM: ride.distance_m ?? 0,
     durationS: ride.duration_s ?? 0,
-    avgPower: ride.avg_power ?? null,
-    avgHr: ride.avg_hr ?? null,
-    hasFit: Boolean(ride.fit_path),
-    hasGpx: Boolean(ride.gpx_path),
+    avgPower: numOrNull(ride.avg_power),
+    maxPower: numOrNull(ride.max_power),
+    avgHr: numOrNull(ride.avg_hr),
+    maxHr: numOrNull(ride.max_hr),
+    avgSpeedKmh: numOrNull(ride.avg_speed_kmh),
+    maxSpeedKmh: numOrNull(ride.max_speed_kmh),
+    elevationGainM: numOrNull(ride.elevation_gain_m),
     createdAt: ride.created_at,
   };
 }

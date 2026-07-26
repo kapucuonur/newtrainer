@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
+import { listRides } from '../api/client';
 import { isCloudApiEnabled } from '../api/config';
-import type { User } from '../api/types';
+import type { RideSummary, User } from '../api/types';
 import { useT } from '../i18n';
+import { formatDistance, formatDuration } from './format';
 
 type Props = {
   user: User | null;
   busy: boolean;
   message: string | null;
+  /** Bump after saving a ride so history reloads. */
+  historyRevision?: number;
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (email: string, password: string, displayName: string) => Promise<void>;
   onLogout: () => Promise<void>;
@@ -18,10 +22,36 @@ type Props = {
   }) => Promise<void>;
 };
 
+function formatRideDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function rideStatsLine(ride: RideSummary): string {
+  const parts: string[] = [
+    formatDistance(ride.distanceM),
+    formatDuration(ride.durationS),
+  ];
+  if (ride.avgPower != null) parts.push(`${Math.round(ride.avgPower)} W`);
+  if (ride.maxPower != null) parts.push(`max ${Math.round(ride.maxPower)} W`);
+  if (ride.avgHr != null) parts.push(`${Math.round(ride.avgHr)} bpm`);
+  if (ride.avgSpeedKmh != null) parts.push(`${ride.avgSpeedKmh.toFixed(1)} km/h`);
+  if (ride.elevationGainM != null) parts.push(`↑ ${Math.round(ride.elevationGainM)} m`);
+  return parts.join(' · ');
+}
+
 export function AuthPanel({
   user,
   busy,
   message,
+  historyRevision = 0,
   onLogin,
   onRegister,
   onLogout,
@@ -36,6 +66,8 @@ export function AuthPanel({
   const [weightKg, setWeightKg] = useState('');
   const [ftp, setFtp] = useState('');
   const [bikeWeightKg, setBikeWeightKg] = useState('');
+  const [rides, setRides] = useState<RideSummary[]>([]);
+  const [ridesLoading, setRidesLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +78,28 @@ export function AuthPanel({
       user.profile.bikeWeightKg != null ? String(user.profile.bikeWeightKg) : '',
     );
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !cloud) {
+      setRides([]);
+      return;
+    }
+    let cancelled = false;
+    setRidesLoading(true);
+    void listRides()
+      .then((next) => {
+        if (!cancelled) setRides(next);
+      })
+      .catch(() => {
+        if (!cancelled) setRides([]);
+      })
+      .finally(() => {
+        if (!cancelled) setRidesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, cloud, historyRevision]);
 
   if (!cloud) {
     return (
@@ -208,6 +262,28 @@ export function AuthPanel({
         </div>
       </form>
       {message && <p className="auth-message">{message}</p>}
+
+      <div className="ride-history">
+        <h3>{t('auth.rideHistory')}</h3>
+        <p className="ride-history-hint">{t('auth.rideHistoryHint')}</p>
+        {ridesLoading ? (
+          <p className="muted-text">…</p>
+        ) : rides.length === 0 ? (
+          <p className="muted-text">{t('auth.rideHistoryEmpty')}</p>
+        ) : (
+          <ul className="ride-history-list">
+            {rides.map((ride) => (
+              <li key={ride.id} className="ride-history-item">
+                <div className="ride-history-title">
+                  {ride.routeName || t('auth.rideUntitled')}
+                </div>
+                <div className="ride-history-meta">{formatRideDate(ride.startedAt)}</div>
+                <div className="ride-history-stats">{rideStatsLine(ride)}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

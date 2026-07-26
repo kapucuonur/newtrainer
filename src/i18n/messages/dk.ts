@@ -77,6 +77,12 @@ export const dk: Messages = {
   'auth.profileSaved': 'Profil gemt',
   'auth.requestFailed': 'Anmodning mislykkedes',
 
+  'auth.rideHistory': 'Turhistorik',
+  'auth.rideHistoryHint':
+    'Kun opsummeringer — kort, GPS-spor og FIT/GPX bliver på din enhed.',
+  'auth.rideHistoryEmpty': 'Ingen gemte opsummeringer endnu.',
+  'auth.rideUntitled': 'Tur',
+
   'phase.idle': 'INAKTIV',
   'phase.ready': 'KLAR',
   'phase.riding': 'LIVE',
@@ -96,7 +102,7 @@ export const dk: Messages = {
     '{{distance}} · {{duration}} — download til Garmin Connect (manuel import).',
   'route.downloadFit': 'Download FIT',
   'route.downloadGpx': 'Download GPX',
-  'route.saveRide': 'Gem tur til profil',
+  'route.saveRide': 'Gem opsummering',
   'route.saving': 'Gemmer…',
   'route.start': 'Start tur',
   'route.pause': 'Pause',
@@ -105,10 +111,10 @@ export const dk: Messages = {
   'route.done': 'Færdig',
   'route.buildFailed': 'Kunne ikke bygge rute',
   'route.noExport': 'Intet spor at eksportere endnu',
-  'route.noSave': 'Intet spor at gemme',
-  'route.loginToSave': 'Log ind for at gemme ture',
-  'route.alreadySaved': 'Denne tur er allerede gemt',
-  'route.saved': 'Gemt til profil (#{{id}})',
+  'route.noSave': 'Ingen opsummering at gemme',
+  'route.loginToSave': 'Log ind for at gemme opsummering',
+  'route.alreadySaved': 'Denne opsummering er allerede gemt',
+  'route.saved': 'Opsummering gemt (#{{id}})',
   'route.gateNoApi':
     'Rutebygning kræver en skykonto. Konfigurer VITE_API_URL til din Pi-API, og registrer dig.',
   'route.gateLogin': 'Log ind eller registrer dig for at vælge start/slut og bygge en rute.',

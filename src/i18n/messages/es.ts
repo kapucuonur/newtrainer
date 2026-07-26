@@ -77,6 +77,12 @@ export const es: Messages = {
   'auth.profileSaved': 'Perfil guardado',
   'auth.requestFailed': 'Solicitud fallida',
 
+  'auth.rideHistory': 'Historial de rutas',
+  'auth.rideHistoryHint':
+    'Solo resúmenes — mapas, GPS y FIT/GPX se quedan en tu dispositivo.',
+  'auth.rideHistoryEmpty': 'Aún no hay resúmenes guardados.',
+  'auth.rideUntitled': 'Ruta',
+
   'phase.idle': 'INACTIVO',
   'phase.ready': 'LISTO',
   'phase.riding': 'EN VIVO',
@@ -96,7 +102,7 @@ export const es: Messages = {
     '{{distance}} · {{duration}} — descarga para Garmin Connect (importación manual).',
   'route.downloadFit': 'Descargar FIT',
   'route.downloadGpx': 'Descargar GPX',
-  'route.saveRide': 'Guardar ruta en el perfil',
+  'route.saveRide': 'Guardar resumen',
   'route.saving': 'Guardando…',
   'route.start': 'Iniciar ruta',
   'route.pause': 'Pausa',
@@ -105,10 +111,10 @@ export const es: Messages = {
   'route.done': 'Hecho',
   'route.buildFailed': 'No se pudo crear la ruta',
   'route.noExport': 'Aún no hay pista para exportar',
-  'route.noSave': 'No hay pista para guardar',
-  'route.loginToSave': 'Inicia sesión para guardar rutas',
-  'route.alreadySaved': 'Esta ruta ya está guardada',
-  'route.saved': 'Guardada en el perfil (#{{id}})',
+  'route.noSave': 'No hay resumen para guardar',
+  'route.loginToSave': 'Inicia sesión para guardar el resumen',
+  'route.alreadySaved': 'Este resumen ya está guardado',
+  'route.saved': 'Resumen guardado (#{{id}})',
   'route.gateNoApi':
     'Crear rutas requiere una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
   'route.gateLogin': 'Inicia sesión o regístrate para elegir inicio/fin y crear una ruta.',
