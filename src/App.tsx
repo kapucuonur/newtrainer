@@ -254,6 +254,8 @@ export default function App() {
           pointB={pointB}
           route={route}
           rider={telemetry.position}
+          ridePhase={telemetry.phase}
+          distanceMeters={telemetry.distanceMeters}
           onPick={onPick}
           pickMode={pickMode}
         />
@@ -261,7 +263,10 @@ export default function App() {
         <RideHUD telemetry={telemetry} />
 
         <footer className="app-footer">
-          <span>Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre</span>
+          <span>
+            Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre /
+            OpenFreeMap
+          </span>
           <span>
             Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no
             Web Bluetooth

@@ -5,7 +5,7 @@ Free browser bike trainer inspired by Zwift/Rouvy: **Web Bluetooth FTMS**, heart
 ## Stack
 
 - Vite + React + TypeScript
-- MapLibre + OpenFreeMap (no Google key required)
+- MapLibre + OpenFreeMap Liberty (colorful free tiles; no Google key required)
 - OSRM public routing + OpenTopoData elevation
 - Web Bluetooth: FTMS `0x1826`, Heart Rate `0x180D`
 
@@ -34,7 +34,7 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 1. Click **Use demo trainer**
 2. Click **Set A** / **Set B** on the map (or keep pick mode)
 3. **Build route** → wait for OSRM + elevation
-4. **Start ride** — rider marker advances; grade updates mock resistance
+4. **Start ride** — follow-road camera pitches along the route (3D-feel); marker advances; grade updates mock resistance
 5. Drag **Demo effort** to change power/speed
 
 ## Test with real hardware
@@ -49,7 +49,14 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 
 ## Optional env
 
-Copy `.env.example` → `.env` to override OSRM, elevation, or map style URLs. Google Maps is optional and unused by default.
+Copy `.env.example` → `.env` to override OSRM, elevation, or map style URLs.
+
+| Variable | Default | Notes |
+|----------|---------|--------|
+| `VITE_MAP_STYLE_URL` | OpenFreeMap **liberty** (colorful) | Free. `dark` / `fiord` are grayscale-ish on purpose |
+| `VITE_GOOGLE_MAPS_API_KEY` | unset | Optional. Enables Street View Static panel while riding (Google billing required). Without it, ride immersion is MapLibre follow-camera only |
+
+True Google Street View is **not** free; the default experience is a pitched follow camera along the A→B polyline (Zwift-like map immersion, not photoreal street imagery).
 
 ## Limitations
 
@@ -60,6 +67,7 @@ Copy `.env.example` → `.env` to override OSRM, elevation, or map style URLs. G
 | ANT+ | Needs USB stick + local bridge (documented in UI / `wifiBridge.ts`) |
 | Public OSRM / OpenTopoData | Rate limits; app falls back to straight line / synthetic elevation |
 | Trainer SIM support | Varies by brand; unsupported devices get grade→resistance mapping |
+| Street-level photos | Need paid Google Maps Street View Static key; free path = 3D follow camera |
 
 ## Architecture (WiFi bridge)
 
