@@ -204,7 +204,9 @@ export const en = {
   'hud.elevation': 'Elevation',
   'hud.distance': 'Distance',
   'hud.time': 'Time',
-  'hud.resistance': 'Resistance target ≈ {{value}} · {{load}} load',
+  'hud.trainerSim': 'SIM grade',
+  'hud.trainerRes': 'Resistance',
+  'hud.trainerTargetAria': 'Live grade and trainer target',
   'hud.climb': 'Climb',
   'hud.descent': 'Descent',
 

@@ -207,7 +207,9 @@ export const tr: Messages = {
   'hud.elevation': 'İrtifa',
   'hud.distance': 'Mesafe',
   'hud.time': 'Süre',
-  'hud.resistance': 'Direnç hedefi ≈ {{value}} · {{load}} yükü',
+  'hud.trainerSim': 'SIM eğim',
+  'hud.trainerRes': 'Direnç',
+  'hud.trainerTargetAria': 'Canlı eğim ve trainer hedefi',
   'hud.climb': 'Tırmanış',
   'hud.descent': 'İniş',
 

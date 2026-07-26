@@ -209,7 +209,9 @@ export const dk: Messages = {
   'hud.elevation': 'Højde',
   'hud.distance': 'Distance',
   'hud.time': 'Tid',
-  'hud.resistance': 'Modstandsmål ≈ {{value}} · {{load}}-belastning',
+  'hud.trainerSim': 'SIM-stigning',
+  'hud.trainerRes': 'Modstand',
+  'hud.trainerTargetAria': 'Live stigning og træner-mål',
   'hud.climb': 'Op',
   'hud.descent': 'Ned',
 

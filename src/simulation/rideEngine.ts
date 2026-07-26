@@ -5,6 +5,9 @@ import type { EnrichedRoute } from '../routing/types';
 
 export type RidePhase = 'idle' | 'ready' | 'riding' | 'paused' | 'finished';
 
+/** How grade is pushed to the trainer (FTMS SIM 0x11 vs resistance 0x04). */
+export type TrainerControlMode = 'sim' | 'resistance';
+
 export interface RideTelemetry {
   phase: RidePhase;
   distanceMeters: number;
@@ -18,7 +21,12 @@ export interface RideTelemetry {
   elevationMeters: number;
   elapsedSeconds: number;
   position: { lat: number; lng: number } | null;
+  /** Resistance level (0–100) used when SIM is unavailable: 20 + grade×4. */
   trainerResistanceHint: number;
+  /** Last grade % written via setSimulation (null before first send). */
+  trainerGradeSent: number | null;
+  /** Active FTMS control path for grade; null when no trainer is attached. */
+  trainerControlMode: TrainerControlMode | null;
   /** True when a completed (or mid-finish) track is available for FIT/GPX download. */
   hasExport: boolean;
 }
@@ -282,6 +290,15 @@ export class RideEngine {
       : null;
     const bike = this.lastBike;
     const gradePercent = at?.gradePercent ?? 0;
+    const gradeForTrainer = Number.isFinite(this.lastGradeSent)
+      ? this.lastGradeSent
+      : gradePercent;
+    const caps = this.trainer?.getCapabilities();
+    const trainerControlMode: TrainerControlMode | null = this.trainer
+      ? caps?.supportsIndoorBikeSimulation
+        ? 'sim'
+        : 'resistance'
+      : null;
 
     return {
       phase: this.phase,
@@ -299,7 +316,9 @@ export class RideEngine {
       elevationMeters: at?.elevationMeters ?? 0,
       elapsedSeconds: this.elapsedSeconds,
       position: at ? { lat: at.lat, lng: at.lng } : null,
-      trainerResistanceHint: Math.max(0, Math.min(100, 20 + gradePercent * 4)),
+      trainerResistanceHint: Math.max(0, Math.min(100, 20 + gradeForTrainer * 4)),
+      trainerGradeSent: Number.isFinite(this.lastGradeSent) ? this.lastGradeSent : null,
+      trainerControlMode,
       hasExport: this.track.length > 0,
     };
   }

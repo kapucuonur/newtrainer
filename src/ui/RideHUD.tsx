@@ -145,6 +145,7 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           icon={<TrendingUp className="icon-sm" />}
           label={t('hud.grade')}
           value={formatGrade(gradePercent)}
+          accent
         />
 
         {/* Elevation */}
@@ -170,11 +171,36 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
         />
       </div>
 
-      <div className={`hud-grade-chip ${gradeClass}`}>
-        {t('hud.resistance', {
-          value: telemetry.trainerResistanceHint.toFixed(0),
-          load: gradePercent >= 0 ? t('hud.climb') : t('hud.descent'),
-        })}
+      <div className={`hud-grade-chip ${gradeClass}`} aria-label={t('hud.trainerTargetAria')}>
+        <div className="hud-grade-chip-metrics">
+          <div className="hud-grade-chip-metric">
+            <span className="hud-grade-chip-k">{t('hud.grade')}</span>
+            <span className="hud-grade-chip-v">{formatGrade(gradePercent)}</span>
+          </div>
+          <div className="hud-grade-chip-metric">
+            <span className="hud-grade-chip-k">
+              {telemetry.trainerControlMode === 'resistance'
+                ? t('hud.trainerRes')
+                : t('hud.trainerSim')}
+            </span>
+            <span className="hud-grade-chip-v">
+              {telemetry.trainerControlMode === 'resistance'
+                ? telemetry.trainerResistanceHint.toFixed(0)
+                : formatGrade(telemetry.trainerGradeSent ?? gradePercent)}
+            </span>
+          </div>
+          {telemetry.trainerControlMode === 'sim' ? (
+            <div className="hud-grade-chip-metric hud-grade-chip-metric-secondary">
+              <span className="hud-grade-chip-k">{t('hud.trainerRes')}</span>
+              <span className="hud-grade-chip-v">
+                {telemetry.trainerResistanceHint.toFixed(0)}
+              </span>
+            </div>
+          ) : null}
+        </div>
+        <span className="hud-grade-chip-load">
+          {gradePercent >= 0 ? t('hud.climb') : t('hud.descent')}
+        </span>
       </div>
     </section>
   );

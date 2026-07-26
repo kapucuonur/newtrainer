@@ -209,7 +209,9 @@ export const ru: Messages = {
   'hud.elevation': 'Высота',
   'hud.distance': 'Дистанция',
   'hud.time': 'Время',
-  'hud.resistance': 'Цель сопротивления ≈ {{value}} · нагрузка {{load}}',
+  'hud.trainerSim': 'SIM уклон',
+  'hud.trainerRes': 'Сопротивление',
+  'hud.trainerTargetAria': 'Текущий уклон и цель тренажёра',
   'hud.climb': 'Подъём',
   'hud.descent': 'Спуск',
 

@@ -63,6 +63,8 @@ const idleTelemetry: RideTelemetry = {
   elapsedSeconds: 0,
   position: null,
   trainerResistanceHint: 20,
+  trainerGradeSent: null,
+  trainerControlMode: null,
   hasExport: false,
 };
 

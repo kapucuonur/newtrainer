@@ -155,6 +155,16 @@ select {
   min-height: 100px;
 }
 
+.app-shell-immersive .hud-grade-chip {
+  font-size: 1.05rem;
+  padding: 14px 18px;
+  gap: 12px;
+}
+
+.app-shell-immersive .hud-grade-chip-v {
+  font-size: 1.45rem;
+}
+
 .app-shell-immersive .elevation-chart-wrapper {
   height: 64px;
 }
@@ -1461,12 +1471,58 @@ select {
 
 .hud-grade-chip {
   align-self: stretch;
-  text-align: center;
-  font-size: 0.95rem;
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  font-size: 0.92rem;
+  padding: 12px 16px;
   border-radius: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.hud-grade-chip-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px 20px;
+  min-width: 0;
+}
+
+.hud-grade-chip-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 4.5rem;
+}
+
+.hud-grade-chip-metric-secondary {
+  opacity: 0.72;
+}
+
+.hud-grade-chip-k {
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.hud-grade-chip-v {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.hud-grade-chip-load {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.9;
 }
 
 .grade-flat {
@@ -1856,8 +1912,23 @@ select {
   }
 
   .hud-grade-chip {
-    font-size: 0.9rem;
-    padding: 11px 14px;
+    font-size: 0.88rem;
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .hud-grade-chip-metrics {
+    gap: 12px 16px;
+  }
+
+  .hud-grade-chip-v {
+    font-size: 1.15rem;
+  }
+
+  .hud-grade-chip-load {
+    width: 100%;
+    text-align: right;
   }
 
   .elevation-chart-wrapper {

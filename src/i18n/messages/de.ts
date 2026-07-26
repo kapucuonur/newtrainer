@@ -208,7 +208,9 @@ export const de: Messages = {
   'hud.elevation': 'Höhe',
   'hud.distance': 'Distanz',
   'hud.time': 'Zeit',
-  'hud.resistance': 'Widerstandsziel ≈ {{value}} · {{load}}-Last',
+  'hud.trainerSim': 'SIM-Steigung',
+  'hud.trainerRes': 'Widerstand',
+  'hud.trainerTargetAria': 'Aktuelle Steigung und Trainer-Ziel',
   'hud.climb': 'Anstieg',
   'hud.descent': 'Abfahrt',
 

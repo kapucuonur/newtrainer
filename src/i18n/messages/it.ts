@@ -209,7 +209,9 @@ export const it: Messages = {
   'hud.elevation': 'Altitudine',
   'hud.distance': 'Distanza',
   'hud.time': 'Tempo',
-  'hud.resistance': 'Target resistenza ≈ {{value}} · carico {{load}}',
+  'hud.trainerSim': 'Pendenza SIM',
+  'hud.trainerRes': 'Resistenza',
+  'hud.trainerTargetAria': 'Pendenza live e target trainer',
   'hud.climb': 'Salita',
   'hud.descent': 'Discesa',
 

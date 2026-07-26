@@ -209,7 +209,9 @@ export const se: Messages = {
   'hud.elevation': 'Höjd',
   'hud.distance': 'Distans',
   'hud.time': 'Tid',
-  'hud.resistance': 'Motståndsmål ≈ {{value}} · {{load}}-belastning',
+  'hud.trainerSim': 'SIM-lutning',
+  'hud.trainerRes': 'Motstånd',
+  'hud.trainerTargetAria': 'Live lutning och tränarmål',
   'hud.climb': 'Stigning',
   'hud.descent': 'Nedför',
 
