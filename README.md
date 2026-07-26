@@ -48,14 +48,25 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 6. Confirm Indoor Bike Data (speed/cadence/power) in the HUD
 7. On climbs, trainer should receive SIM grade (`0x11`) or resistance fallback
 
+## Cloud profile (optional, Raspberry Pi)
+
+Self-hosted API under [`backend/`](./backend) (Node + Fastify + SQLite). No Supabase.
+
+1. On Pi: see [`backend/README.md`](./backend/README.md) — `npm install && npm start`, systemd, Cloudflare Tunnel
+2. Tunnel hostname example: `https://api.newtrainer.trihonor.com` → `http://localhost:8788`
+3. Vercel / local env: `VITE_API_URL=https://api.newtrainer.trihonor.com`
+
+Without `VITE_API_URL`, the app stays local-only (Bluetooth / map / FIT+GPX download unchanged).
+
 ## Optional env
 
-Copy `.env.example` → `.env` to override OSRM, elevation, map style, or Mapillary token.
+Copy `.env.example` → `.env` to override OSRM, elevation, map style, Mapillary token, or API URL.
 
 | Variable | Default | Notes |
 |----------|---------|--------|
 | `VITE_MAP_STYLE_URL` | OpenFreeMap **liberty** (colorful) | Free. `dark` / `fiord` are grayscale-ish on purpose |
 | `VITE_MAPILLARY_ACCESS_TOKEN` | unset | Free Mapillary client token from [developers dashboard](https://www.mapillary.com/dashboard/developers). Enables street-level photos during rides. Without it, ride immersion is MapLibre follow-camera only |
+| `VITE_API_URL` | unset | Pi API base URL. Enables register/login, profile, save ride |
 
 Street photos use **Mapillary** (CC BY-SA, free developer token). Coverage varies by city; Turkey has sparse coverage outside major corridors. Without a token or nearby images, the pitched follow camera along the A→B polyline remains primary.
 

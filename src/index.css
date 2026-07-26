@@ -254,6 +254,46 @@ input {
   font-size: 0.8rem;
 }
 
+.auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auth-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 12, 18, 0.72);
+  color: var(--text);
+  padding: 0.5rem 0.65rem;
+}
+
+.auth-form input:focus {
+  outline: 1px solid var(--line-strong);
+}
+
+.auth-email {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.auth-message {
+  margin: 10px 0 0;
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
 .effort-slider input {
   width: 100%;
   accent-color: var(--accent-deep);

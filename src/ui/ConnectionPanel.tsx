@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ConnectionState } from '../bluetooth/types';
 import { getBluetoothSupportMessage, isWebBluetoothSupported } from '../bluetooth/webBluetooth';
 
@@ -17,6 +18,7 @@ type Props = {
   onDisconnectHr: () => void;
   onProbeWifi: () => void;
   onMockEffort: (value: number) => void;
+  children?: ReactNode;
 };
 
 function StatusDot({ state }: { state: ConnectionState }) {
@@ -39,6 +41,7 @@ export function ConnectionPanel({
   onDisconnectHr,
   onProbeWifi,
   onMockEffort,
+  children,
 }: Props) {
   const btOk = isWebBluetoothSupported();
 
@@ -137,6 +140,8 @@ export function ConnectionPanel({
           Probe local bridge
         </button>
       </section>
+
+      {children}
     </aside>
   );
 }

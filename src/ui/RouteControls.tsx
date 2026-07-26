@@ -22,6 +22,11 @@ type Props = {
   onStop: () => void;
   onDownloadFit: () => void;
   onDownloadGpx: () => void;
+  /** When set, show “Save ride to profile” after finish. */
+  canSaveToProfile?: boolean;
+  saveBusy?: boolean;
+  saveMessage?: string | null;
+  onSaveToProfile?: () => void;
 };
 
 export function RouteControls({
@@ -44,6 +49,10 @@ export function RouteControls({
   onStop,
   onDownloadFit,
   onDownloadGpx,
+  canSaveToProfile = false,
+  saveBusy = false,
+  saveMessage = null,
+  onSaveToProfile,
 }: Props) {
   const showComplete = phase === 'finished' && hasExport;
 
@@ -116,7 +125,18 @@ export function RouteControls({
             <button type="button" className="btn btn-secondary" onClick={onDownloadGpx}>
               Download GPX
             </button>
+            {canSaveToProfile && onSaveToProfile && (
+              <button
+                type="button"
+                className="btn btn-accent"
+                disabled={saveBusy}
+                onClick={onSaveToProfile}
+              >
+                {saveBusy ? 'Saving…' : 'Save ride to profile'}
+              </button>
+            )}
           </div>
+          {saveMessage && <p className="auth-message">{saveMessage}</p>}
         </div>
       )}
 

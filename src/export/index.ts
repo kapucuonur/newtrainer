@@ -6,6 +6,8 @@ import type { RideExport } from './types';
 
 export type { RideExport, TrackPoint } from './types';
 export { rideExportFilename } from './filename';
+export { buildFit } from './fit';
+export { buildGpx } from './gpx';
 
 export function downloadRideFit(ride: RideExport): void {
   const bytes = buildFit(ride);

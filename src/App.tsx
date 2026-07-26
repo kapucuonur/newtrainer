@@ -1,15 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ApiError,
+  fetchMe,
+  getStoredToken,
+  login as apiLogin,
+  logout as apiLogout,
+  register as apiRegister,
+  saveRide,
+  setStoredToken,
+  updateProfile,
+} from './api/client';
+import { isCloudApiEnabled } from './api/config';
+import type { User } from './api/types';
 import { FtmsTrainer } from './bluetooth/ftms';
 import { HeartRateMonitor } from './bluetooth/heartRate';
 import { MockTrainer } from './bluetooth/mockTrainer';
 import type { BikeTrainer, ConnectionState } from './bluetooth/types';
 import { probeWifiBridge } from './bluetooth/wifiBridge';
 import { enrichRouteWithElevation } from './elevation/service';
+import { buildFit, buildGpx, downloadRideFit, downloadRideGpx } from './export';
 import { RouteMap } from './map/RouteMap';
 import { fetchRoute } from './routing/osrm';
 import type { EnrichedRoute, LatLng } from './routing/types';
-import { downloadRideFit, downloadRideGpx } from './export';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
+import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
@@ -30,6 +44,11 @@ const idleTelemetry: RideTelemetry = {
   trainerResistanceHint: 20,
   hasExport: false,
 };
+
+function avg(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
 
 export default function App() {
   const engineRef = useRef(new RideEngine());
@@ -56,6 +75,13 @@ export default function App() {
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<RideTelemetry>(idleTelemetry);
+
+  const [user, setUser] = useState<User | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [savedRideId, setSavedRideId] = useState<number | null>(null);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -85,6 +111,29 @@ export default function App() {
   useEffect(() => {
     mockRef.current.setEffort(mockEffort);
   }, [mockEffort]);
+
+  useEffect(() => {
+    if (!isCloudApiEnabled() || !getStoredToken()) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const me = await fetchMe();
+        if (!cancelled) setUser(me);
+      } catch {
+        if (!cancelled) setStoredToken(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (telemetry.phase === 'finished') {
+      setSavedRideId(null);
+      setSaveMessage(null);
+    }
+  }, [telemetry.phase, telemetry.hasExport]);
 
   const attachTrainer = useCallback((next: BikeTrainer, mock: boolean) => {
     trainerUnsubRef.current?.();
@@ -192,6 +241,8 @@ export default function App() {
     setPickMode('A');
     engineRef.current.setRoute(null);
     setTelemetry(idleTelemetry);
+    setSavedRideId(null);
+    setSaveMessage(null);
   };
 
   const onProbeWifi = async () => {
@@ -227,6 +278,142 @@ export default function App() {
     downloadRideGpx(ride);
   };
 
+  const withAuthError = (error: unknown): string => {
+    if (error instanceof ApiError) return error.message;
+    if (error instanceof Error) return error.message;
+    return 'Request failed';
+  };
+
+  const onLogin = async (email: string, password: string) => {
+    setAuthBusy(true);
+    setAuthMessage(null);
+    try {
+      const res = await apiLogin(email, password);
+      setUser(res.user);
+      setAuthMessage('Logged in');
+    } catch (error) {
+      setAuthMessage(withAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const onRegister = async (email: string, password: string, displayName: string) => {
+    setAuthBusy(true);
+    setAuthMessage(null);
+    try {
+      const res = await apiRegister(email, password, displayName || undefined);
+      setUser(res.user);
+      setAuthMessage('Account created');
+    } catch (error) {
+      setAuthMessage(withAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const onLogout = async () => {
+    setAuthBusy(true);
+    setAuthMessage(null);
+    try {
+      await apiLogout();
+      setUser(null);
+      setAuthMessage('Logged out');
+    } catch (error) {
+      setStoredToken(null);
+      setUser(null);
+      setAuthMessage(withAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const onSaveProfile = async (fields: {
+    displayName: string;
+    weightKg: string;
+    ftp: string;
+    bikeWeightKg: string;
+  }) => {
+    setAuthBusy(true);
+    setAuthMessage(null);
+    try {
+      const parseNum = (raw: string): number | null => {
+        if (!raw.trim()) return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+      };
+      const parseIntOrNull = (raw: string): number | null => {
+        if (!raw.trim()) return null;
+        const n = Number(raw);
+        return Number.isInteger(n) ? n : null;
+      };
+      const next = await updateProfile({
+        displayName: fields.displayName.trim() || null,
+        weightKg: parseNum(fields.weightKg),
+        ftp: parseIntOrNull(fields.ftp),
+        bikeWeightKg: parseNum(fields.bikeWeightKg),
+      });
+      setUser(next);
+      setAuthMessage('Profile saved');
+    } catch (error) {
+      setAuthMessage(withAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const onSaveToProfile = async () => {
+    const ride = engineRef.current.getExport();
+    if (!ride || ride.points.length === 0) {
+      setSaveMessage('No ride track to save');
+      return;
+    }
+    if (!user) {
+      setSaveMessage('Log in to save rides');
+      return;
+    }
+    if (savedRideId != null) {
+      setSaveMessage('Already saved this ride');
+      return;
+    }
+
+    setSaveBusy(true);
+    setSaveMessage(null);
+    try {
+      const powers = ride.points.map((p) => p.powerWatts).filter((v) => v > 0);
+      const hrs = ride.points
+        .map((p) => p.heartRateBpm)
+        .filter((v): v is number => v != null && v > 0);
+      const fitBytes = buildFit(ride);
+      const gpxText = buildGpx(ride);
+      const fitCopy = new Uint8Array(fitBytes.byteLength);
+      fitCopy.set(fitBytes);
+      const fitBlob = new Blob([fitCopy], { type: 'application/octet-stream' });
+      const gpxBlob = new Blob([gpxText], { type: 'application/gpx+xml' });
+
+      const km = (ride.distanceMeters / 1000).toFixed(1);
+      const saved = await saveRide({
+        routeName: `ROADLAB ${km} km`,
+        startedAt: new Date(ride.startedAtMs).toISOString(),
+        endedAt: new Date(ride.finishedAtMs).toISOString(),
+        distanceM: ride.distanceMeters,
+        durationS: Math.round(ride.elapsedSeconds),
+        avgPower: avg(powers),
+        avgHr: avg(hrs),
+        fit: fitBlob,
+        gpx: gpxBlob,
+      });
+      setSavedRideId(saved.id);
+      setSaveMessage(`Saved to profile (#${saved.id})`);
+    } catch (error) {
+      setSaveMessage(withAuthError(error));
+    } finally {
+      setSaveBusy(false);
+    }
+  };
+
+  const canSaveToProfile = Boolean(user && isCloudApiEnabled() && savedRideId == null);
+
   return (
     <div className="app-shell">
       <ConnectionPanel
@@ -245,7 +432,17 @@ export default function App() {
         onDisconnectHr={() => void disconnectHr()}
         onProbeWifi={() => void onProbeWifi()}
         onMockEffort={setMockEffort}
-      />
+      >
+        <AuthPanel
+          user={user}
+          busy={authBusy}
+          message={authMessage}
+          onLogin={onLogin}
+          onRegister={onRegister}
+          onLogout={onLogout}
+          onSaveProfile={onSaveProfile}
+        />
+      </ConnectionPanel>
 
       <main className="main-stage">
         <div className="stage-top">
@@ -273,6 +470,10 @@ export default function App() {
             onStop={() => void engineRef.current.stop()}
             onDownloadFit={onDownloadFit}
             onDownloadGpx={onDownloadGpx}
+            canSaveToProfile={canSaveToProfile}
+            saveBusy={saveBusy}
+            saveMessage={saveMessage}
+            onSaveToProfile={() => void onSaveToProfile()}
           />
         </div>
 
