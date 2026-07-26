@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:parse": "npx tsx src/bluetooth/ftms.parse.test.ts"
+    "test:parse": "npx tsx src/bluetooth/ftms.parse.test.ts",
+    "test:map-style": "npx tsx src/map/sanitizeMapStyle.test.ts"
   },
   "dependencies": {
     "@markw65/fit-file-writer": "^0.1.10",

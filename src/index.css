@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700;800&family=Sora:wght@400;500;600;700&display=swap');
 
 :root {
+  /* cache-bust: force new hashed CSS after Cloudflare edge 404s on prior hash */
+  --asset-epoch: 2026-07-26-2;
   --bg-0: #080a0f;
   --bg-1: #0d111a;
   --bg-2: #141c28;
