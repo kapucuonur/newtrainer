@@ -93,7 +93,11 @@ export function ConnectionPanel({
             <button
               type="button"
               className="btn btn-ghost panel-close-btn"
-              onClick={onClosePanel}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onClosePanel();
+              }}
               aria-label={t('shell.closeControls')}
             >
               <X className="icon-xs" />

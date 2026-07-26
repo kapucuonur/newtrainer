@@ -2,7 +2,7 @@
 
 :root {
   /* cache-bust: force new hashed CSS after Cloudflare edge 404s on prior hash */
-  --asset-epoch: 2026-07-26-2;
+  --asset-epoch: 2026-07-26-3;
   --bg-0: #080a0f;
   --bg-1: #0d111a;
   --bg-2: #141c28;
@@ -159,7 +159,7 @@ select {
   height: 64px;
 }
 
-/* Shell backdrop for mobile drawer */
+/* Shell backdrop for mobile drawer — only interactive while panel is open */
 .shell-backdrop {
   display: none;
   position: fixed;
@@ -169,6 +169,11 @@ select {
   z-index: 90;
   border: none;
   cursor: pointer;
+  pointer-events: none;
+}
+
+.app-shell.panel-open .shell-backdrop {
+  pointer-events: auto;
 }
 
 /* Mobile Header Chrome */
@@ -192,7 +197,7 @@ select {
   letter-spacing: 0.06em;
 }
 
-/* Connection Panel Sidebar Drawer */
+/* Connection Panel Sidebar Drawer — above backdrop so Close/controls receive clicks */
 .connection-panel {
   background: var(--panel);
   backdrop-filter: blur(20px);
@@ -204,8 +209,13 @@ select {
   padding: 20px;
   height: 100%;
   overflow-y: auto;
-  z-index: 50;
+  z-index: 100;
   box-shadow: var(--shadow);
+  position: relative;
+}
+
+.panel-sheet-handle {
+  display: none;
 }
 
 .panel-header-row {
@@ -213,6 +223,19 @@ select {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
+  gap: 10px;
+}
+
+.panel-close-btn {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+.shell-open-panel-btn {
+  display: none;
+  align-self: flex-start;
 }
 
 .brand-badge {
@@ -1604,13 +1627,35 @@ select {
   pointer-events: none;
 }
 
+/* Desktop: Close collapses the sidebar; Menu reopens it */
+@media (min-width: 1025px) {
+  .app-shell:not(.panel-open) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell:not(.panel-open) .connection-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--panel-width);
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app-shell:not(.panel-open) .shell-open-panel-btn {
+    display: inline-flex;
+  }
+}
+
 /* Responsive Rules for Mobile/Tablet */
 @media (max-width: 1024px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
-  .shell-backdrop {
+  .app-shell.panel-open .shell-backdrop {
     display: block;
   }
 
@@ -1623,13 +1668,20 @@ select {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 320px;
+    width: min(320px, 88vw);
+    z-index: 100;
     transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0.28s;
   }
 
   .app-shell.panel-open .connection-panel {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .viewer-stage-split {

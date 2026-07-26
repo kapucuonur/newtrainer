@@ -129,7 +129,11 @@ export default function App() {
   const [joinCode, setJoinCode] = useState('');
   const [groupBusy, setGroupBusy] = useState(false);
   const [groupMessage, setGroupMessage] = useState<string | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(min-width: 1025px)').matches
+      : true,
+  );
   const [routePeekOpen, setRoutePeekOpen] = useState(false);
   const [videoPanelOpen, setVideoPanelOpen] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -652,8 +656,21 @@ export default function App() {
     setWifiCode(status.code);
   };
 
+  const focusRideViewer = () => {
+    window.requestAnimationFrame(() => {
+      document.getElementById('ride-viewer')?.focus({ preventScroll: true });
+    });
+  };
+
+  const openPanel = () => setPanelOpen(true);
+
+  const closePanel = () => {
+    setPanelOpen(false);
+    focusRideViewer();
+  };
+
   const onOpenAccount = () => {
-    setPanelOpen(true);
+    openPanel();
     window.setTimeout(() => {
       document.getElementById('account-panel')?.scrollIntoView({
         behavior: 'smooth',
@@ -663,14 +680,21 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (immersiveRide) setPanelOpen(false);
-    else setRoutePeekOpen(false);
+    if (immersiveRide) {
+      setPanelOpen(false);
+      focusRideViewer();
+    } else {
+      setRoutePeekOpen(false);
+    }
   }, [immersiveRide]);
 
   useEffect(() => {
     if (!panelOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPanelOpen(false);
+      if (event.key === 'Escape') {
+        setPanelOpen(false);
+        focusRideViewer();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1013,7 +1037,7 @@ export default function App() {
         className="shell-backdrop"
         aria-label={t('shell.closeControls')}
         tabIndex={panelOpen ? 0 : -1}
-        onClick={() => setPanelOpen(false)}
+        onClick={closePanel}
       />
 
       <header className="mobile-chrome">
@@ -1022,7 +1046,10 @@ export default function App() {
           className="btn btn-secondary mobile-chrome-btn"
           aria-expanded={panelOpen}
           aria-controls="connection-panel"
-          onClick={() => setPanelOpen((open) => !open)}
+          onClick={() => {
+            if (panelOpen) closePanel();
+            else openPanel();
+          }}
         >
           {panelOpen ? t('shell.close') : t('shell.menu')}
         </button>
@@ -1061,7 +1088,7 @@ export default function App() {
         onProbeWifi={() => void onProbeWifi()}
         onMockEffort={setMockEffort}
         onOpenAccount={onOpenAccount}
-        onClosePanel={() => setPanelOpen(false)}
+        onClosePanel={closePanel}
       >
         <AuthPanel
           user={user}
@@ -1090,8 +1117,19 @@ export default function App() {
         />
       </ConnectionPanel>
 
-      <main className="main-stage">
+      <main className="main-stage" id="ride-viewer" tabIndex={-1}>
         <div className="stage-top">
+          {!panelOpen && (
+            <button
+              type="button"
+              className="btn btn-secondary shell-open-panel-btn"
+              aria-expanded={false}
+              aria-controls="connection-panel"
+              onClick={openPanel}
+            >
+              {t('shell.menu')}
+            </button>
+          )}
           <div className="live-pill stage-live-pill" data-phase={telemetry.phase}>
             <span className="live-dot" />
             {rideLabel}
