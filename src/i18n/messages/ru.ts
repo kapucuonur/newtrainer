@@ -124,6 +124,8 @@ export const ru: Messages = {
   'route.stop': 'Стоп',
   'route.done': 'Готово',
   'route.buildFailed': 'Не удалось построить маршрут',
+  'route.elevationUnavailable':
+    'Данные высоты недоступны — уклон тренажёра плоский. Постройте маршрут снова.',
   'route.noExport': 'Нет трека для экспорта',
   'route.noSave': 'Нет сводки для сохранения',
   'route.loginToSave': 'Войдите, чтобы сохранить сводку',
@@ -192,7 +194,7 @@ export const ru: Messages = {
   'street.compass': 'Съёмка {{capture}}° · езда {{ride}}°',
 
   'footer.protocols':
-    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
   'footer.test':
     'Тест: Chrome/Edge + FTMS · Демо-тренажёр без железа · iOS Safari: нет Web Bluetooth',
 };

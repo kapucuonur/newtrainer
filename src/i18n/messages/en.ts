@@ -120,6 +120,8 @@ export const en = {
   'route.stop': 'Stop',
   'route.done': 'Done',
   'route.buildFailed': 'Route build failed',
+  'route.elevationUnavailable':
+    'Elevation data unavailable — trainer grade set to flat. Retry route build.',
   'route.noExport': 'No ride track to export yet',
   'route.noSave': 'No ride summary to save',
   'route.loginToSave': 'Log in to save ride summary',
@@ -188,7 +190,7 @@ export const en = {
   'street.compass': 'Capture bearing {{capture}}° · ride {{ride}}°',
 
   'footer.protocols':
-    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
   'footer.test':
     'Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no Web Bluetooth',
 } as const;

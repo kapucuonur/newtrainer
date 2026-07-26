@@ -117,6 +117,129 @@ app.get('/api/health', async () => ({
   time: new Date().toISOString(),
 }));
 
+const OPEN_METEO_ELEVATION = 'https://api.open-meteo.com/v1/elevation';
+const OPEN_TOPO_ELEVATION = 'https://api.opentopodata.org/v1/mapzen';
+const ELEVATION_CHUNK = 80;
+const ELEVATION_MAX_POINTS = 5000;
+
+/**
+ * @param {{ lat: number; lng: number }[]} points
+ * @returns {Promise<number[]>}
+ */
+async function fetchOpenMeteoElevationsServer(points) {
+  /** @type {number[]} */
+  const elevations = [];
+  for (let i = 0; i < points.length; i += ELEVATION_CHUNK) {
+    const chunk = points.slice(i, i + ELEVATION_CHUNK);
+    const lats = chunk.map((p) => p.lat.toFixed(5)).join(',');
+    const lngs = chunk.map((p) => p.lng.toFixed(5)).join(',');
+    const res = await fetch(
+      `${OPEN_METEO_ELEVATION}?latitude=${lats}&longitude=${lngs}`,
+    );
+    if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
+    const json = /** @type {{ elevation?: unknown }} */ (await res.json());
+    if (!Array.isArray(json.elevation) || json.elevation.length !== chunk.length) {
+      throw new Error('Open-Meteo elevation payload invalid');
+    }
+    for (const value of json.elevation) {
+      elevations.push(typeof value === 'number' && Number.isFinite(value) ? value : 0);
+    }
+  }
+  return elevations;
+}
+
+/**
+ * @param {{ lat: number; lng: number }[]} points
+ * @returns {Promise<number[]>}
+ */
+async function fetchOpenTopoElevationsServer(points) {
+  /** @type {number[]} */
+  const elevations = [];
+  for (let i = 0; i < points.length; i += ELEVATION_CHUNK) {
+    const chunk = points.slice(i, i + ELEVATION_CHUNK);
+    const locations = chunk.map((p) => `${p.lat},${p.lng}`).join('|');
+    const res = await fetch(
+      `${OPEN_TOPO_ELEVATION}?locations=${encodeURIComponent(locations)}`,
+    );
+    if (!res.ok) throw new Error(`OpenTopo HTTP ${res.status}`);
+    const json = /** @type {{ status?: string; results?: Array<{ elevation: number | null }> }} */ (
+      await res.json()
+    );
+    if (json.status !== 'OK' || !Array.isArray(json.results) || json.results.length !== chunk.length) {
+      throw new Error('OpenTopo elevation payload invalid');
+    }
+    for (const row of json.results) {
+      const value = row.elevation;
+      elevations.push(typeof value === 'number' && Number.isFinite(value) ? value : 0);
+    }
+    if (i + ELEVATION_CHUNK < points.length) {
+      await new Promise((r) => setTimeout(r, 1100));
+    }
+  }
+  return elevations;
+}
+
+/**
+ * Server-side DEM lookup for the browser (avoids CORS / public rate limits).
+ * Body: { locations: [{ lat, lng }, ...] }
+ */
+app.post(
+  '/api/elevation',
+  {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: '1 minute',
+      },
+    },
+  },
+  async (request, reply) => {
+    const body = /** @type {{ locations?: unknown }} */ (request.body || {});
+    if (!Array.isArray(body.locations) || body.locations.length === 0) {
+      return reply.code(400).send({ error: 'locations array required' });
+    }
+    if (body.locations.length > ELEVATION_MAX_POINTS) {
+      return reply
+        .code(400)
+        .send({ error: `Too many locations (max ${ELEVATION_MAX_POINTS})` });
+    }
+
+    /** @type {{ lat: number; lng: number }[]} */
+    const points = [];
+    for (const raw of body.locations) {
+      if (!raw || typeof raw !== 'object') {
+        return reply.code(400).send({ error: 'Invalid location entry' });
+      }
+      const lat = Number(/** @type {{ lat?: unknown }} */ (raw).lat);
+      const lng = Number(/** @type {{ lng?: unknown }} */ (raw).lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return reply.code(400).send({ error: 'Invalid lat/lng' });
+      }
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return reply.code(400).send({ error: 'lat/lng out of range' });
+      }
+      points.push({ lat, lng });
+    }
+
+    try {
+      const elevations = await fetchOpenMeteoElevationsServer(points);
+      return { elevations, source: 'open-meteo' };
+    } catch (primaryErr) {
+      request.log.warn(
+        { err: primaryErr },
+        'Open-Meteo elevation failed; trying OpenTopo mapzen',
+      );
+      try {
+        const elevations = await fetchOpenTopoElevationsServer(points);
+        return { elevations, source: 'opentopo-mapzen' };
+      } catch (fallbackErr) {
+        request.log.error({ err: fallbackErr }, 'Elevation providers unavailable');
+        return reply.code(502).send({ error: 'Elevation providers unavailable' });
+      }
+    }
+  },
+);
+
 app.post(
   '/api/auth/register',
   {

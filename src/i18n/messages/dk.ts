@@ -124,6 +124,8 @@ export const dk: Messages = {
   'route.stop': 'Stop',
   'route.done': 'Færdig',
   'route.buildFailed': 'Kunne ikke bygge rute',
+  'route.elevationUnavailable':
+    'Højde data utilgængelig — trænerhældning sat til flad. Prøv ruten igen.',
   'route.noExport': 'Intet spor at eksportere endnu',
   'route.noSave': 'Ingen opsummering at gemme',
   'route.loginToSave': 'Log ind for at gemme opsummering',
@@ -192,7 +194,7 @@ export const dk: Messages = {
   'street.compass': 'Optagelse {{capture}}° · cykling {{ride}}°',
 
   'footer.protocols':
-    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
   'footer.test':
     'Test: Chrome/Edge + FTMS-trainer · Demo-trainer uden hardware · iOS Safari: ingen Web Bluetooth',
 };

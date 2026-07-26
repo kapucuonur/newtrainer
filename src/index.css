@@ -919,6 +919,16 @@ select {
   font-size: 0.78rem;
 }
 
+.elevation-warning {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #f0c674;
+  background: rgba(240, 198, 116, 0.1);
+  border: 1px solid rgba(240, 198, 116, 0.28);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
 .profile-title {
   display: flex;
   align-items: center;

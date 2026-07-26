@@ -133,6 +133,12 @@ export function ElevationProfile({
         </div>
       </div>
 
+      {route.elevationSource === 'unavailable' || route.elevationWarning ? (
+        <div className="elevation-warning" role="status">
+          {route.elevationWarning || t('route.elevationUnavailable')}
+        </div>
+      ) : null}
+
       <div className="elevation-chart-wrapper">
         <svg
           viewBox={`0 0 ${data.width} ${data.height}`}

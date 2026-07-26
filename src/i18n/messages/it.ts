@@ -124,6 +124,8 @@ export const it: Messages = {
   'route.stop': 'Stop',
   'route.done': 'Fatto',
   'route.buildFailed': 'Creazione percorso non riuscita',
+  'route.elevationUnavailable':
+    'Dati altimetrici non disponibili — pendenza trainer piatta. Ricrea il percorso.',
   'route.noExport': 'Nessuna traccia da esportare',
   'route.noSave': 'Nessun riepilogo da salvare',
   'route.loginToSave': 'Accedi per salvare il riepilogo',
@@ -192,7 +194,7 @@ export const it: Messages = {
   'street.compass': 'Ripresa {{capture}}° · corsa {{ride}}°',
 
   'footer.protocols':
-    'Protocolli: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protocolli: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
   'footer.test':
     'Test: Chrome/Edge + trainer FTMS · Trainer demo senza hardware · iOS Safari: no Web Bluetooth',
 };

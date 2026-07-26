@@ -24,10 +24,20 @@ export interface RouteResult {
   source: 'osrm' | 'straight';
 }
 
+export type ElevationSource =
+  | 'open-meteo'
+  | 'opentopo'
+  | 'proxy'
+  | 'unavailable';
+
 export interface EnrichedRoute extends RouteResult {
   samples: RoutePoint[];
   elevGainMeters: number;
   elevLossMeters: number;
   minElevMeters: number;
   maxElevMeters: number;
+  /** DEM provider used for samples; unavailable = honest flat (no synthetic terrain). */
+  elevationSource?: ElevationSource;
+  /** Set when real DEM lookup failed — show in UI, do not invent hills. */
+  elevationWarning?: string;
 }

@@ -446,6 +446,7 @@ export default function App() {
       const enriched = await enrichRouteWithElevation(base);
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
+      setRouteError(enriched.elevationWarning ?? null);
     } catch (error) {
       setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
     } finally {
@@ -466,6 +467,7 @@ export default function App() {
       const enriched = await enrichRouteWithElevation(base);
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
+      setRouteError(enriched.elevationWarning ?? null);
     } catch (error) {
       setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
     } finally {

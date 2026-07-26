@@ -122,6 +122,8 @@ export const tr: Messages = {
   'route.stop': 'Durdur',
   'route.done': 'Tamam',
   'route.buildFailed': 'Rota oluşturulamadı',
+  'route.elevationUnavailable':
+    'İrtifa verisi alınamadı — trainer eğimi düz. Rotayı yeniden oluşturun.',
   'route.noExport': 'Dışa aktarılacak sürüş izi yok',
   'route.noSave': 'Kaydedilecek sürüş özeti yok',
   'route.loginToSave': 'Sürüş özeti kaydetmek için giriş yapın',
@@ -190,7 +192,7 @@ export const tr: Messages = {
   'street.compass': 'Çekim yönü {{capture}}° · sürüş {{ride}}°',
 
   'footer.protocols':
-    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
   'footer.test':
     'Test: Chrome/Edge + FTMS trainer · Demo trainer donanımsız çalışır · iOS Safari: Web Bluetooth yok',
 };

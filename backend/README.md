@@ -144,6 +144,7 @@ If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save su
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/api/health` | no |
+| POST | `/api/elevation` | no (body: `{ locations: [{ lat, lng }] }` → DEM via Open-Meteo / OpenTopo mapzen) |
 | POST | `/api/auth/register` | no |
 | POST | `/api/auth/login` | no |
 | POST | `/api/auth/logout` | no |
