@@ -6,6 +6,8 @@ import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 type Props = {
+  devicesEnabled: boolean;
+  deviceGateMessage: string | null;
   trainerState: ConnectionState;
   trainerName: string;
   hrState: ConnectionState;
@@ -21,6 +23,8 @@ type Props = {
   onDisconnectHr: () => void;
   onProbeWifi: () => void;
   onMockEffort: (value: number) => void;
+  onOpenAccount: () => void;
+  onClosePanel?: () => void;
   children?: ReactNode;
 };
 
@@ -37,6 +41,8 @@ function StatusDot({ state }: { state: ConnectionState }) {
 }
 
 export function ConnectionPanel({
+  devicesEnabled,
+  deviceGateMessage,
   trainerState,
   trainerName,
   hrState,
@@ -52,6 +58,8 @@ export function ConnectionPanel({
   onDisconnectHr,
   onProbeWifi,
   onMockEffort,
+  onOpenAccount,
+  onClosePanel,
   children,
 }: Props) {
   const t = useT();
@@ -61,9 +69,22 @@ export function ConnectionPanel({
   const hrStatus = t(CONN_KEYS[hrState]);
 
   return (
-    <aside className="connection-panel">
+    <aside className="connection-panel" id="connection-panel" aria-label={t('shell.controls')}>
+      <div className="panel-sheet-handle" aria-hidden="true" />
       <header className="panel-header">
-        <p className="brand-mark">ROADLAB</p>
+        <div className="panel-header-row">
+          <p className="brand-mark">ROADLAB</p>
+          {onClosePanel ? (
+            <button
+              type="button"
+              className="btn btn-ghost panel-close-btn"
+              onClick={onClosePanel}
+              aria-label={t('shell.closeControls')}
+            >
+              {t('shell.close')}
+            </button>
+          ) : null}
+        </div>
         <h1>{t('app.title')}</h1>
         <p className="panel-sub">{t('app.subtitle')}</p>
         <LanguageSwitcher />
@@ -74,6 +95,15 @@ export function ConnectionPanel({
         <p>{t(getBluetoothSupportCode())}</p>
       </div>
 
+      {deviceGateMessage && (
+        <div className="auth-gate-banner" role="status">
+          <p>{deviceGateMessage}</p>
+          <button type="button" className="btn btn-accent" onClick={onOpenAccount}>
+            {t('route.gateCta')}
+          </button>
+        </div>
+      )}
+
       <section className="device-card">
         <div className="device-card-head">
           <StatusDot state={trainerState} />
@@ -82,40 +112,45 @@ export function ConnectionPanel({
             <p>
               {trainerLabel} · {trainerStatus}
             </p>
+            {!devicesEnabled && <p className="muted-text">{t('devices.helpTrainer')}</p>}
           </div>
         </div>
-        <div className="btn-row">
-          {trainerState === 'connected' ? (
-            <button type="button" className="btn btn-ghost" onClick={onDisconnectTrainer}>
-              {t('trainer.disconnect')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onConnectTrainer}
-              disabled={!btOk || trainerState === 'connecting'}
-            >
-              {trainerState === 'connecting' ? t('trainer.connecting') : t('trainer.connect')}
-            </button>
-          )}
-          <button type="button" className="btn btn-secondary" onClick={onUseMock}>
-            {t('trainer.useDemo')}
-          </button>
-        </div>
-        {usingMock && (
-          <label className="effort-slider">
-            <span>{t('trainer.demoEffort')}</span>
-            <input
-              type="range"
-              min={0.3}
-              max={1}
-              step={0.01}
-              value={mockEffort}
-              onChange={(e) => onMockEffort(Number(e.target.value))}
-            />
-          </label>
-        )}
+        {devicesEnabled ? (
+          <>
+            <div className="btn-row">
+              {trainerState === 'connected' ? (
+                <button type="button" className="btn btn-ghost" onClick={onDisconnectTrainer}>
+                  {t('trainer.disconnect')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={onConnectTrainer}
+                  disabled={!btOk || trainerState === 'connecting'}
+                >
+                  {trainerState === 'connecting' ? t('trainer.connecting') : t('trainer.connect')}
+                </button>
+              )}
+              <button type="button" className="btn btn-secondary" onClick={onUseMock}>
+                {t('trainer.useDemo')}
+              </button>
+            </div>
+            {usingMock && (
+              <label className="effort-slider">
+                <span>{t('trainer.demoEffort')}</span>
+                <input
+                  type="range"
+                  min={0.3}
+                  max={1}
+                  step={0.01}
+                  value={mockEffort}
+                  onChange={(e) => onMockEffort(Number(e.target.value))}
+                />
+              </label>
+            )}
+          </>
+        ) : null}
       </section>
 
       <section className="device-card">
@@ -127,32 +162,38 @@ export function ConnectionPanel({
               {hrName} · {hrStatus}
               {hrBpm != null ? ` · ${hrBpm} bpm` : ''}
             </p>
+            {!devicesEnabled && <p className="muted-text">{t('devices.helpHr')}</p>}
           </div>
         </div>
-        <div className="btn-row">
-          {hrState === 'connected' ? (
-            <button type="button" className="btn btn-ghost" onClick={onDisconnectHr}>
-              {t('hr.disconnect')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onConnectHr}
-              disabled={!btOk || hrState === 'connecting'}
-            >
-              {hrState === 'connecting' ? t('hr.connecting') : t('hr.connect')}
-            </button>
-          )}
-        </div>
+        {devicesEnabled ? (
+          <div className="btn-row">
+            {hrState === 'connected' ? (
+              <button type="button" className="btn btn-ghost" onClick={onDisconnectHr}>
+                {t('hr.disconnect')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onConnectHr}
+                disabled={!btOk || hrState === 'connecting'}
+              >
+                {hrState === 'connecting' ? t('hr.connecting') : t('hr.connect')}
+              </button>
+            )}
+          </div>
+        ) : null}
       </section>
 
       <section className="device-card device-card-muted">
         <h2>{t('wifi.title')}</h2>
         <p>{wifiMessage}</p>
-        <button type="button" className="btn btn-ghost" onClick={onProbeWifi}>
-          {t('wifi.probe')}
-        </button>
+        {!devicesEnabled && <p className="muted-text">{t('devices.helpWifi')}</p>}
+        {devicesEnabled ? (
+          <button type="button" className="btn btn-ghost" onClick={onProbeWifi}>
+            {t('wifi.probe')}
+          </button>
+        ) : null}
       </section>
 
       {children}

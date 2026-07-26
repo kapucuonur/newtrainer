@@ -5,6 +5,11 @@ export const se: Messages = {
   'app.subtitle':
     'FTMS Bluetooth-trainer, puls och verklig väggradient — karta först, sedan cykling.',
   'lang.label': 'Språk',
+  'shell.controls': 'Enheter och konto',
+  'shell.menu': 'Meny',
+  'shell.close': 'Stäng',
+  'shell.closeControls': 'Stäng kontroller',
+  'shell.account': 'Konto',
 
   'browser.title': 'Webbläsare',
   'bt.noBrowser': 'Bluetooth finns bara i en webbläsare.',
@@ -54,9 +59,18 @@ export const se: Messages = {
 
   'auth.cloudTitle': 'Molnprofil',
   'auth.cloudDisabled':
-    'Ett molnkonto krävs för att bygga rutter. Ange VITE_API_URL till din Pi-API och registrera dig eller logga in.',
+    'Ett molnkonto krävs för att ansluta enheter och bygga rutter. Ange VITE_API_URL till din Pi-API och registrera dig eller logga in.',
   'auth.accountTitle': 'Konto',
-  'auth.accountHint': 'Logga in eller registrera dig först för att välja A–B på kartan och bygga en rutt.',
+  'auth.accountHint':
+    'Logga in eller registrera dig först för att ansluta enheter och välja A–B på kartan.',
+  'devices.gateNoApi':
+    'Enhetsanslutningar kräver ett molnkonto. Konfigurera VITE_API_URL till din Pi-API och registrera dig.',
+  'devices.gateLogin':
+    'Logga in eller registrera dig först för att ansluta tränare, pulsbälte eller WiFi-brygga.',
+  'devices.helpTrainer':
+    'Efter inloggning para en FTMS-cykeltrainer eller använd demo-trainern.',
+  'devices.helpHr': 'Efter inloggning anslut ett Bluetooth-pulsbälte.',
+  'devices.helpWifi': 'Efter inloggning kontrollera den lokala WiFi/ANT+-bryggan.',
   'auth.login': 'Logga in',
   'auth.register': 'Registrera',
   'auth.displayName': 'Visningsnamn',
@@ -116,15 +130,16 @@ export const se: Messages = {
   'route.alreadySaved': 'Denna sammanfattning är redan sparad',
   'route.saved': 'Sammanfattning sparad (#{{id}})',
   'route.gateNoApi':
-    'Ruttbygge kräver ett molnkonto. Konfigurera VITE_API_URL till din Pi-API och registrera dig.',
-  'route.gateLogin': 'Logga in eller registrera dig för att välja start/mål och bygga en rutt.',
+    'Rutter och enheter kräver ett molnkonto. Konfigurera VITE_API_URL till din Pi-API och registrera dig.',
+  'route.gateLogin':
+    'Logga in eller registrera dig för att ansluta enheter, välja start/mål och bygga en rutt.',
   'route.gateCta': 'Öppna konto',
 
   'map.pickBanner': 'Tryck på kartan för punkt {{point}}',
   'map.followBanner': 'Följ väg · 3D-kamera',
   'map.followMapillary': ' · Mapillary på',
   'map.followGroup': ' · Gruppkarta (ingen street view)',
-  'map.lockedBanner': 'Logga in för att sätta A–B på kartan',
+  'map.lockedBanner': 'Logga in för att ansluta enheter och sätta A–B på kartan',
 
   'group.title': 'Gruppridning',
   'group.subtitle': 'Dela en A→B-rutt. Upp till 20 cyklister på den färgrika kartan.',

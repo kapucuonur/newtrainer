@@ -3,6 +3,11 @@ export const en = {
   'app.subtitle':
     'FTMS Bluetooth trainer, heart rate, and real-road elevation — map first, ride ready.',
   'lang.label': 'Language',
+  'shell.controls': 'Devices and account',
+  'shell.menu': 'Menu',
+  'shell.close': 'Close',
+  'shell.closeControls': 'Close controls',
+  'shell.account': 'Account',
 
   'browser.title': 'Browser',
   'bt.noBrowser': 'Bluetooth is only available in a browser.',
@@ -52,9 +57,17 @@ export const en = {
 
   'auth.cloudTitle': 'Cloud profile',
   'auth.cloudDisabled':
-    'Cloud account is required to build routes. Set VITE_API_URL to your Pi API, then register or log in.',
+    'Cloud account is required to connect devices and build routes. Set VITE_API_URL to your Pi API, then register or log in.',
   'auth.accountTitle': 'Account',
-  'auth.accountHint': 'Log in or register first to pick A–B on the map and build a route.',
+  'auth.accountHint':
+    'Log in or register first to connect devices and pick A–B on the map to build a route.',
+  'devices.gateNoApi':
+    'Device connections require a cloud account. Configure VITE_API_URL to your Pi API, then register.',
+  'devices.gateLogin':
+    'Log in or register first to connect your trainer, heart-rate strap, or WiFi bridge.',
+  'devices.helpTrainer': 'Pair an FTMS bike trainer or use the demo trainer after you sign in.',
+  'devices.helpHr': 'Connect a Bluetooth heart-rate strap after you sign in.',
+  'devices.helpWifi': 'Probe a local WiFi/ANT+ bridge after you sign in.',
   'auth.login': 'Login',
   'auth.register': 'Register',
   'auth.displayName': 'Display name',
@@ -113,15 +126,16 @@ export const en = {
   'route.alreadySaved': 'Already saved this summary',
   'route.saved': 'Summary saved (#{{id}})',
   'route.gateNoApi':
-    'Route building requires a cloud account. Configure VITE_API_URL to your Pi API, then register.',
-  'route.gateLogin': 'Log in or register to pick start/end points and build a route.',
+    'Routes and devices require a cloud account. Configure VITE_API_URL to your Pi API, then register.',
+  'route.gateLogin':
+    'Log in or register to connect devices, pick start/end points, and build a route.',
   'route.gateCta': 'Open Account',
 
   'map.pickBanner': 'Tap the map to set point {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',
   'map.followMapillary': ' · Mapillary on',
   'map.followGroup': ' · Group map (no street view)',
-  'map.lockedBanner': 'Sign in to set A–B on the map',
+  'map.lockedBanner': 'Sign in to connect devices and set A–B on the map',
 
   'group.title': 'Group ride',
   'group.subtitle': 'Share an A→B route. Up to 20 riders on the colored map.',

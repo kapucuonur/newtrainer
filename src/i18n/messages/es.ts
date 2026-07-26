@@ -5,6 +5,11 @@ export const es: Messages = {
   'app.subtitle':
     'Rodillo FTMS Bluetooth, ritmo cardiaco y pendiente real — primero el mapa, luego la ruta.',
   'lang.label': 'Idioma',
+  'shell.controls': 'Dispositivos y cuenta',
+  'shell.menu': 'Menú',
+  'shell.close': 'Cerrar',
+  'shell.closeControls': 'Cerrar controles',
+  'shell.account': 'Cuenta',
 
   'browser.title': 'Navegador',
   'bt.noBrowser': 'Bluetooth solo está disponible en el navegador.',
@@ -54,9 +59,18 @@ export const es: Messages = {
 
   'auth.cloudTitle': 'Perfil en la nube',
   'auth.cloudDisabled':
-    'Se requiere una cuenta en la nube para crear rutas. Configura VITE_API_URL con tu API de Pi y regístrate o inicia sesión.',
+    'Se requiere una cuenta en la nube para conectar dispositivos y crear rutas. Configura VITE_API_URL con tu API de Pi y regístrate o inicia sesión.',
   'auth.accountTitle': 'Cuenta',
-  'auth.accountHint': 'Inicia sesión o regístrate antes de elegir A–B en el mapa y crear una ruta.',
+  'auth.accountHint':
+    'Inicia sesión o regístrate antes de conectar dispositivos y elegir A–B en el mapa.',
+  'devices.gateNoApi':
+    'Las conexiones de dispositivos requieren una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
+  'devices.gateLogin':
+    'Inicia sesión o regístrate primero para conectar el rodillo, la banda de FC o el puente WiFi.',
+  'devices.helpTrainer':
+    'Tras iniciar sesión, empareja un rodillo FTMS o usa el rodillo demo.',
+  'devices.helpHr': 'Tras iniciar sesión, conecta una banda de frecuencia cardíaca Bluetooth.',
+  'devices.helpWifi': 'Tras iniciar sesión, comprueba el puente local WiFi/ANT+.',
   'auth.login': 'Entrar',
   'auth.register': 'Registrarse',
   'auth.displayName': 'Nombre visible',
@@ -116,15 +130,16 @@ export const es: Messages = {
   'route.alreadySaved': 'Este resumen ya está guardado',
   'route.saved': 'Resumen guardado (#{{id}})',
   'route.gateNoApi':
-    'Crear rutas requiere una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
-  'route.gateLogin': 'Inicia sesión o regístrate para elegir inicio/fin y crear una ruta.',
+    'Rutas y dispositivos requieren una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
+  'route.gateLogin':
+    'Inicia sesión o regístrate para conectar dispositivos, elegir inicio/fin y crear una ruta.',
   'route.gateCta': 'Abrir cuenta',
 
   'map.pickBanner': 'Toca el mapa para el punto {{point}}',
   'map.followBanner': 'Seguir carretera · cámara 3D',
   'map.followMapillary': ' · Mapillary on',
   'map.followGroup': ' · Mapa de grupo (sin street view)',
-  'map.lockedBanner': 'Inicia sesión para fijar A–B en el mapa',
+  'map.lockedBanner': 'Inicia sesión para conectar dispositivos y fijar A–B en el mapa',
 
   'group.title': 'Salida en grupo',
   'group.subtitle': 'Comparte una ruta A→B. Hasta 20 ciclistas en el mapa a color.',

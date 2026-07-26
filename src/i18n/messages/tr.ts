@@ -5,6 +5,11 @@ export const tr: Messages = {
   'app.subtitle':
     'FTMS Bluetooth trainer, nabız ve gerçek yol eğimi — önce harita, sonra sürüş.',
   'lang.label': 'Dil',
+  'shell.controls': 'Cihazlar ve hesap',
+  'shell.menu': 'Menü',
+  'shell.close': 'Kapat',
+  'shell.closeControls': 'Kontrolleri kapat',
+  'shell.account': 'Hesap',
 
   'browser.title': 'Tarayıcı',
   'bt.noBrowser': 'Bluetooth yalnızca tarayıcıda kullanılabilir.',
@@ -54,9 +59,17 @@ export const tr: Messages = {
 
   'auth.cloudTitle': 'Bulut profil',
   'auth.cloudDisabled':
-    'Rota oluşturmak için bulut hesabı gerekir. Pi API’niz için VITE_API_URL ayarlayın, sonra kayıt olun veya giriş yapın.',
+    'Cihaz bağlamak ve rota oluşturmak için bulut hesabı gerekir. Pi API’niz için VITE_API_URL ayarlayın, sonra kayıt olun veya giriş yapın.',
   'auth.accountTitle': 'Hesap',
-  'auth.accountHint': 'Haritada A–B seçmek ve rota oluşturmak için önce giriş yapın veya kayıt olun.',
+  'auth.accountHint':
+    'Cihaz bağlamak ve haritada A–B seçip rota oluşturmak için önce giriş yapın veya kayıt olun.',
+  'devices.gateNoApi':
+    'Cihaz bağlantıları için bulut hesabı gerekir. Pi API için VITE_API_URL ayarlayın, sonra kayıt olun.',
+  'devices.gateLogin':
+    'Trainer, nabız kayışı veya WiFi köprüsü bağlamak için önce giriş yapın veya kayıt olun.',
+  'devices.helpTrainer': 'Giriş yaptıktan sonra FTMS bisiklet trainer’ı eşleştirin veya demo trainer kullanın.',
+  'devices.helpHr': 'Giriş yaptıktan sonra Bluetooth nabız kayışını bağlayın.',
+  'devices.helpWifi': 'Giriş yaptıktan sonra yerel WiFi/ANT+ köprüsünü tarayın.',
   'auth.login': 'Giriş',
   'auth.register': 'Kayıt',
   'auth.displayName': 'Görünen ad',
@@ -115,15 +128,16 @@ export const tr: Messages = {
   'route.alreadySaved': 'Bu özet zaten kaydedildi',
   'route.saved': 'Özet kaydedildi (#{{id}})',
   'route.gateNoApi':
-    'Rota oluşturmak için bulut hesabı gerekir. Pi API için VITE_API_URL ayarlayın, sonra kayıt olun.',
-  'route.gateLogin': 'Başlangıç/bitiş seçmek ve rota oluşturmak için giriş yapın veya kayıt olun.',
+    'Rota ve cihazlar için bulut hesabı gerekir. Pi API için VITE_API_URL ayarlayın, sonra kayıt olun.',
+  'route.gateLogin':
+    'Cihaz bağlamak, başlangıç/bitiş seçmek ve rota oluşturmak için giriş yapın veya kayıt olun.',
   'route.gateCta': 'Hesabı aç',
 
   'map.pickBanner': 'Nokta {{point}} için haritaya dokunun',
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',
   'map.followMapillary': ' · Mapillary açık',
   'map.followGroup': ' · Grup haritası (sokak görüntüsü yok)',
-  'map.lockedBanner': 'Haritada A–B seçmek için giriş yapın',
+  'map.lockedBanner': 'Cihaz bağlamak ve haritada A–B seçmek için giriş yapın',
 
   'group.title': 'Grup sürüşü',
   'group.subtitle': 'A→B rotasını paylaşın. Renkli haritada en fazla 20 sürücü.',

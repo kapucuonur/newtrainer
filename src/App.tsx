@@ -113,6 +113,7 @@ export default function App() {
   const [joinCode, setJoinCode] = useState('');
   const [groupBusy, setGroupBusy] = useState(false);
   const [groupMessage, setGroupMessage] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   const roomSocketRef = useRef<RoomSocket | null>(null);
   const roomRef = useRef<Room | null>(null);
   const groupStartRef = useRef(false);
@@ -120,8 +121,11 @@ export default function App() {
 
   const cloudEnabled = isCloudApiEnabled();
   const canPlanRoute = Boolean(cloudEnabled && user);
+  const canUseDevices = canPlanRoute;
   const inGroup = Boolean(room && room.status !== 'ended');
   const groupMode = inGroup;
+  const immersiveRide =
+    telemetry.phase === 'riding' || telemetry.phase === 'paused';
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -175,6 +179,44 @@ export default function App() {
     }
     setPickMode((prev) => prev ?? 'A');
   }, [canPlanRoute]);
+
+  useEffect(() => {
+    if (canUseDevices) return;
+    let cancelled = false;
+    void (async () => {
+      const trainer = activeTrainerRef.current;
+      if (trainer && trainer.getState() !== 'disconnected') {
+        try {
+          await trainer.disconnect();
+        } catch {
+          // ignore disconnect errors while locking devices
+        }
+      }
+      if (cancelled) return;
+      trainerUnsubRef.current?.();
+      trainerUnsubRef.current = null;
+      activeTrainerRef.current = null;
+      engineRef.current.attachTrainer(null);
+      setUsingMock(false);
+      setTrainerState('disconnected');
+      setTrainerName(t('trainer.defaultName'));
+
+      if (hrRef.current.getState() !== 'disconnected') {
+        try {
+          await hrRef.current.disconnect();
+        } catch {
+          // ignore
+        }
+      }
+      if (cancelled) return;
+      setHrBpm(null);
+      engineRef.current.setHeartRate(null);
+      setHrName(t('hr.defaultName'));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canUseDevices, t]);
 
   useEffect(() => {
     if (telemetry.phase === 'finished') {
@@ -310,6 +352,7 @@ export default function App() {
   }, []);
 
   const connectFtms = async () => {
+    if (!canUseDevices) return;
     try {
       setRouteError(null);
       if (usingMock && mockRef.current.getState() === 'connected') {
@@ -324,6 +367,7 @@ export default function App() {
   };
 
   const useMock = async () => {
+    if (!canUseDevices) return;
     try {
       setRouteError(null);
       const current = activeTrainerRef.current;
@@ -352,6 +396,7 @@ export default function App() {
   };
 
   const connectHr = async () => {
+    if (!canUseDevices) return;
     try {
       setRouteError(null);
       await hrRef.current.connect();
@@ -434,16 +479,33 @@ export default function App() {
   };
 
   const onProbeWifi = async () => {
+    if (!canUseDevices) return;
     const status = await probeWifiBridge();
     setWifiCode(status.code);
   };
 
   const onOpenAccount = () => {
-    document.getElementById('account-panel')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-    });
+    setPanelOpen(true);
+    window.setTimeout(() => {
+      document.getElementById('account-panel')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }, 80);
   };
+
+  useEffect(() => {
+    if (immersiveRide) setPanelOpen(false);
+  }, [immersiveRide]);
+
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPanelOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [panelOpen]);
 
   const rideLabel = useMemo(() => {
     if (telemetry.phase === 'riding') return t('phase.riding');
@@ -457,6 +519,12 @@ export default function App() {
     ? t('route.gateNoApi')
     : !user
       ? t('route.gateLogin')
+      : null;
+
+  const deviceGateMessage = !cloudEnabled
+    ? t('devices.gateNoApi')
+    : !user
+      ? t('devices.gateLogin')
       : null;
 
   const onDownloadFit = () => {
@@ -745,9 +813,53 @@ export default function App() {
 
   const hideSoloStart = Boolean(room && room.status === 'lobby');
 
+  const shellClass = [
+    'app-shell',
+    panelOpen ? 'panel-open' : '',
+    immersiveRide ? 'app-shell-immersive' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className="app-shell">
+    <div className={shellClass} data-phase={telemetry.phase}>
+      <button
+        type="button"
+        className="shell-backdrop"
+        aria-label={t('shell.closeControls')}
+        tabIndex={panelOpen ? 0 : -1}
+        onClick={() => setPanelOpen(false)}
+      />
+
+      <header className="mobile-chrome">
+        <button
+          type="button"
+          className="btn btn-secondary mobile-chrome-btn"
+          aria-expanded={panelOpen}
+          aria-controls="connection-panel"
+          onClick={() => setPanelOpen((open) => !open)}
+        >
+          {panelOpen ? t('shell.close') : t('shell.menu')}
+        </button>
+        <div className="mobile-chrome-brand">
+          <span className="brand-mark">ROADLAB</span>
+          <div className="live-pill" data-phase={telemetry.phase}>
+            <span className="live-dot" />
+            {rideLabel}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost mobile-chrome-btn"
+          onClick={onOpenAccount}
+        >
+          {t('shell.account')}
+        </button>
+      </header>
+
       <ConnectionPanel
+        devicesEnabled={canUseDevices}
+        deviceGateMessage={deviceGateMessage}
         trainerState={trainerState}
         trainerName={trainerName}
         hrState={hrState}
@@ -763,6 +875,8 @@ export default function App() {
         onDisconnectHr={() => void disconnectHr()}
         onProbeWifi={() => void onProbeWifi()}
         onMockEffort={setMockEffort}
+        onOpenAccount={onOpenAccount}
+        onClosePanel={() => setPanelOpen(false)}
       >
         <AuthPanel
           user={user}
@@ -793,7 +907,7 @@ export default function App() {
 
       <main className="main-stage">
         <div className="stage-top">
-          <div className="live-pill" data-phase={telemetry.phase}>
+          <div className="live-pill stage-live-pill" data-phase={telemetry.phase}>
             <span className="live-dot" />
             {rideLabel}
           </div>
@@ -828,21 +942,22 @@ export default function App() {
           />
         </div>
 
-        <RouteMap
-          pointA={pointA}
-          pointB={pointB}
-          route={route}
-          rider={telemetry.position}
-          ridePhase={telemetry.phase}
-          distanceMeters={telemetry.distanceMeters}
-          onPick={onPick}
-          pickMode={pickMode}
-          pickingEnabled={canPlanRoute && !inGroup}
-          peers={mapPeers}
-          groupMode={groupMode}
-        />
-
-        <RideHUD telemetry={telemetry} />
+        <div className="viewer-stage">
+          <RouteMap
+            pointA={pointA}
+            pointB={pointB}
+            route={route}
+            rider={telemetry.position}
+            ridePhase={telemetry.phase}
+            distanceMeters={telemetry.distanceMeters}
+            onPick={onPick}
+            pickMode={pickMode}
+            pickingEnabled={canPlanRoute && !inGroup}
+            peers={mapPeers}
+            groupMode={groupMode}
+          />
+          <RideHUD telemetry={telemetry} />
+        </div>
 
         <footer className="app-footer">
           <span>{t('footer.protocols')}</span>

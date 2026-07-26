@@ -5,6 +5,11 @@ export const no: Messages = {
   'app.subtitle':
     'FTMS Bluetooth-trainer, puls og ekte veistigning — kart først, deretter sykling.',
   'lang.label': 'Språk',
+  'shell.controls': 'Enheter og konto',
+  'shell.menu': 'Meny',
+  'shell.close': 'Lukk',
+  'shell.closeControls': 'Lukk kontroller',
+  'shell.account': 'Konto',
 
   'browser.title': 'Nettleser',
   'bt.noBrowser': 'Bluetooth er bare tilgjengelig i en nettleser.',
@@ -54,9 +59,18 @@ export const no: Messages = {
 
   'auth.cloudTitle': 'Skyprofil',
   'auth.cloudDisabled':
-    'Skykonto kreves for å bygge ruter. Sett VITE_API_URL til Pi-API-en din, og registrer deg eller logg inn.',
+    'Skykonto kreves for å koble til enheter og bygge ruter. Sett VITE_API_URL til Pi-API-en din, og registrer deg eller logg inn.',
   'auth.accountTitle': 'Konto',
-  'auth.accountHint': 'Logg inn eller registrer deg først for å velge A–B på kartet og bygge en rute.',
+  'auth.accountHint':
+    'Logg inn eller registrer deg først for å koble til enheter og velge A–B på kartet.',
+  'devices.gateNoApi':
+    'Enhetstilkoblinger krever skykonto. Konfigurer VITE_API_URL til Pi-API-en din og registrer deg.',
+  'devices.gateLogin':
+    'Logg inn eller registrer deg først for å koble til trener, pulsbånd eller WiFi-bro.',
+  'devices.helpTrainer':
+    'Etter innlogging par en FTMS-sykkeltrener eller bruk demo-treneren.',
+  'devices.helpHr': 'Etter innlogging koble til et Bluetooth-pulsbånd.',
+  'devices.helpWifi': 'Etter innlogging sjekk den lokale WiFi/ANT+-broen.',
   'auth.login': 'Logg inn',
   'auth.register': 'Registrer',
   'auth.displayName': 'Visningsnavn',
@@ -116,15 +130,16 @@ export const no: Messages = {
   'route.alreadySaved': 'Dette sammendraget er allerede lagret',
   'route.saved': 'Sammendrag lagret (#{{id}})',
   'route.gateNoApi':
-    'Rutebygging krever skykonto. Konfigurer VITE_API_URL til Pi-API-en din og registrer deg.',
-  'route.gateLogin': 'Logg inn eller registrer deg for å velge start/slutt og bygge en rute.',
+    'Ruter og enheter krever skykonto. Konfigurer VITE_API_URL til Pi-API-en din og registrer deg.',
+  'route.gateLogin':
+    'Logg inn eller registrer deg for å koble til enheter, velge start/slutt og bygge en rute.',
   'route.gateCta': 'Åpne konto',
 
   'map.pickBanner': 'Trykk på kartet for punkt {{point}}',
   'map.followBanner': 'Følg vei · 3D-kamera',
   'map.followMapillary': ' · Mapillary på',
   'map.followGroup': ' · Gruppekart (ingen street view)',
-  'map.lockedBanner': 'Logg inn for å sette A–B på kartet',
+  'map.lockedBanner': 'Logg inn for å koble til enheter og sette A–B på kartet',
 
   'group.title': 'Gruppetur',
   'group.subtitle': 'Del en A→B-rute. Opptil 20 ryttere på det fargerike kartet.',

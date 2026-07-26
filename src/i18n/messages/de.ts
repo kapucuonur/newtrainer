@@ -5,6 +5,11 @@ export const de: Messages = {
   'app.subtitle':
     'FTMS-Bluetooth-Trainer, Herzfrequenz und echte Straßensteigung — zuerst Karte, dann fahren.',
   'lang.label': 'Sprache',
+  'shell.controls': 'Geräte und Konto',
+  'shell.menu': 'Menü',
+  'shell.close': 'Schließen',
+  'shell.closeControls': 'Steuerung schließen',
+  'shell.account': 'Konto',
 
   'browser.title': 'Browser',
   'bt.noBrowser': 'Bluetooth ist nur im Browser verfügbar.',
@@ -54,9 +59,18 @@ export const de: Messages = {
 
   'auth.cloudTitle': 'Cloud-Profil',
   'auth.cloudDisabled':
-    'Für Routen ist ein Cloud-Konto nötig. Setzen Sie VITE_API_URL auf Ihre Pi-API, dann registrieren oder anmelden.',
+    'Für Geräte und Routen ist ein Cloud-Konto nötig. Setzen Sie VITE_API_URL auf Ihre Pi-API, dann registrieren oder anmelden.',
   'auth.accountTitle': 'Konto',
-  'auth.accountHint': 'Melden Sie sich zuerst an oder registrieren Sie sich, um A–B auf der Karte zu setzen und eine Route zu bauen.',
+  'auth.accountHint':
+    'Melden Sie sich zuerst an oder registrieren Sie sich, um Geräte zu verbinden und A–B auf der Karte zu setzen.',
+  'devices.gateNoApi':
+    'Geräteverbindungen brauchen ein Cloud-Konto. Konfigurieren Sie VITE_API_URL für Ihre Pi-API, dann registrieren.',
+  'devices.gateLogin':
+    'Melden Sie sich zuerst an oder registrieren Sie sich, um Trainer, Herzfrequenzgurt oder WiFi-Bridge zu verbinden.',
+  'devices.helpTrainer':
+    'Nach der Anmeldung FTMS-Rollentrainer koppeln oder Demo-Trainer nutzen.',
+  'devices.helpHr': 'Nach der Anmeldung einen Bluetooth-Herzfrequenzgurt verbinden.',
+  'devices.helpWifi': 'Nach der Anmeldung die lokale WiFi/ANT+-Bridge prüfen.',
   'auth.login': 'Anmelden',
   'auth.register': 'Registrieren',
   'auth.displayName': 'Anzeigename',
@@ -115,15 +129,16 @@ export const de: Messages = {
   'route.alreadySaved': 'Diese Zusammenfassung ist bereits gespeichert',
   'route.saved': 'Zusammenfassung gespeichert (#{{id}})',
   'route.gateNoApi':
-    'Routenbau braucht ein Cloud-Konto. Konfigurieren Sie VITE_API_URL für Ihre Pi-API, dann registrieren.',
-  'route.gateLogin': 'Melden Sie sich an oder registrieren Sie sich, um Start/Ziel zu setzen und eine Route zu bauen.',
+    'Routen und Geräte brauchen ein Cloud-Konto. Konfigurieren Sie VITE_API_URL für Ihre Pi-API, dann registrieren.',
+  'route.gateLogin':
+    'Melden Sie sich an oder registrieren Sie sich, um Geräte zu verbinden, Start/Ziel zu setzen und eine Route zu bauen.',
   'route.gateCta': 'Konto öffnen',
 
   'map.pickBanner': 'Tippen Sie auf die Karte für Punkt {{point}}',
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',
   'map.followMapillary': ' · Mapillary an',
   'map.followGroup': ' · Gruppenkarte (kein Street View)',
-  'map.lockedBanner': 'Zum Setzen von A–B anmelden',
+  'map.lockedBanner': 'Anmelden, um Geräte zu verbinden und A–B auf der Karte zu setzen',
 
   'group.title': 'Gruppenfahrt',
   'group.subtitle': 'A→B-Route teilen. Bis zu 20 Fahrer auf der farbigen Karte.',

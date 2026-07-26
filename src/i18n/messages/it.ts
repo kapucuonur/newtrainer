@@ -5,6 +5,11 @@ export const it: Messages = {
   'app.subtitle':
     'Trainer FTMS Bluetooth, frequenza cardiaca e pendenza reale — prima la mappa, poi la corsa.',
   'lang.label': 'Lingua',
+  'shell.controls': 'Dispositivi e account',
+  'shell.menu': 'Menu',
+  'shell.close': 'Chiudi',
+  'shell.closeControls': 'Chiudi controlli',
+  'shell.account': 'Account',
 
   'browser.title': 'Browser',
   'bt.noBrowser': 'Bluetooth è disponibile solo nel browser.',
@@ -54,9 +59,18 @@ export const it: Messages = {
 
   'auth.cloudTitle': 'Profilo cloud',
   'auth.cloudDisabled':
-    'Per costruire percorsi serve un account cloud. Imposta VITE_API_URL sulla tua API Pi, poi registrati o accedi.',
+    'Per collegare dispositivi e costruire percorsi serve un account cloud. Imposta VITE_API_URL sulla tua API Pi, poi registrati o accedi.',
   'auth.accountTitle': 'Account',
-  'auth.accountHint': 'Accedi o registrati prima di scegliere A–B sulla mappa e costruire un percorso.',
+  'auth.accountHint':
+    'Accedi o registrati prima di collegare i dispositivi e scegliere A–B sulla mappa.',
+  'devices.gateNoApi':
+    'Per collegare i dispositivi serve un account cloud. Configura VITE_API_URL verso la tua API Pi, poi registrati.',
+  'devices.gateLogin':
+    'Accedi o registrati prima di collegare trainer, fascia cardio o bridge WiFi.',
+  'devices.helpTrainer':
+    'Dopo l’accesso accoppia un trainer FTMS o usa il trainer demo.',
+  'devices.helpHr': 'Dopo l’accesso collega una fascia cardio Bluetooth.',
+  'devices.helpWifi': 'Dopo l’accesso verifica il bridge locale WiFi/ANT+.',
   'auth.login': 'Accedi',
   'auth.register': 'Registrati',
   'auth.displayName': 'Nome visualizzato',
@@ -116,15 +130,16 @@ export const it: Messages = {
   'route.alreadySaved': 'Questo riepilogo è già salvato',
   'route.saved': 'Riepilogo salvato (#{{id}})',
   'route.gateNoApi':
-    'Per i percorsi serve un account cloud. Configura VITE_API_URL verso la tua API Pi, poi registrati.',
-  'route.gateLogin': 'Accedi o registrati per scegliere inizio/fine e creare un percorso.',
+    'Per percorsi e dispositivi serve un account cloud. Configura VITE_API_URL verso la tua API Pi, poi registrati.',
+  'route.gateLogin':
+    'Accedi o registrati per collegare i dispositivi, scegliere inizio/fine e creare un percorso.',
   'route.gateCta': 'Apri Account',
 
   'map.pickBanner': 'Tocca la mappa per il punto {{point}}',
   'map.followBanner': 'Segui strada · camera 3D',
   'map.followMapillary': ' · Mapillary on',
   'map.followGroup': ' · Mappa di gruppo (niente street view)',
-  'map.lockedBanner': 'Accedi per impostare A–B sulla mappa',
+  'map.lockedBanner': 'Accedi per collegare i dispositivi e impostare A–B sulla mappa',
 
   'group.title': 'Uscita di gruppo',
   'group.subtitle': 'Condividi un percorso A→B. Fino a 20 rider sulla mappa colorata.',

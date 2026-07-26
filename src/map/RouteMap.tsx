@@ -204,7 +204,18 @@ export function RouteMap({
     });
 
     mapRef.current = map;
+
+    const container = containerRef.current;
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            map.resize();
+          })
+        : null;
+    resizeObserver?.observe(container);
+
     return () => {
+      resizeObserver?.disconnect();
       markerA.current?.remove();
       markerB.current?.remove();
       markerRider.current?.remove();
