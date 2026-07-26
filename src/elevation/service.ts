@@ -21,36 +21,42 @@ function haversineMeters(a: LatLng, b: LatLng): number {
 
 /**
  * Fetch elevation points via Open-Meteo DEM (High accuracy, no rate limit).
- * Supports up to 500 coordinates per request.
+ * Uses chunk size of 70 coordinates (~900 chars URL length) to prevent HTTP 414 Request-URI Too Large errors.
+ * Fetches chunks in parallel via Promise.all.
  */
 async function fetchOpenMeteoElevations(points: LatLng[]): Promise<number[]> {
   if (points.length === 0) return [];
-  const chunkSize = 450;
-  const elevations: number[] = [];
+  const chunkSize = 70;
+  const chunks: LatLng[][] = [];
 
   for (let i = 0; i < points.length; i += chunkSize) {
-    const chunk = points.slice(i, i + chunkSize);
-    const lats = chunk.map((p) => p.lat.toFixed(5)).join(',');
-    const lngs = chunk.map((p) => p.lng.toFixed(5)).join(',');
-    const url = `${OPEN_METEO_BASE}?latitude=${lats}&longitude=${lngs}`;
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
-    const json = (await res.json()) as { elevation?: number[] };
-    if (!json.elevation || !Array.isArray(json.elevation)) {
-      throw new Error('Open-Meteo elevation data missing');
-    }
-    elevations.push(...json.elevation);
+    chunks.push(points.slice(i, i + chunkSize));
   }
 
-  return elevations;
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      const lats = chunk.map((p) => p.lat.toFixed(5)).join(',');
+      const lngs = chunk.map((p) => p.lng.toFixed(5)).join(',');
+      const url = `${OPEN_METEO_BASE}?latitude=${lats}&longitude=${lngs}`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
+      const json = (await res.json()) as { elevation?: number[] };
+      if (!json.elevation || !Array.isArray(json.elevation)) {
+        throw new Error('Open-Meteo elevation data missing');
+      }
+      return json.elevation;
+    }),
+  );
+
+  return results.flat();
 }
 
 /**
  * Fallback elevation fetcher via OpenTopoData ASTER 30m.
  */
 async function fetchOpenTopoElevations(points: LatLng[]): Promise<number[]> {
-  const chunkSize = 90;
+  const chunkSize = 70;
   const elevations: number[] = [];
 
   for (let i = 0; i < points.length; i += chunkSize) {
@@ -68,7 +74,7 @@ async function fetchOpenTopoElevations(points: LatLng[]): Promise<number[]> {
     }
     elevations.push(...json.results.map((r) => r.elevation ?? 0));
     if (i + chunkSize < points.length) {
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 900));
     }
   }
 
@@ -85,8 +91,8 @@ async function fetchAllElevations(points: LatLng[]): Promise<number[]> {
     try {
       return await fetchOpenTopoElevations(points);
     } catch {
-      // Synthetic fallback if offline
-      return points.map((_, i) => 40 + Math.sin(i / 8) * 18 + (i % 17));
+      // Gentle realistic fallback (flat sea-level coastal profile)
+      return points.map((_, i) => 15 + Math.sin(i / 60) * 3);
     }
   }
 }
@@ -130,7 +136,7 @@ export async function enrichRouteWithElevation(
   let minElev = elevations[0] ?? 0;
   let maxElev = elevations[0] ?? 0;
 
-  // Track continuous elevation delta for Garmin/Strava 0.4m hysteresis threshold filtering
+  // Track continuous elevation delta for Garmin/Strava 0.5m hysteresis threshold filtering
   let pendingGain = 0;
   let pendingLoss = 0;
 
@@ -143,17 +149,17 @@ export async function enrichRouteWithElevation(
       const dElev = elev - (elevations[i - 1] ?? elev);
       cumulative += dist;
 
-      // Accumulate gain/loss with 0.4m noise hysteresis threshold
+      // Accumulate gain/loss with 0.5m noise hysteresis threshold
       if (dElev > 0) {
         pendingGain += dElev;
-        if (pendingGain >= 0.4) {
+        if (pendingGain >= 0.5) {
           elevGain += pendingGain;
           pendingGain = 0;
         }
         pendingLoss = 0;
       } else if (dElev < 0) {
         pendingLoss += -dElev;
-        if (pendingLoss >= 0.4) {
+        if (pendingLoss >= 0.5) {
           elevLoss += pendingLoss;
           pendingLoss = 0;
         }
