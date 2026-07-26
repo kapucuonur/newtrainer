@@ -54,12 +54,17 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     body = JSON.stringify(options.json);
   }
 
-  const res = await fetch(`${base}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body,
-    credentials: 'include',
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path}`, {
+      method: options.method ?? 'GET',
+      headers,
+      body,
+      credentials: 'include',
+    });
+  } catch {
+    throw new ApiError(0, 'Network error — is the Pi API reachable?');
+  }
 
   const text = await res.text();
   let data: unknown = null;
@@ -78,7 +83,14 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
       'error' in data &&
       typeof (data as { error: unknown }).error === 'string'
         ? (data as { error: string }).error
-        : `Request failed (${res.status})`;
+        : data &&
+            typeof data === 'object' &&
+            'message' in data &&
+            typeof (data as { message: unknown }).message === 'string'
+          ? (data as { message: string }).message
+          : res.status === 413
+            ? 'Route payload too large for the API'
+            : `Request failed (${res.status})`;
     const code =
       data &&
       typeof data === 'object' &&

@@ -50,8 +50,8 @@ const roomHub = new RoomHub();
 
 const app = Fastify({
   logger: true,
-  // Summary JSON only — no FIT/GPX uploads (keeps Pi SD card light).
-  bodyLimit: 256 * 1024,
+  // Room create sends enriched route samples (long rides can exceed 256 KiB).
+  bodyLimit: 2 * 1024 * 1024,
 });
 
 await app.register(cors, {

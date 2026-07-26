@@ -31,6 +31,7 @@ import { useT, type MessageKey } from './i18n';
 import { RouteMap, type MapPeer } from './map/RouteMap';
 import { parseRoomRoute } from './routing/fromRoomRoute';
 import { fetchRouteAlternatives } from './routing/osrm';
+import { toRoomRoutePayload } from './routing/toRoomRoute';
 import type { EnrichedRoute, LatLng, RouteResult } from './routing/types';
 import {
   MAX_WAYPOINTS,
@@ -748,11 +749,18 @@ export default function App() {
   };
 
   const onCreateRoom = async () => {
-    if (!user || !route) return;
+    if (!user) {
+      setGroupMessage(t('group.needLogin'));
+      return;
+    }
+    if (!route) {
+      setGroupMessage(t('group.needRoute'));
+      return;
+    }
     setGroupBusy(true);
     setGroupMessage(null);
     try {
-      const created = await createRoom(route);
+      const created = await createRoom(toRoomRoutePayload(route));
       setRoom(created);
       applyRoomRoute(created);
       connectRoomSocket(created.id);

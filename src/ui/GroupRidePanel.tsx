@@ -53,13 +53,19 @@ export function GroupRidePanel({
           <button
             type="button"
             className="btn btn-accent btn-sm"
-            disabled={!canCreate || busy}
+            disabled={busy}
+            aria-disabled={!canCreate || busy}
+            title={!canCreate ? t('group.needRoute') : undefined}
             onClick={onCreate}
           >
             <Plus className="icon-xs" />
             {busy ? t('group.working') : t('group.create')}
           </button>
-          {!canCreate && <p className="muted-text">{t('group.needRoute')}</p>}
+          {!canCreate && (
+            <p className="group-need-route" role="status">
+              {t('group.needRoute')}
+            </p>
+          )}
 
           <div className="group-join-row">
             <input

@@ -505,6 +505,7 @@ select {
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -528,6 +529,17 @@ select {
 .btn-accent:hover:not(:disabled) {
   background: #33f3ff;
   box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+}
+
+/* Accent teal must not look "on" while blocked/disabled (Group ride Create room). */
+.btn-accent:disabled,
+.btn-accent[aria-disabled='true'] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--muted);
+  border-color: var(--line);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -1633,6 +1645,14 @@ select {
   font-size: 0.75rem;
   color: var(--muted);
   margin: 0;
+}
+
+.group-need-route {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--warn);
+  line-height: 1.35;
 }
 
 .group-join-row {
