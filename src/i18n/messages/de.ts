@@ -112,7 +112,7 @@ export const de: Messages = {
   'route.waypointCount': '{{count}} / {{max}} Wegpunkte',
   'route.maxWaypoints': 'Maximal {{n}} Wegpunkte',
   'route.oneWay': 'Einfach',
-  'route.roundTripShort': 'Zurück nach A',
+  'route.roundTripShort': 'Gleicher Weg zurück',
   'route.searchPlaceholder': 'Stadt, Adresse oder Berg suchen — als nächsten Wegpunkt hinzufügen',
   'route.build': 'Route bauen',
   'route.building': 'Baut…',
@@ -148,7 +148,7 @@ export const de: Messages = {
   'route.selected': 'Ausgewählt',
   'route.ascentPending': 'Anstieg…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Hin und zurück (zurück nach A)',
+  'route.roundTrip': 'Hin und zurück (gleicher Weg nach A)',
 
   'map.pickBanner': 'Tippen Sie auf die Karte für {{point}}',
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',

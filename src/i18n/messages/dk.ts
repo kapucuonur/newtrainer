@@ -113,7 +113,7 @@ export const dk: Messages = {
   'route.waypointCount': '{{count}} / {{max}} vejpoints',
   'route.maxWaypoints': 'Maks. {{n}} vejpoints',
   'route.oneWay': 'En vej',
-  'route.roundTripShort': 'Tilbage til A',
+  'route.roundTripShort': 'Samme vej tilbage',
   'route.searchPlaceholder': 'Søg by, adresse eller bjerg — tilføjes som næste vejpoint',
   'route.build': 'Byg rute',
   'route.building': 'Bygger…',
@@ -149,7 +149,7 @@ export const dk: Messages = {
   'route.selected': 'Valgt',
   'route.ascentPending': 'Stigning…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Tur-retur (tilbage til A)',
+  'route.roundTrip': 'Tur-retur (samme vej til A)',
 
   'map.pickBanner': 'Tryk på kortet for at placere {{point}}',
   'map.followBanner': 'Følg vej · 3D-kamera',

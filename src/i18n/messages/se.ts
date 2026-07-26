@@ -113,7 +113,7 @@ export const se: Messages = {
   'route.waypointCount': '{{count}} / {{max}} vägpunkter',
   'route.maxWaypoints': 'Max {{n}} vägpunkter',
   'route.oneWay': 'Enkelväg',
-  'route.roundTripShort': 'Tillbaka till A',
+  'route.roundTripShort': 'Samma väg tillbaka',
   'route.searchPlaceholder': 'Sök stad, adress eller berg — läggs till som nästa vägpunkt',
   'route.build': 'Bygg rutt',
   'route.building': 'Bygger…',
@@ -149,7 +149,7 @@ export const se: Messages = {
   'route.selected': 'Vald',
   'route.ascentPending': 'Stigning…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Tur och retur (tillbaka till A)',
+  'route.roundTrip': 'Tur och retur (samma väg till A)',
 
   'map.pickBanner': 'Tryck på kartan för att placera {{point}}',
   'map.followBanner': 'Följ väg · 3D-kamera',

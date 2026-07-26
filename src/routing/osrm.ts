@@ -66,15 +66,34 @@ function parseOsrmRoute(route: OsrmRouteJson): RouteResult {
   };
 }
 
-function buildOsrmPath(waypoints: LatLng[], isRoundTrip: boolean): LatLng[] {
-  if (waypoints.length < MIN_WAYPOINTS) return waypoints;
-  if (isRoundTrip) return [...waypoints, waypoints[0]];
-  return waypoints;
+/**
+ * Build an out-and-back route on the exact same roads:
+ * outbound geometry concatenated with its reverse (skip duplicate turnaround point).
+ * Distance and duration are doubled — no second OSRM request for the return.
+ */
+export function asSamePathRoundTrip(route: RouteResult): RouteResult {
+  if (route.coordinates.length < 2) return route;
+
+  const returnCoords = route.coordinates.slice(0, -1).reverse();
+  const coordinates = [...route.coordinates, ...returnCoords];
+  const geometryCoords = coordinates.map((c) => [c.lng, c.lat]);
+
+  return {
+    ...route,
+    coordinates,
+    distanceMeters: route.distanceMeters * 2,
+    durationSeconds: route.durationSeconds * 2,
+    geometry: {
+      type: 'LineString',
+      coordinates: geometryCoords,
+    },
+  };
 }
 
 /**
  * Fetch a route through ordered waypoints (A→B→C→…).
- * Round-trip appends start at the end. Alternatives only when exactly 2 points.
+ * Round-trip mirrors the outbound polyline back to A (same roads) — OSRM is
+ * only asked for the outbound path. Alternatives only when exactly 2 points.
  * Falls back to a single straight polyline on failure.
  */
 export async function fetchRouteAlternatives(
@@ -85,8 +104,7 @@ export async function fetchRouteAlternatives(
     return [];
   }
 
-  const pathPoints = buildOsrmPath(waypoints, isRoundTrip);
-  const path = pathPoints.map((p) => `${p.lng},${p.lat}`).join(';');
+  const path = waypoints.map((p) => `${p.lng},${p.lat}`).join(';');
   const wantAlts = waypoints.length === 2;
   const url =
     `${OSRM_BASE}/route/v1/cycling/${path}` +
@@ -110,9 +128,10 @@ export async function fetchRouteAlternatives(
       .map(parseOsrmRoute);
 
     if (parsed.length === 0) throw new Error('OSRM returned no route');
-    return parsed;
+    return isRoundTrip ? parsed.map(asSamePathRoundTrip) : parsed;
   } catch {
-    return [straightFallback(pathPoints)];
+    const fallback = straightFallback(waypoints);
+    return [isRoundTrip ? asSamePathRoundTrip(fallback) : fallback];
   }
 }
 
@@ -126,7 +145,9 @@ export async function fetchRoute(
 ): Promise<RouteResult> {
   const alts = await fetchRouteAlternatives(waypoints, isRoundTrip);
   if (alts.length === 0) {
-    return straightFallback(waypoints);
+    return isRoundTrip
+      ? asSamePathRoundTrip(straightFallback(waypoints))
+      : straightFallback(waypoints);
   }
   return alts[0];
 }

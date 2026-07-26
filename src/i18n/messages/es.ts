@@ -113,7 +113,7 @@ export const es: Messages = {
   'route.waypointCount': '{{count}} / {{max}} waypoints',
   'route.maxWaypoints': 'Máximo {{n}} waypoints',
   'route.oneWay': 'Solo ida',
-  'route.roundTripShort': 'Volver a A',
+  'route.roundTripShort': 'Misma ruta de vuelta',
   'route.searchPlaceholder': 'Busca ciudad, dirección o montaña y añádelo como siguiente waypoint',
   'route.build': 'Crear ruta',
   'route.building': 'Creando…',
@@ -149,7 +149,7 @@ export const es: Messages = {
   'route.selected': 'Seleccionada',
   'route.ascentPending': 'Ascenso…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Ida y vuelta (volver a A)',
+  'route.roundTrip': 'Ida y vuelta (misma ruta a A)',
 
   'map.pickBanner': 'Toca el mapa para colocar {{point}}',
   'map.followBanner': 'Seguir carretera · cámara 3D',

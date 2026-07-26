@@ -111,7 +111,7 @@ export const tr: Messages = {
   'route.waypointCount': '{{count}} / {{max}} ara nokta',
   'route.maxWaypoints': 'En fazla {{n}} ara nokta',
   'route.oneWay': 'Tek yön',
-  'route.roundTripShort': 'A’ya dön',
+  'route.roundTripShort': 'Aynı yoldan dön',
   'route.searchPlaceholder': 'Şehir, adres veya dağ ara; sonraki ara nokta olarak ekle',
   'route.build': 'Rota oluştur',
   'route.building': 'Oluşturuluyor…',
@@ -147,7 +147,7 @@ export const tr: Messages = {
   'route.selected': 'Seçili',
   'route.ascentPending': 'Tırmanış…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Gidiş-dönüş (A’ya dön)',
+  'route.roundTrip': 'Gidiş-dönüş (aynı yoldan A’ya)',
 
   'map.pickBanner': '{{point}} noktasını yerleştirmek için haritaya dokunun',
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',

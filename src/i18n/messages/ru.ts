@@ -113,7 +113,7 @@ export const ru: Messages = {
   'route.waypointCount': '{{count}} / {{max}} точек',
   'route.maxWaypoints': 'Максимум {{n}} точек',
   'route.oneWay': 'В одну сторону',
-  'route.roundTripShort': 'Назад в A',
+  'route.roundTripShort': 'Тем же путём',
   'route.searchPlaceholder': 'Ищите город, адрес или гору — добавится следующей точкой',
   'route.build': 'Построить маршрут',
   'route.building': 'Строим…',
@@ -149,7 +149,7 @@ export const ru: Messages = {
   'route.selected': 'Выбран',
   'route.ascentPending': 'Набор…',
   'route.ascent': '↑{{gain}}м',
-  'route.roundTrip': 'Туда-обратно (вернуться в A)',
+  'route.roundTrip': 'Туда-обратно (тем же путём в A)',
 
   'map.pickBanner': 'Нажмите на карту, чтобы поставить {{point}}',
   'map.followBanner': 'Следование по дороге · 3D-камера',

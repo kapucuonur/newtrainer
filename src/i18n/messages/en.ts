@@ -109,7 +109,7 @@ export const en = {
   'route.waypointCount': '{{count}} / {{max}} waypoints',
   'route.maxWaypoints': 'Maximum {{n}} waypoints',
   'route.oneWay': 'One way',
-  'route.roundTripShort': 'Return to A',
+  'route.roundTripShort': 'Same road back',
   'route.searchPlaceholder': 'Search city, address or mountain, then add as next waypoint',
   'route.build': 'Build route',
   'route.building': 'Building…',
@@ -145,7 +145,7 @@ export const en = {
   'route.selected': 'Selected',
   'route.ascentPending': 'Ascent…',
   'route.ascent': '↑{{gain}}m',
-  'route.roundTrip': 'Round trip (return to A)',
+  'route.roundTrip': 'Round trip (same road back to A)',
 
   'map.pickBanner': 'Tap the map to place {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',
