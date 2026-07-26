@@ -85,12 +85,11 @@ You already tunnel other hostnames (`sre`, `tools`). Add one more public hostnam
 
 | Public hostname | Service |
 |-----------------|---------|
-| `api.newtrainer.trihonor.com` (önerilen) | `http://localhost:8788` |
-| veya `newtrainer-api.trihonor.com` | `http://localhost:8788` |
+| `newtrainer-api.trihonor.com` | `http://localhost:8788` |
 
 Zero Trust → Networks → Tunnels → your tunnel → Public Hostname → Add:
 
-- **Subdomain:** `api.newtrainer` (or `newtrainer-api`)
+- **Subdomain:** `newtrainer-api`
 - **Domain:** `trihonor.com`
 - **Type:** HTTP
 - **URL:** `localhost:8788`
@@ -98,7 +97,7 @@ Zero Trust → Networks → Tunnels → your tunnel → Public Hostname → Add:
 DNS will be managed by Cloudflare. After save:
 
 ```bash
-curl -s https://api.newtrainer.trihonor.com/api/health
+curl -s https://newtrainer-api.trihonor.com/api/health
 ```
 
 Production `.env` on Pi:
@@ -118,7 +117,7 @@ In the ROADLAB Vercel project:
 
 | Name | Value |
 |------|--------|
-| `VITE_API_URL` | `https://api.newtrainer.trihonor.com` |
+| `VITE_API_URL` | `https://newtrainer-api.trihonor.com` |
 
 Redeploy the frontend after setting the variable.
 

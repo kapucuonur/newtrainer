@@ -53,8 +53,8 @@ npx tsx src/bluetooth/ftms.parse.test.ts
 Self-hosted API under [`backend/`](./backend) (Node + Fastify + SQLite). No Supabase.
 
 1. On Pi: see [`backend/README.md`](./backend/README.md) — `npm install && npm start`, systemd, Cloudflare Tunnel
-2. Tunnel hostname example: `https://api.newtrainer.trihonor.com` → `http://localhost:8788`
-3. Vercel / local env: `VITE_API_URL=https://api.newtrainer.trihonor.com`
+2. Tunnel hostname example: `https://newtrainer-api.trihonor.com` → `http://localhost:8788`
+3. Vercel / local env: `VITE_API_URL=https://newtrainer-api.trihonor.com`
 
 Without `VITE_API_URL`, the app stays local-only (Bluetooth / map / FIT+GPX download unchanged).
 
