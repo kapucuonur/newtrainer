@@ -32,8 +32,8 @@ export function ElevationProfile({
     const rangeY = yMax - yMin;
 
     const width = 800;
-    const height = 100;
-    const paddingY = 8;
+    const height = 140;
+    const paddingY = 10;
     const chartH = height - paddingY * 2;
 
     const points = samples.map((pt) => {

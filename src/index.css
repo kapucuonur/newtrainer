@@ -7,8 +7,8 @@
   --bg-3: #1b2536;
   --panel: rgba(13, 17, 26, 0.94);
   --panel-solid: #0f141f;
-  --line: rgba(94, 225, 255, 0.12);
-  --line-strong: rgba(94, 225, 255, 0.28);
+  --line: rgba(94, 225, 255, 0.14);
+  --line-strong: rgba(94, 225, 255, 0.3);
   --text: #f0f4f9;
   --muted: #8493a8;
   --accent: #00f0ff;
@@ -31,8 +31,8 @@
   --grade-steep: #ff3b30;
   --grade-down: #30d158;
 
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  --radius: 12px;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --radius: 14px;
   --radius-sm: 8px;
   --font-display: 'Oxanium', 'Segoe UI', sans-serif;
   --font-body: 'Sora', 'Segoe UI', sans-serif;
@@ -676,6 +676,60 @@ select {
   height: 100%;
 }
 
+/* High-Visibility Pro Map Pins */
+.map-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  pointer-events: auto;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
+  transition: transform 0.15s ease;
+}
+
+.map-pin:hover {
+  transform: scale(1.1);
+}
+
+.map-pin-a {
+  background: linear-gradient(135deg, #00f0ff 0%, #00b8ff 100%);
+  color: #020b12;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.85), 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.map-pin-b {
+  background: linear-gradient(135deg, #ff9f0a 0%, #ff3b30 100%);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 24px rgba(255, 59, 48, 0.85), 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.map-pin-rider {
+  background: #ffffff;
+  color: var(--accent-ink);
+  border: 2.5px solid var(--accent);
+  padding: 6px 10px;
+  font-size: 1rem;
+  border-radius: 50%;
+  box-shadow: 0 0 28px rgba(0, 240, 255, 0.95);
+  animation: pulse-rider 1.5s infinite alternate;
+}
+
+@keyframes pulse-rider {
+  from { box-shadow: 0 0 16px rgba(0, 240, 255, 0.6); }
+  to { box-shadow: 0 0 32px rgba(0, 240, 255, 1); }
+}
+
 /* Map Banners */
 .map-pick-banner,
 .map-follow-banner,
@@ -717,23 +771,87 @@ select {
   background: var(--bg-1);
 }
 
-/* Pro Ride Telemetry HUD Overlay */
-.ride-hud {
+/* Unified Bottom Dashboard Deck Container */
+.bottom-dashboard-deck {
   position: absolute;
   bottom: 16px;
   left: 16px;
   right: 16px;
   z-index: 30;
-  background: rgba(13, 17, 26, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--line);
+  background: rgba(13, 17, 26, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  padding: 12px 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow);
+}
+
+/* Elevation Profile inside Bottom Deck */
+.elevation-profile-container {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.elevation-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.profile-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.elevation-chart-wrapper {
+  width: 100%;
+  height: 85px;
+}
+
+.elevation-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.rider-pulse-ring {
+  animation: pulse-ring 1.4s infinite ease-out;
+  transform-origin: center;
+}
+
+@keyframes pulse-ring {
+  0% { r: 4px; opacity: 0.8; }
+  100% { r: 14px; opacity: 0; }
+}
+
+/* Telemetry Ride HUD inside Bottom Deck */
+.ride-hud {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: var(--shadow);
 }
 
 .hud-progress-track {
@@ -752,7 +870,7 @@ select {
 
 .hud-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px;
 }
 
@@ -760,7 +878,7 @@ select {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-sm);
@@ -768,7 +886,7 @@ select {
 
 .hud-stat-accent {
   background: rgba(0, 240, 255, 0.04);
-  border-color: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.14);
 }
 
 .hud-stat-header {
@@ -790,7 +908,7 @@ select {
 
 .hud-value {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 800;
   line-height: 1.1;
   color: #fff;
@@ -829,8 +947,8 @@ select {
 
 .hud-grade-chip {
   align-self: flex-start;
-  font-size: 0.72rem;
-  padding: 3px 10px;
+  font-size: 0.75rem;
+  padding: 4px 12px;
   border-radius: 12px;
   font-weight: 600;
 }
@@ -851,68 +969,6 @@ select {
   background: rgba(48, 209, 88, 0.15);
   color: var(--ok);
   border: 1px solid rgba(48, 209, 88, 0.3);
-}
-
-/* Elevation Profile Container */
-.elevation-profile-container {
-  position: absolute;
-  bottom: 130px;
-  left: 16px;
-  right: 16px;
-  z-index: 25;
-  background: rgba(13, 17, 26, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: var(--shadow);
-}
-
-.elevation-profile-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.72rem;
-}
-
-.profile-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.profile-stats {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-}
-
-.elevation-chart-wrapper {
-  width: 100%;
-  height: 50px;
-}
-
-.elevation-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.rider-pulse-ring {
-  animation: pulse-ring 1.4s infinite ease-out;
-  transform-origin: center;
-}
-
-@keyframes pulse-ring {
-  0% { r: 4px; opacity: 0.8; }
-  100% { r: 14px; opacity: 0; }
 }
 
 /* Language Switcher */
@@ -1170,8 +1226,11 @@ select {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .elevation-profile-container {
-    bottom: 160px;
+  .bottom-dashboard-deck {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    padding: 12px;
   }
 }
 
@@ -1180,7 +1239,7 @@ select {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .elevation-profile-container {
-    bottom: 210px;
+  .elevation-chart-wrapper {
+    height: 65px;
   }
 }

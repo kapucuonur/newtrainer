@@ -253,9 +253,9 @@ export function RouteMap({
       }
     };
 
-    syncMarker(markerA, pointA, 'map-pin-a', 'A');
-    syncMarker(markerB, pointB, 'map-pin-b', 'B');
-    syncMarker(markerRider, rider, 'map-pin-rider', '●');
+    syncMarker(markerA, pointA, 'map-pin-a', 'A START');
+    syncMarker(markerB, pointB, 'map-pin-b', 'B FINISH');
+    syncMarker(markerRider, rider, 'map-pin-rider', '🚴');
   }, [pointA, pointB, rider]);
 
   useEffect(() => {

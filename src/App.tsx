@@ -977,15 +977,17 @@ export default function App() {
             peers={mapPeers}
             groupMode={groupMode}
           />
-          <ElevationProfile
-            route={route}
-            currentDistanceMeters={telemetry.distanceMeters}
-            currentElevationMeters={telemetry.elevationMeters}
-          />
-          <RideHUD
-            telemetry={telemetry}
-            riderWeightKg={user?.profile?.weightKg ?? 75}
-          />
+          <div className="bottom-dashboard-deck">
+            <ElevationProfile
+              route={route}
+              currentDistanceMeters={telemetry.distanceMeters}
+              currentElevationMeters={telemetry.elevationMeters}
+            />
+            <RideHUD
+              telemetry={telemetry}
+              riderWeightKg={user?.profile?.weightKg ?? 75}
+            />
+          </div>
         </div>
 
         <footer className="app-footer">

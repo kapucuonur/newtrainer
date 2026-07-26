@@ -41,17 +41,6 @@ const COOKIE_SECURE = String(process.env.COOKIE_SECURE || 'false') === 'true';
 const COOKIE_NAME = 'roadlab_token';
 const DATA_DIR = path.resolve(ROOT, process.env.DATA_DIR || './data');
 
-const DEFAULT_ORIGINS = [
-  'https://newtrainer.trihonor.com',
-  'https://newtrainer.vercel.app',
-  'http://localhost:5173',
-];
-
-const CORS_ORIGINS = (process.env.CORS_ORIGINS || DEFAULT_ORIGINS.join(','))
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-
 if (!process.env.JWT_SECRET) {
   console.warn('[roadlab-api] JWT_SECRET not set — using insecure default (dev only)');
 }
