@@ -31,6 +31,8 @@ type Props = {
   saveBusy?: boolean;
   saveMessage?: string | null;
   onSaveToProfile?: () => void;
+  /** Hide solo Start while waiting in a group lobby. */
+  hideStart?: boolean;
 };
 
 export function RouteControls({
@@ -60,6 +62,7 @@ export function RouteControls({
   saveBusy = false,
   saveMessage = null,
   onSaveToProfile,
+  hideStart = false,
 }: Props) {
   const t = useT();
   const showComplete = phase === 'finished' && hasExport;
@@ -163,7 +166,7 @@ export function RouteControls({
       )}
 
       <div className="btn-row ride-actions">
-        {(phase === 'ready' || phase === 'finished') && (
+        {!hideStart && (phase === 'ready' || phase === 'finished') && (
           <button type="button" className="btn btn-accent" onClick={onStart} disabled={!route}>
             {t('route.start')}
           </button>

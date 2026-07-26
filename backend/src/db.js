@@ -48,6 +48,29 @@ export function openDb(dataDir) {
 
     CREATE INDEX IF NOT EXISTS idx_rides_user_started
       ON rides(user_id, started_at DESC);
+
+    CREATE TABLE IF NOT EXISTS rooms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      host_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'lobby'
+        CHECK (status IN ('lobby', 'live', 'ended')),
+      route_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      max_members INTEGER NOT NULL DEFAULT 20
+    );
+
+    CREATE TABLE IF NOT EXISTS room_members (
+      room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      display_name TEXT,
+      joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_seen TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (room_id, user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rooms_code ON rooms(code);
+    CREATE INDEX IF NOT EXISTS idx_room_members_room ON room_members(room_id);
   `);
 
   return db;

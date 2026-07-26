@@ -150,3 +150,21 @@ If `VITE_API_URL` is unset, the app stays local-only (no cloud profile / save ri
 | POST | `/api/rides` | yes (JSON or multipart + fit/gpx) |
 | GET | `/api/rides/:id` | yes |
 | GET | `/api/rides/:id/download/:kind` | yes (`fit` \| `gpx`) |
+| POST | `/api/rooms` | yes (body: `{ route }` — host creates lobby) |
+| POST | `/api/rooms/join` | yes (body: `{ code }`) |
+| GET | `/api/rooms/:id` | yes (members only) |
+| POST | `/api/rooms/:id/start` | yes (host) |
+| POST | `/api/rooms/:id/leave` | yes |
+| POST | `/api/rooms/:id/end` | yes (host) |
+| GET | `/ws/rooms/:id?token=…` | JWT query or cookie |
+
+## Group rides
+
+Shared A→B rooms for up to **20** riders. Host creates a room from a built route; others join by code; host starts; clients send light telemetry over WebSocket (~1–2 Hz) and receive peer positions for map markers. No Mapillary/street imagery in group mode (frontend).
+
+WebSocket (same host as REST — works behind Cloudflare Tunnel HTTP→`localhost:8788`):
+
+- Client → server: `{ type:'telemetry', lat, lng, distance_m, speed_kmh, power, hr, cadence }`
+- Server → clients: `{ type:'peers', riders:[…] }`, plus `member_join`, `member_leave`, `start`, `end`
+
+Join is rejected with `409` / `ROOM_FULL` when the room already has 20 members.

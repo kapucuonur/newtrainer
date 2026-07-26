@@ -78,6 +78,10 @@ export class RideEngine {
     this.heartRateBpm = bpm;
   }
 
+  getPhase(): RidePhase {
+    return this.phase;
+  }
+
   onTelemetry(listener: RideTelemetryListener): () => void {
     this.listeners.add(listener);
     listener(this.snapshot());

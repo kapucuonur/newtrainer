@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from './config';
-import type { AuthResponse, RideSummary, User, UserProfile } from './types';
+import type { AuthResponse, RideSummary, Room, User, UserProfile } from './types';
 
 const TOKEN_KEY = 'roadlab_token';
 
@@ -22,11 +22,13 @@ export function setStoredToken(token: string | null): void {
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -77,7 +79,14 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
       typeof (data as { error: unknown }).error === 'string'
         ? (data as { error: string }).error
         : `Request failed (${res.status})`;
-    throw new ApiError(res.status, message);
+    const code =
+      data &&
+      typeof data === 'object' &&
+      'code' in data &&
+      typeof (data as { code: unknown }).code === 'string'
+        ? (data as { code: string }).code
+        : undefined;
+    throw new ApiError(res.status, message, code);
   }
 
   return data as T;
@@ -171,4 +180,45 @@ export async function saveRide(input: SaveRideInput): Promise<RideSummary> {
   return data.ride;
 }
 
-export type { User, UserProfile, RideSummary };
+export async function createRoom(route: unknown): Promise<Room> {
+  const data = await apiRequest<{ room: Room }>('/api/rooms', {
+    method: 'POST',
+    json: { route },
+  });
+  return data.room;
+}
+
+export async function joinRoom(code: string): Promise<Room> {
+  const data = await apiRequest<{ room: Room }>('/api/rooms/join', {
+    method: 'POST',
+    json: { code },
+  });
+  return data.room;
+}
+
+export async function fetchRoom(roomId: number): Promise<Room> {
+  const data = await apiRequest<{ room: Room }>(`/api/rooms/${roomId}`);
+  return data.room;
+}
+
+export async function startRoom(roomId: number): Promise<Room> {
+  const data = await apiRequest<{ room: Room }>(`/api/rooms/${roomId}/start`, {
+    method: 'POST',
+  });
+  return data.room;
+}
+
+export async function leaveRoom(roomId: number): Promise<void> {
+  await apiRequest<{ ok: boolean }>(`/api/rooms/${roomId}/leave`, {
+    method: 'POST',
+  });
+}
+
+export async function endRoom(roomId: number): Promise<Room> {
+  const data = await apiRequest<{ room: Room }>(`/api/rooms/${roomId}/end`, {
+    method: 'POST',
+  });
+  return data.room;
+}
+
+export type { User, UserProfile, RideSummary, Room };

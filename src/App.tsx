@@ -1,17 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ApiError,
+  createRoom,
+  endRoom,
   fetchMe,
   getStoredToken,
+  joinRoom,
+  leaveRoom,
   login as apiLogin,
   logout as apiLogout,
   register as apiRegister,
   saveRide,
   setStoredToken,
+  startRoom,
   updateProfile,
 } from './api/client';
 import { isCloudApiEnabled } from './api/config';
-import type { User } from './api/types';
+import { RoomSocket } from './api/roomSocket';
+import type { PeerRider, Room, User } from './api/types';
 import { FtmsTrainer } from './bluetooth/ftms';
 import { HeartRateMonitor } from './bluetooth/heartRate';
 import { MockTrainer } from './bluetooth/mockTrainer';
@@ -20,12 +26,14 @@ import { probeWifiBridge } from './bluetooth/wifiBridge';
 import { enrichRouteWithElevation } from './elevation/service';
 import { buildFit, buildGpx, downloadRideFit, downloadRideGpx } from './export';
 import { useT, type MessageKey } from './i18n';
-import { RouteMap } from './map/RouteMap';
+import { RouteMap, type MapPeer } from './map/RouteMap';
+import { parseRoomRoute } from './routing/fromRoomRoute';
 import { fetchRoute } from './routing/osrm';
 import type { EnrichedRoute, LatLng } from './routing/types';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
 import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
+import { GroupRidePanel } from './ui/GroupRidePanel';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
 
@@ -83,8 +91,20 @@ export default function App() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [savedRideId, setSavedRideId] = useState<number | null>(null);
 
+  const [room, setRoom] = useState<Room | null>(null);
+  const [peers, setPeers] = useState<PeerRider[]>([]);
+  const [joinCode, setJoinCode] = useState('');
+  const [groupBusy, setGroupBusy] = useState(false);
+  const [groupMessage, setGroupMessage] = useState<string | null>(null);
+  const roomSocketRef = useRef<RoomSocket | null>(null);
+  const roomRef = useRef<Room | null>(null);
+  const groupStartRef = useRef(false);
+  const telemetryPhaseRef = useRef(idleTelemetry.phase);
+
   const cloudEnabled = isCloudApiEnabled();
   const canPlanRoute = Boolean(cloudEnabled && user);
+  const inGroup = Boolean(room && room.status !== 'ended');
+  const groupMode = inGroup;
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -145,6 +165,120 @@ export default function App() {
       setSaveMessage(null);
     }
   }, [telemetry.phase, telemetry.hasExport]);
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
+
+  const applyRoomRoute = useCallback(
+    (nextRoom: Room) => {
+      const parsed = parseRoomRoute(nextRoom.route);
+      if (!parsed) {
+        setGroupMessage(t('group.badRoute'));
+        return false;
+      }
+      setRoute(parsed);
+      engineRef.current.setRoute(parsed);
+      const first = parsed.coordinates[0] ?? null;
+      const last = parsed.coordinates[parsed.coordinates.length - 1] ?? null;
+      setPointA(first);
+      setPointB(last);
+      setPickMode(null);
+      setRouteError(null);
+      return true;
+    },
+    [t],
+  );
+
+  const beginGroupRide = useCallback(async () => {
+    if (groupStartRef.current) return;
+    const phase = engineRef.current.getPhase();
+    if (phase === 'riding' || phase === 'paused') {
+      groupStartRef.current = true;
+      return;
+    }
+    try {
+      groupStartRef.current = true;
+      await engineRef.current.start();
+    } catch (error) {
+      groupStartRef.current = false;
+      setGroupMessage(
+        error instanceof Error ? error.message : t('group.startFailed'),
+      );
+    }
+  }, [t]);
+
+  const disconnectRoomSocket = useCallback(() => {
+    roomSocketRef.current?.close();
+    roomSocketRef.current = null;
+  }, []);
+
+  const connectRoomSocket = useCallback(
+    (roomId: number) => {
+      disconnectRoomSocket();
+      const sock = new RoomSocket(roomId, {
+        onEvent: (event) => {
+          if (event.type === 'hello') {
+            if (event.room) setRoom(event.room);
+            setPeers(event.peers ?? []);
+            return;
+          }
+          if (event.type === 'peers') {
+            setPeers(event.riders ?? []);
+            return;
+          }
+          if (event.type === 'member_join' || event.type === 'member_leave') {
+            if (event.room) setRoom(event.room);
+            return;
+          }
+          if (event.type === 'start') {
+            if (event.room) setRoom(event.room);
+            void beginGroupRide();
+            return;
+          }
+          if (event.type === 'end') {
+            if (event.room) setRoom(event.room);
+            setGroupMessage(t('group.ended'));
+            disconnectRoomSocket();
+            groupStartRef.current = false;
+          }
+        },
+        onError: () => {
+          setGroupMessage(t('group.wsError'));
+        },
+      });
+      roomSocketRef.current = sock;
+      sock.connect();
+    },
+    [beginGroupRide, disconnectRoomSocket, t],
+  );
+
+  useEffect(() => {
+    return () => {
+      disconnectRoomSocket();
+    };
+  }, [disconnectRoomSocket]);
+
+  useEffect(() => {
+    telemetryPhaseRef.current = telemetry.phase;
+  }, [telemetry.phase]);
+
+  useEffect(() => {
+    const active = roomRef.current;
+    if (!active || active.status === 'ended') return;
+    if (telemetry.phase !== 'riding' && telemetry.phase !== 'paused') return;
+    const pos = telemetry.position;
+    if (!pos) return;
+    roomSocketRef.current?.sendTelemetry({
+      lat: pos.lat,
+      lng: pos.lng,
+      distance_m: telemetry.distanceMeters,
+      speed_kmh: telemetry.speedKmh,
+      power: telemetry.powerWatts,
+      hr: telemetry.heartRateBpm,
+      cadence: telemetry.cadenceRpm,
+    });
+  }, [telemetry]);
 
   const attachTrainer = useCallback((next: BikeTrainer, mock: boolean) => {
     trainerUnsubRef.current?.();
@@ -254,7 +388,23 @@ export default function App() {
     }
   };
 
+  const resetGroupState = useCallback(() => {
+    disconnectRoomSocket();
+    setRoom(null);
+    setPeers([]);
+    groupStartRef.current = false;
+  }, [disconnectRoomSocket]);
+
   const clearRoute = async () => {
+    if (roomRef.current && roomRef.current.status !== 'ended') {
+      try {
+        await leaveRoom(roomRef.current.id);
+      } catch {
+        // still clear local state
+      }
+      resetGroupState();
+      setGroupMessage(null);
+    }
     await engineRef.current.stop();
     setRoute(null);
     setPointA(null);
@@ -318,6 +468,101 @@ export default function App() {
     return t('auth.requestFailed');
   };
 
+  const onCreateRoom = async () => {
+    if (!user || !route) return;
+    setGroupBusy(true);
+    setGroupMessage(null);
+    try {
+      const created = await createRoom(route);
+      setRoom(created);
+      applyRoomRoute(created);
+      connectRoomSocket(created.id);
+      setGroupMessage(t('group.created', { code: created.code }));
+    } catch (error) {
+      setGroupMessage(withAuthError(error));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const onJoinRoom = async () => {
+    if (!user) return;
+    setGroupBusy(true);
+    setGroupMessage(null);
+    try {
+      const joined = await joinRoom(joinCode.trim());
+      if (!applyRoomRoute(joined)) {
+        setGroupBusy(false);
+        return;
+      }
+      setRoom(joined);
+      connectRoomSocket(joined.id);
+      setJoinCode('');
+      setGroupMessage(t('group.joined', { code: joined.code }));
+      if (joined.status === 'live') {
+        void beginGroupRide();
+      }
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.code === 'ROOM_FULL' || error.message.toLowerCase().includes('full'))
+      ) {
+        setGroupMessage(t('group.full', { max: 20 }));
+      } else {
+        setGroupMessage(withAuthError(error));
+      }
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const onStartGroup = async () => {
+    if (!room) return;
+    setGroupBusy(true);
+    setGroupMessage(null);
+    try {
+      const next = await startRoom(room.id);
+      setRoom(next);
+      await beginGroupRide();
+    } catch (error) {
+      setGroupMessage(withAuthError(error));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const onLeaveGroup = async () => {
+    if (!room) return;
+    setGroupBusy(true);
+    setGroupMessage(null);
+    try {
+      await leaveRoom(room.id);
+      resetGroupState();
+      setGroupMessage(t('group.left'));
+    } catch (error) {
+      setGroupMessage(withAuthError(error));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const onEndGroup = async () => {
+    if (!room) return;
+    setGroupBusy(true);
+    setGroupMessage(null);
+    try {
+      const next = await endRoom(room.id);
+      setRoom(next);
+      disconnectRoomSocket();
+      groupStartRef.current = false;
+      setGroupMessage(t('group.ended'));
+    } catch (error) {
+      setGroupMessage(withAuthError(error));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
   const onLogin = async (email: string, password: string) => {
     setAuthBusy(true);
     setAuthMessage(null);
@@ -350,12 +595,21 @@ export default function App() {
     setAuthBusy(true);
     setAuthMessage(null);
     try {
+      if (roomRef.current && roomRef.current.status !== 'ended') {
+        try {
+          await leaveRoom(roomRef.current.id);
+        } catch {
+          // ignore leave errors on logout
+        }
+      }
+      resetGroupState();
       await apiLogout();
       setUser(null);
       setAuthMessage(t('auth.loggedOut'));
     } catch (error) {
       setStoredToken(null);
       setUser(null);
+      resetGroupState();
       setAuthMessage(withAuthError(error));
     } finally {
       setAuthBusy(false);
@@ -448,6 +702,26 @@ export default function App() {
 
   const canSaveToProfile = Boolean(user && isCloudApiEnabled() && savedRideId == null);
 
+  const mapPeers: MapPeer[] = useMemo(() => {
+    if (!user || !groupMode) return [];
+    return peers
+      .filter(
+        (p) =>
+          p.userId !== user.id &&
+          p.lat != null &&
+          p.lng != null &&
+          Number.isFinite(p.lat) &&
+          Number.isFinite(p.lng),
+      )
+      .map((p) => ({
+        userId: p.userId,
+        displayName: p.displayName,
+        position: { lat: p.lat as number, lng: p.lng as number },
+      }));
+  }, [groupMode, peers, user]);
+
+  const hideSoloStart = Boolean(room && room.status === 'lobby');
+
   return (
     <div className="app-shell">
       <ConnectionPanel
@@ -476,6 +750,21 @@ export default function App() {
           onLogout={onLogout}
           onSaveProfile={onSaveProfile}
         />
+        <GroupRidePanel
+          enabled={Boolean(cloudEnabled && user)}
+          userId={user?.id ?? null}
+          room={room}
+          joinCode={joinCode}
+          busy={groupBusy}
+          message={groupMessage}
+          canCreate={Boolean(route && user)}
+          onJoinCodeChange={setJoinCode}
+          onCreate={() => void onCreateRoom()}
+          onJoin={() => void onJoinRoom()}
+          onStart={() => void onStartGroup()}
+          onLeave={() => void onLeaveGroup()}
+          onEnd={() => void onEndGroup()}
+        />
       </ConnectionPanel>
 
       <main className="main-stage">
@@ -495,7 +784,7 @@ export default function App() {
             hasExport={telemetry.hasExport}
             completedDistanceMeters={telemetry.distanceMeters}
             completedElapsedSeconds={telemetry.elapsedSeconds}
-            routePlanningEnabled={canPlanRoute}
+            routePlanningEnabled={canPlanRoute && !inGroup}
             gateMessage={gateMessage}
             onOpenAccount={onOpenAccount}
             onSetPickMode={onSetPickMode}
@@ -511,6 +800,7 @@ export default function App() {
             saveBusy={saveBusy}
             saveMessage={saveMessage}
             onSaveToProfile={() => void onSaveToProfile()}
+            hideStart={hideSoloStart}
           />
         </div>
 
@@ -523,7 +813,9 @@ export default function App() {
           distanceMeters={telemetry.distanceMeters}
           onPick={onPick}
           pickMode={pickMode}
-          pickingEnabled={canPlanRoute}
+          pickingEnabled={canPlanRoute && !inGroup}
+          peers={mapPeers}
+          groupMode={groupMode}
         />
 
         <RideHUD telemetry={telemetry} />

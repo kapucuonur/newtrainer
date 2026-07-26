@@ -26,6 +26,12 @@ const STYLE_URL =
   import.meta.env.VITE_MAP_STYLE_URL ??
   'https://tiles.openfreemap.org/styles/liberty';
 
+export type MapPeer = {
+  userId: number;
+  displayName: string;
+  position: LatLng;
+};
+
 type Props = {
   pointA: LatLng | null;
   pointB: LatLng | null;
@@ -36,6 +42,10 @@ type Props = {
   onPick: (point: LatLng) => void;
   pickMode: 'A' | 'B' | null;
   pickingEnabled?: boolean;
+  /** Other riders on the shared route (group rides). */
+  peers?: MapPeer[];
+  /** Group mode: colored map + peers only — no Mapillary / street view. */
+  groupMode?: boolean;
 };
 
 function tryEnable3dBuildings(map: Map): void {
@@ -106,6 +116,8 @@ export function RouteMap({
   onPick,
   pickMode,
   pickingEnabled = true,
+  peers = [],
+  groupMode = false,
 }: Props) {
   const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +125,7 @@ export function RouteMap({
   const markerA = useRef<Marker | null>(null);
   const markerB = useRef<Marker | null>(null);
   const markerRider = useRef<Marker | null>(null);
+  const peerMarkersRef = useRef(new globalThis.Map<number, Marker>());
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
   const pickingEnabledRef = useRef(pickingEnabled);
@@ -121,6 +134,7 @@ export function RouteMap({
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
   const activePickMode = pickingEnabled ? pickMode : null;
+  const streetViewEnabled = followRoad && !groupMode;
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -194,6 +208,8 @@ export function RouteMap({
       markerA.current?.remove();
       markerB.current?.remove();
       markerRider.current?.remove();
+      for (const marker of peerMarkersRef.current.values()) marker.remove();
+      peerMarkersRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
@@ -230,6 +246,39 @@ export function RouteMap({
     syncMarker(markerB, pointB, 'map-pin-b', 'B');
     syncMarker(markerRider, rider, 'map-pin-rider', '●');
   }, [pointA, pointB, rider]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const alive = new Set(peers.map((p) => p.userId));
+    for (const [userId, marker] of peerMarkersRef.current) {
+      if (!alive.has(userId)) {
+        marker.remove();
+        peerMarkersRef.current.delete(userId);
+      }
+    }
+
+    for (const peer of peers) {
+      let marker = peerMarkersRef.current.get(peer.userId);
+      if (!marker) {
+        const el = document.createElement('div');
+        el.className = 'map-pin map-pin-peer';
+        const label = document.createElement('span');
+        label.className = 'map-pin-peer-label';
+        label.textContent = peer.displayName.slice(0, 12);
+        el.appendChild(label);
+        marker = new Marker({ element: el, offset: [0, -4] })
+          .setLngLat([peer.position.lng, peer.position.lat])
+          .addTo(map);
+        peerMarkersRef.current.set(peer.userId, marker);
+      } else {
+        marker.setLngLat([peer.position.lng, peer.position.lat]);
+        const label = marker.getElement().querySelector('.map-pin-peer-label');
+        if (label) label.textContent = peer.displayName.slice(0, 12);
+      }
+    }
+  }, [peers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -312,11 +361,15 @@ export function RouteMap({
       {followRoad && (
         <div className="map-follow-banner" role="status">
           {t('map.followBanner')}
-          {hasMapillaryToken() ? t('map.followMapillary') : ''}
+          {groupMode
+            ? t('map.followGroup')
+            : hasMapillaryToken()
+              ? t('map.followMapillary')
+              : ''}
         </div>
       )}
       <StreetViewPanel
-        enabled={followRoad}
+        enabled={streetViewEnabled}
         position={rider}
         heading={heading}
       />

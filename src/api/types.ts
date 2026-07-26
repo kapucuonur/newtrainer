@@ -30,3 +30,37 @@ export type AuthResponse = {
   token: string;
   user: User;
 };
+
+export type RoomStatus = 'lobby' | 'live' | 'ended';
+
+export type RoomMember = {
+  userId: number;
+  displayName: string;
+  joinedAt?: string;
+  lastSeen?: string;
+  isHost: boolean;
+};
+
+export type Room = {
+  id: number;
+  code: string;
+  hostUserId: number;
+  status: RoomStatus;
+  route: unknown;
+  createdAt: string;
+  maxMembers: number;
+  members: RoomMember[];
+};
+
+export type PeerRider = {
+  userId: number;
+  displayName: string;
+  lat: number | null;
+  lng: number | null;
+  distance_m: number | null;
+  speed_kmh: number | null;
+  power: number | null;
+  hr: number | null;
+  cadence: number | null;
+  stale?: boolean;
+};

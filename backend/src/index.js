@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
+import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,6 +20,18 @@ import {
   validatePassword,
   verifyPassword,
 } from './auth.js';
+import { RoomHub } from './roomHub.js';
+import {
+  countRoomMembers,
+  findRoomByCode,
+  generateRoomCode,
+  getRoomMember,
+  getRoomRow,
+  listRoomMembers,
+  MAX_ROOM_MEMBERS,
+  toPublicRoom,
+  validateRoutePayload,
+} from './rooms.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -47,6 +60,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 const db = openDb(DATA_DIR);
+const roomHub = new RoomHub();
 
 const app = Fastify({
   logger: true,
@@ -82,6 +96,7 @@ await app.register(multipart, {
 await app.register(rateLimit, {
   global: false,
 });
+await app.register(websocket);
 
 /**
  * @param {import('fastify').FastifyReply} reply
@@ -446,6 +461,362 @@ app.get(
     reply.header('Content-Type', contentType);
     reply.header('Content-Disposition', `attachment; filename="${filename}"`);
     return reply.send(fs.createReadStream(filePath));
+  },
+);
+
+/**
+ * @param {number} roomId
+ */
+function publicRoomById(roomId) {
+  const room = getRoomRow(db, roomId);
+  if (!room) return null;
+  return toPublicRoom(room, listRoomMembers(db, roomId));
+}
+
+/**
+ * @param {number} userId
+ */
+function displayNameForUser(userId) {
+  const me = getMeRow(db, userId);
+  const name = me?.display_name?.trim();
+  if (name) return name.slice(0, 80);
+  const email = typeof me?.email === 'string' ? me.email : '';
+  const local = email.includes('@') ? email.split('@')[0] : '';
+  return (local || `Rider ${userId}`).slice(0, 80);
+}
+
+/**
+ * @param {unknown} raw
+ */
+function parseRoomId(raw) {
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return id;
+}
+
+app.post('/api/rooms', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const body = /** @type {{ route?: unknown }} */ (request.body || {});
+  const routeError = validateRoutePayload(body.route);
+  if (routeError) return reply.code(400).send({ error: routeError });
+
+  const routeJson = JSON.stringify(body.route);
+  let code = generateRoomCode();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const clash = findRoomByCode(db, code);
+    if (!clash) break;
+    code = generateRoomCode();
+  }
+
+  const insert = db.transaction(() => {
+    const result = db
+      .prepare(
+        `INSERT INTO rooms (code, host_user_id, status, route_json, max_members)
+         VALUES (?, ?, 'lobby', ?, ?)`,
+      )
+      .run(code, userId, routeJson, MAX_ROOM_MEMBERS);
+    const roomId = Number(result.lastInsertRowid);
+    db.prepare(
+      `INSERT INTO room_members (room_id, user_id, display_name)
+       VALUES (?, ?, ?)`,
+    ).run(roomId, userId, displayNameForUser(userId));
+    return roomId;
+  });
+
+  const roomId = insert();
+  return reply.code(201).send({ room: publicRoomById(roomId) });
+});
+
+app.post('/api/rooms/join', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const body = /** @type {{ code?: unknown }} */ (request.body || {});
+  const code = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
+  if (!code || code.length < 4) {
+    return reply.code(400).send({ error: 'Valid room code is required' });
+  }
+
+  const room = findRoomByCode(db, code);
+  if (!room) return reply.code(404).send({ error: 'Room not found' });
+  if (room.status === 'ended') {
+    return reply.code(410).send({ error: 'Room has ended' });
+  }
+
+  const existing = getRoomMember(db, room.id, userId);
+  if (!existing) {
+    const count = countRoomMembers(db, room.id);
+    const max = Number(room.max_members) || MAX_ROOM_MEMBERS;
+    if (count >= max) {
+      return reply.code(409).send({
+        error: `Room is full (max ${max} riders)`,
+        code: 'ROOM_FULL',
+        maxMembers: max,
+      });
+    }
+    db.prepare(
+      `INSERT INTO room_members (room_id, user_id, display_name)
+       VALUES (?, ?, ?)`,
+    ).run(room.id, userId, displayNameForUser(userId));
+  } else {
+    db.prepare(
+      `UPDATE room_members
+       SET display_name = ?, last_seen = datetime('now')
+       WHERE room_id = ? AND user_id = ?`,
+    ).run(displayNameForUser(userId), room.id, userId);
+  }
+
+  const publicRoom = publicRoomById(room.id);
+  const member = publicRoom?.members.find((m) => m.userId === userId);
+  roomHub.broadcast(room.id, {
+    type: 'member_join',
+    member,
+    room: publicRoom,
+  });
+
+  return { room: publicRoom };
+});
+
+app.get('/api/rooms/:id', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const roomId = parseRoomId(/** @type {{ id: string }} */ (request.params).id);
+  if (!roomId) return reply.code(400).send({ error: 'Invalid room id' });
+
+  const member = getRoomMember(db, roomId, userId);
+  if (!member) return reply.code(403).send({ error: 'Not a member of this room' });
+
+  const room = publicRoomById(roomId);
+  if (!room) return reply.code(404).send({ error: 'Room not found' });
+  return { room };
+});
+
+app.post('/api/rooms/:id/start', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const roomId = parseRoomId(/** @type {{ id: string }} */ (request.params).id);
+  if (!roomId) return reply.code(400).send({ error: 'Invalid room id' });
+
+  const room = getRoomRow(db, roomId);
+  if (!room) return reply.code(404).send({ error: 'Room not found' });
+  if (room.host_user_id !== userId) {
+    return reply.code(403).send({ error: 'Only the host can start the ride' });
+  }
+  if (room.status === 'ended') {
+    return reply.code(410).send({ error: 'Room has ended' });
+  }
+  if (room.status === 'live') {
+    return { room: publicRoomById(roomId) };
+  }
+
+  db.prepare(`UPDATE rooms SET status = 'live' WHERE id = ?`).run(roomId);
+  const publicRoom = publicRoomById(roomId);
+  roomHub.broadcast(roomId, { type: 'start', room: publicRoom });
+  return { room: publicRoom };
+});
+
+app.post('/api/rooms/:id/leave', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const roomId = parseRoomId(/** @type {{ id: string }} */ (request.params).id);
+  if (!roomId) return reply.code(400).send({ error: 'Invalid room id' });
+
+  const room = getRoomRow(db, roomId);
+  if (!room) return reply.code(404).send({ error: 'Room not found' });
+
+  const member = getRoomMember(db, roomId, userId);
+  if (!member) return { ok: true };
+
+  db.prepare('DELETE FROM room_members WHERE room_id = ? AND user_id = ?').run(
+    roomId,
+    userId,
+  );
+  roomHub.removeClient(roomId, userId);
+  roomHub.broadcast(roomId, {
+    type: 'member_leave',
+    userId,
+    room: publicRoomById(roomId),
+  });
+
+  if (room.host_user_id === userId && room.status !== 'ended') {
+    db.prepare(`UPDATE rooms SET status = 'ended' WHERE id = ?`).run(roomId);
+    roomHub.broadcast(roomId, {
+      type: 'end',
+      room: publicRoomById(roomId),
+    });
+  }
+
+  return { ok: true };
+});
+
+app.post('/api/rooms/:id/end', { preHandler: requireAuth }, async (request, reply) => {
+  const userId = Number(request.user.sub);
+  const roomId = parseRoomId(/** @type {{ id: string }} */ (request.params).id);
+  if (!roomId) return reply.code(400).send({ error: 'Invalid room id' });
+
+  const room = getRoomRow(db, roomId);
+  if (!room) return reply.code(404).send({ error: 'Room not found' });
+  if (room.host_user_id !== userId) {
+    return reply.code(403).send({ error: 'Only the host can end the room' });
+  }
+
+  db.prepare(`UPDATE rooms SET status = 'ended' WHERE id = ?`).run(roomId);
+  const publicRoom = publicRoomById(roomId);
+  roomHub.broadcast(roomId, { type: 'end', room: publicRoom });
+  return { room: publicRoom };
+});
+
+app.get(
+  '/ws/rooms/:id',
+  { websocket: true },
+  /**
+   * @param {import('ws').WebSocket} socket
+   * @param {import('fastify').FastifyRequest} request
+   */
+  (socket, request) => {
+    const roomId = parseRoomId(/** @type {{ id: string }} */ (request.params).id);
+    if (!roomId) {
+      socket.close(4400, 'Invalid room id');
+      return;
+    }
+
+    const query = /** @type {{ token?: string }} */ (request.query || {});
+    const token =
+      (typeof query.token === 'string' && query.token) ||
+      request.cookies?.[COOKIE_NAME] ||
+      '';
+
+    /** @type {{ sub?: number | string } | null} */
+    let payload = null;
+    try {
+      if (!token) throw new Error('missing token');
+      payload = /** @type {{ sub?: number | string }} */ (app.jwt.verify(token));
+    } catch {
+      socket.close(4401, 'Unauthorized');
+      return;
+    }
+
+    const userId = Number(payload?.sub);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      socket.close(4401, 'Unauthorized');
+      return;
+    }
+
+    const room = getRoomRow(db, roomId);
+    if (!room || room.status === 'ended') {
+      socket.close(4410, 'Room unavailable');
+      return;
+    }
+
+    const member = getRoomMember(db, roomId, userId);
+    if (!member) {
+      socket.close(4403, 'Not a member');
+      return;
+    }
+
+    const displayName = member.display_name || displayNameForUser(userId);
+    roomHub.addClient(roomId, {
+      socket,
+      userId,
+      displayName,
+      lastTelemetry: null,
+    });
+
+    db.prepare(
+      `UPDATE room_members SET last_seen = datetime('now') WHERE room_id = ? AND user_id = ?`,
+    ).run(roomId, userId);
+
+    socket.send(
+      JSON.stringify({
+        type: 'hello',
+        room: publicRoomById(roomId),
+        peers: roomHub.peersPayload(roomId).riders,
+      }),
+    );
+    roomHub.broadcast(
+      roomId,
+      {
+        type: 'member_join',
+        member: {
+          userId,
+          displayName,
+          isHost: room.host_user_id === userId,
+        },
+        room: publicRoomById(roomId),
+      },
+      userId,
+    );
+
+    let lastTelemetryAt = 0;
+
+    socket.on('message', (raw) => {
+      let msg;
+      try {
+        msg = JSON.parse(String(raw));
+      } catch {
+        return;
+      }
+      if (!msg || typeof msg !== 'object') return;
+
+      if (msg.type === 'telemetry') {
+        const now = Date.now();
+        if (now - lastTelemetryAt < 400) return;
+        lastTelemetryAt = now;
+
+        const lat = Number(msg.lat);
+        const lng = Number(msg.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        const distance_m = Number(msg.distance_m ?? msg.distanceM ?? 0);
+        const speed_kmh = Number(msg.speed_kmh ?? msg.speedKmh ?? 0);
+        const powerRaw = msg.power;
+        const hrRaw = msg.hr ?? msg.heartRateBpm;
+        const cadenceRaw = msg.cadence ?? msg.cadenceRpm;
+
+        roomHub.setTelemetry(roomId, userId, {
+          lat,
+          lng,
+          distance_m: Number.isFinite(distance_m) ? distance_m : 0,
+          speed_kmh: Number.isFinite(speed_kmh) ? speed_kmh : 0,
+          power:
+            powerRaw == null || powerRaw === ''
+              ? null
+              : Number.isFinite(Number(powerRaw))
+                ? Number(powerRaw)
+                : null,
+          hr:
+            hrRaw == null || hrRaw === ''
+              ? null
+              : Number.isFinite(Number(hrRaw))
+                ? Number(hrRaw)
+                : null,
+          cadence:
+            cadenceRaw == null || cadenceRaw === ''
+              ? null
+              : Number.isFinite(Number(cadenceRaw))
+                ? Number(cadenceRaw)
+                : null,
+          updatedAt: now,
+        });
+
+        db.prepare(
+          `UPDATE room_members SET last_seen = datetime('now') WHERE room_id = ? AND user_id = ?`,
+        ).run(roomId, userId);
+        return;
+      }
+
+      if (msg.type === 'ping') {
+        try {
+          socket.send(JSON.stringify({ type: 'pong' }));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    socket.on('close', () => {
+      roomHub.removeClient(roomId, userId, socket);
+      roomHub.broadcast(roomId, {
+        type: 'member_leave',
+        userId,
+        room: publicRoomById(roomId),
+      });
+    });
   },
 );
 
