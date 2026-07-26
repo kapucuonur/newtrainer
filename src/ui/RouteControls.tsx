@@ -2,6 +2,19 @@ import type { EnrichedRoute, LatLng } from '../routing/types';
 import type { RidePhase } from '../simulation/rideEngine';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
+import {
+  MapPin,
+  Play,
+  Pause,
+  RotateCcw,
+  Square,
+  Download,
+  Save,
+  Route,
+  Sparkles,
+  Mountain,
+  Compass,
+} from 'lucide-react';
 
 type Props = {
   pointA: LatLng | null;
@@ -26,14 +39,39 @@ type Props = {
   onStop: () => void;
   onDownloadFit: () => void;
   onDownloadGpx: () => void;
-  /** When set, show “Save summary” after finish. */
   canSaveToProfile?: boolean;
   saveBusy?: boolean;
   saveMessage?: string | null;
   onSaveToProfile?: () => void;
-  /** Hide solo Start while waiting in a group lobby. */
   hideStart?: boolean;
+  /** Direct preset route selector callback */
+  onSelectPresetRoute?: (pointA: LatLng, pointB: LatLng) => void;
 };
+
+// Preset iconic cycling routes for instant indoor training
+const PRESET_ROUTES = [
+  {
+    id: 'alps-pass',
+    name: 'Alps Pass Climb',
+    desc: 'High elevation alpine climb (8.4 km)',
+    pointA: { lat: 45.0934, lng: 6.0682 }, // Alpe d'Huez base
+    pointB: { lat: 45.1158, lng: 6.0665 },
+  },
+  {
+    id: 'coastal-flat',
+    name: 'Coastal Flat 10K',
+    desc: 'Smooth coastal endurance loop (10 km)',
+    pointA: { lat: 43.6957, lng: 7.2714 }, // Nice Promenade des Anglais
+    pointB: { lat: 43.6845, lng: 7.3321 },
+  },
+  {
+    id: 'rolling-hills',
+    name: 'Tuscany Rolling Hills',
+    desc: 'Varied tempo terrain & punchy climbs (12 km)',
+    pointA: { lat: 43.4674, lng: 11.0431 }, // San Gimignano
+    pointB: { lat: 43.4912, lng: 11.1152 },
+  },
+];
 
 export function RouteControls({
   pointA,
@@ -63,48 +101,84 @@ export function RouteControls({
   saveMessage = null,
   onSaveToProfile,
   hideStart = false,
+  onSelectPresetRoute,
 }: Props) {
   const t = useT();
   const showComplete = phase === 'finished' && hasExport;
   const locked = !routePlanningEnabled;
 
   return (
-    <section className="route-controls">
+    <section className="route-controls" aria-label="Route Controls">
       <div className="route-controls-top">
-        <div>
-          <h2>{t('route.title')}</h2>
-          <p>{t('route.subtitle')}</p>
+        <div className="route-header-brand">
+          <Route className="icon-md icon-accent" />
+          <div>
+            <h2>{t('route.title')}</h2>
+            <p className="subtitle">{t('route.subtitle')}</p>
+          </div>
         </div>
-        <div className="btn-row">
+
+        {/* Step by step map pin buttons */}
+        <div className="btn-row route-pin-row">
           <button
             type="button"
             className={`btn ${pickMode === 'A' ? 'btn-primary' : 'btn-secondary'}`}
             disabled={locked}
             onClick={() => onSetPickMode(pickMode === 'A' ? null : 'A')}
           >
-            {t('route.setA')}
+            <MapPin className="icon-xs" />
+            {t('route.setA')} {pointA ? '✓' : ''}
           </button>
+
           <button
             type="button"
             className={`btn ${pickMode === 'B' ? 'btn-primary' : 'btn-secondary'}`}
             disabled={locked}
             onClick={() => onSetPickMode(pickMode === 'B' ? null : 'B')}
           >
-            {t('route.setB')}
+            <MapPin className="icon-xs" />
+            {t('route.setB')} {pointB ? '✓' : ''}
           </button>
+
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary btn-glow"
             disabled={locked || !pointA || !pointB || loading}
             onClick={onBuildRoute}
           >
+            <Sparkles className="icon-xs" />
             {loading ? t('route.building') : t('route.build')}
           </button>
+
           <button type="button" className="btn btn-ghost" onClick={onClear}>
+            <RotateCcw className="icon-xs" />
             {t('route.clear')}
           </button>
         </div>
       </div>
+
+      {/* Preset Routes Quick Chips */}
+      {routePlanningEnabled && !route && (
+        <div className="preset-routes-bar">
+          <span className="preset-label">Quick Presets:</span>
+          {PRESET_ROUTES.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className="chip-preset"
+              onClick={() => {
+                onSetPickMode(null);
+                if (onSelectPresetRoute) {
+                  onSelectPresetRoute(preset.pointA, preset.pointB);
+                }
+              }}
+            >
+              <Mountain className="icon-xs" />
+              <span>{preset.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {gateMessage && (
         <div className="auth-gate-banner" role="status">
@@ -115,14 +189,23 @@ export function RouteControls({
         </div>
       )}
 
+      {/* Route Metadata Summary */}
       <div className="route-meta">
-        <span>A: {pointA ? `${pointA.lat.toFixed(4)}, ${pointA.lng.toFixed(4)}` : '—'}</span>
-        <span>B: {pointB ? `${pointB.lat.toFixed(4)}, ${pointB.lng.toFixed(4)}` : '—'}</span>
+        <span className="meta-badge">
+          <MapPin className="icon-xs" /> A: {pointA ? `${pointA.lat.toFixed(4)}, ${pointA.lng.toFixed(4)}` : '—'}
+        </span>
+        <span className="meta-badge">
+          <MapPin className="icon-xs" /> B: {pointB ? `${pointB.lat.toFixed(4)}, ${pointB.lng.toFixed(4)}` : '—'}
+        </span>
         {route && (
           <>
-            <span>{formatDistance(route.distanceMeters)}</span>
-            <span>~{formatDuration(route.durationSeconds)}</span>
-            <span>
+            <span className="meta-badge highlight">
+              <Compass className="icon-xs" /> {formatDistance(route.distanceMeters)}
+            </span>
+            <span className="meta-badge">
+              ~{formatDuration(route.durationSeconds)}
+            </span>
+            <span className="meta-badge">
               ↑{route.elevGainMeters}m ↓{route.elevLossMeters}m
             </span>
             <span className="route-source">{route.source}</span>
@@ -132,10 +215,13 @@ export function RouteControls({
 
       {error && <p className="error-text">{error}</p>}
 
+      {/* Ride Complete Summary Card */}
       {showComplete && (
         <div className="ride-complete" role="status">
           <div className="ride-complete-copy">
-            <h3>{t('route.rideComplete')}</h3>
+            <h3>
+              <Sparkles className="icon-sm" /> {t('route.rideComplete')}
+            </h3>
             <p>
               {t('route.rideCompleteHint', {
                 distance: formatDistance(completedDistanceMeters),
@@ -145,9 +231,11 @@ export function RouteControls({
           </div>
           <div className="btn-row">
             <button type="button" className="btn btn-primary" onClick={onDownloadFit}>
+              <Download className="icon-xs" />
               {t('route.downloadFit')}
             </button>
             <button type="button" className="btn btn-secondary" onClick={onDownloadGpx}>
+              <Download className="icon-xs" />
               {t('route.downloadGpx')}
             </button>
             {canSaveToProfile && onSaveToProfile && (
@@ -157,6 +245,7 @@ export function RouteControls({
                 disabled={saveBusy}
                 onClick={onSaveToProfile}
               >
+                <Save className="icon-xs" />
                 {saveBusy ? t('route.saving') : t('route.saveRide')}
               </button>
             )}
@@ -165,24 +254,34 @@ export function RouteControls({
         </div>
       )}
 
+      {/* Main Ride Control Actions */}
       <div className="btn-row ride-actions">
         {!hideStart && (phase === 'ready' || phase === 'finished') && (
-          <button type="button" className="btn btn-accent" onClick={onStart} disabled={!route}>
+          <button
+            type="button"
+            className="btn btn-accent btn-large btn-glow"
+            onClick={onStart}
+            disabled={!route}
+          >
+            <Play className="icon-sm" />
             {t('route.start')}
           </button>
         )}
         {phase === 'riding' && (
-          <button type="button" className="btn btn-secondary" onClick={onPause}>
+          <button type="button" className="btn btn-secondary btn-large" onClick={onPause}>
+            <Pause className="icon-sm" />
             {t('route.pause')}
           </button>
         )}
         {phase === 'paused' && (
-          <button type="button" className="btn btn-accent" onClick={onResume}>
+          <button type="button" className="btn btn-accent btn-large btn-glow" onClick={onResume}>
+            <Play className="icon-sm" />
             {t('route.resume')}
           </button>
         )}
         {(phase === 'riding' || phase === 'paused') && (
-          <button type="button" className="btn btn-ghost" onClick={onStop}>
+          <button type="button" className="btn btn-danger btn-large" onClick={onStop}>
+            <Square className="icon-sm" />
             {t('route.stop')}
           </button>
         )}

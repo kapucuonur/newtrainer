@@ -34,6 +34,7 @@ import type { EnrichedRoute, LatLng } from './routing/types';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
 import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
+import { ElevationProfile } from './ui/ElevationProfile';
 import { GroupRidePanel } from './ui/GroupRidePanel';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
@@ -366,7 +367,7 @@ export default function App() {
     }
   };
 
-  const useMock = async () => {
+  const enableMockTrainer = async () => {
     if (!canUseDevices) return;
     try {
       setRouteError(null);
@@ -440,6 +441,25 @@ export default function App() {
     setRouteError(null);
     try {
       const base = await fetchRoute(pointA, pointB);
+      const enriched = await enrichRouteWithElevation(base);
+      setRoute(enriched);
+      engineRef.current.setRoute(enriched);
+    } catch (error) {
+      setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
+    } finally {
+      setLoadingRoute(false);
+    }
+  };
+
+  const handleSelectPreset = async (pA: LatLng, pB: LatLng) => {
+    if (!canPlanRoute) return;
+    setPointA(pA);
+    setPointB(pB);
+    setPickMode(null);
+    setLoadingRoute(true);
+    setRouteError(null);
+    try {
+      const base = await fetchRoute(pA, pB);
       const enriched = await enrichRouteWithElevation(base);
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
@@ -870,7 +890,7 @@ export default function App() {
         mockEffort={mockEffort}
         onConnectTrainer={() => void connectFtms()}
         onDisconnectTrainer={() => void disconnectTrainer()}
-        onUseMock={() => void useMock()}
+        onUseMock={() => void enableMockTrainer()}
         onConnectHr={() => void connectHr()}
         onDisconnectHr={() => void disconnectHr()}
         onProbeWifi={() => void onProbeWifi()}
@@ -939,6 +959,7 @@ export default function App() {
             saveMessage={saveMessage}
             onSaveToProfile={() => void onSaveToProfile()}
             hideStart={hideSoloStart}
+            onSelectPresetRoute={(pA, pB) => void handleSelectPreset(pA, pB)}
           />
         </div>
 
@@ -956,7 +977,15 @@ export default function App() {
             peers={mapPeers}
             groupMode={groupMode}
           />
-          <RideHUD telemetry={telemetry} />
+          <ElevationProfile
+            route={route}
+            currentDistanceMeters={telemetry.distanceMeters}
+            currentElevationMeters={telemetry.elevationMeters}
+          />
+          <RideHUD
+            telemetry={telemetry}
+            riderWeightKg={user?.profile?.weightKg ?? 75}
+          />
         </div>
 
         <footer className="app-footer">

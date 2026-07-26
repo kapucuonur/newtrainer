@@ -1,5 +1,6 @@
 import type { Room } from '../api/types';
 import { useT } from '../i18n';
+import { Users, Plus, LogIn, LogOut, Radio, Play, ShieldAlert } from 'lucide-react';
 
 type Props = {
   enabled: boolean;
@@ -38,7 +39,10 @@ export function GroupRidePanel({
   return (
     <section className="group-ride-panel" aria-label={t('group.title')}>
       <div className="group-ride-head">
-        <h2>{t('group.title')}</h2>
+        <h2>
+          <Users className="icon-xs" />
+          {t('group.title')}
+        </h2>
         <p>{t('group.subtitle')}</p>
       </div>
 
@@ -48,10 +52,11 @@ export function GroupRidePanel({
         <div className="group-ride-actions">
           <button
             type="button"
-            className="btn btn-accent"
+            className="btn btn-accent btn-sm"
             disabled={!canCreate || busy}
             onClick={onCreate}
           >
+            <Plus className="icon-xs" />
             {busy ? t('group.working') : t('group.create')}
           </button>
           {!canCreate && <p className="muted-text">{t('group.needRoute')}</p>}
@@ -71,10 +76,11 @@ export function GroupRidePanel({
             />
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               disabled={busy || joinCode.trim().length < 4}
               onClick={onJoin}
             >
+              <LogIn className="icon-xs" />
               {t('group.join')}
             </button>
           </div>
@@ -88,6 +94,7 @@ export function GroupRidePanel({
               {room.code}
             </span>
             <span className="group-status" data-status={room.status}>
+              <Radio className="icon-xs" />
               {room.status === 'lobby'
                 ? t('group.statusLobby')
                 : room.status === 'live'
@@ -120,30 +127,33 @@ export function GroupRidePanel({
             {isHost && room.status === 'lobby' && (
               <button
                 type="button"
-                className="btn btn-accent"
+                className="btn btn-accent btn-sm"
                 disabled={busy}
                 onClick={onStart}
               >
+                <Play className="icon-xs" />
                 {t('group.start')}
               </button>
             )}
             {isHost && room.status !== 'ended' && (
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn btn-ghost btn-sm"
                 disabled={busy}
                 onClick={onEnd}
               >
+                <ShieldAlert className="icon-xs" />
                 {t('group.end')}
               </button>
             )}
             {room.status !== 'ended' && (
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-sm"
                 disabled={busy}
                 onClick={onLeave}
               >
+                <LogOut className="icon-xs" />
                 {t('group.leave')}
               </button>
             )}

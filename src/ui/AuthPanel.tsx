@@ -4,12 +4,12 @@ import { isCloudApiEnabled } from '../api/config';
 import type { RideSummary, User } from '../api/types';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
+import { User as UserIcon, Lock, Mail, History, Save, LogOut, Award, Shield, UserPlus, LogIn } from 'lucide-react';
 
 type Props = {
   user: User | null;
   busy: boolean;
   message: string | null;
-  /** Bump after saving a ride so history reloads. */
   historyRevision?: number;
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (email: string, password: string, displayName: string) => Promise<void>;
@@ -80,210 +80,228 @@ export function AuthPanel({
   }, [user]);
 
   useEffect(() => {
-    if (!user || !cloud) {
-      setRides([]);
-      return;
-    }
-    let cancelled = false;
+    if (!user || !cloud) return;
+    let cancel = false;
     setRidesLoading(true);
-    void listRides()
-      .then((next) => {
-        if (!cancelled) setRides(next);
+    listRides()
+      .then((data) => {
+        if (!cancel) setRides(data);
       })
       .catch(() => {
-        if (!cancelled) setRides([]);
+        if (!cancel) setRides([]);
       })
       .finally(() => {
-        if (!cancelled) setRidesLoading(false);
+        if (!cancel) setRidesLoading(false);
       });
     return () => {
-      cancelled = true;
+      cancel = true;
     };
   }, [user, cloud, historyRevision]);
 
   if (!cloud) {
     return (
-      <section id="account-panel" className="device-card auth-card">
-        <div className="device-card-head">
-          <div>
-            <h2>{t('auth.cloudTitle')}</h2>
-            <p>{t('auth.cloudDisabled')}</p>
-          </div>
-        </div>
+      <section className="auth-card">
+        <h2>
+          <Shield className="icon-xs" />
+          {t('auth.cloudDisabled')}
+        </h2>
+        <p className="device-info-text">{t('auth.accountHint')}</p>
       </section>
     );
   }
 
-  if (!user) {
+  if (user) {
     return (
-      <section id="account-panel" className="device-card auth-card">
-        <div className="device-card-head">
+      <section className="auth-card" id="account-panel">
+        <div className="profile-header">
+          <Award className="icon-md icon-accent" />
           <div>
-            <h2>{t('auth.accountTitle')}</h2>
-            <p>{t('auth.accountHint')}</p>
+            <h2>{user.profile.displayName || user.email}</h2>
+            <p className="device-info-text">{user.email}</p>
           </div>
         </div>
-        <div className="btn-row" style={{ marginBottom: 10 }}>
-          <button
-            type="button"
-            className={`btn ${mode === 'login' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setMode('login')}
-          >
-            {t('auth.login')}
-          </button>
-          <button
-            type="button"
-            className={`btn ${mode === 'register' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setMode('register')}
-          >
-            {t('auth.register')}
-          </button>
-        </div>
+
         <form
-          className="auth-form"
           onSubmit={(e) => {
             e.preventDefault();
-            if (mode === 'login') void onLogin(email, password);
-            else void onRegister(email, password, displayName);
+            void onSaveProfile({ displayName, weightKg, ftp, bikeWeightKg });
           }}
+          className="profile-form"
         >
-          {mode === 'register' && (
-            <label>
+          <div className="input-group">
+            <label htmlFor="pf-name">
+              <UserIcon className="icon-xs" />
               {t('auth.displayName')}
-              <input
-                type="text"
-                autoComplete="nickname"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={t('auth.displayNamePlaceholder')}
-              />
             </label>
-          )}
-          <label>
-            {t('auth.email')}
             <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="pf-name"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
             />
-          </label>
-          <label>
-            {t('auth.password')}
-            <input
-              type="password"
-              required
-              minLength={8}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          <button type="submit" className="btn btn-secondary" disabled={busy}>
-            {busy ? '…' : mode === 'login' ? t('auth.logIn') : t('auth.createAccount')}
-          </button>
+          </div>
+
+          <div className="profile-row-3">
+            <div className="input-group">
+              <label htmlFor="pf-w">{t('auth.weight')}</label>
+              <input
+                id="pf-w"
+                type="number"
+                step="0.5"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="pf-ftp">{t('auth.ftp')}</label>
+              <input
+                id="pf-ftp"
+                type="number"
+                value={ftp}
+                onChange={(e) => setFtp(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="pf-bw">{t('auth.bikeWeight')}</label>
+              <input
+                id="pf-bw"
+                type="number"
+                step="0.5"
+                value={bikeWeightKg}
+                onChange={(e) => setBikeWeightKg(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="btn-row">
+            <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
+              <Save className="icon-xs" />
+              {busy ? 'Saving...' : t('auth.saveProfile')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => void onLogout()}
+            >
+              <LogOut className="icon-xs" />
+              {t('auth.logOut')}
+            </button>
+          </div>
         </form>
+
+        <div className="history-section">
+          <h3>
+            <History className="icon-xs" />
+            {t('auth.rideHistory')}
+          </h3>
+          {ridesLoading && <p className="device-info-text">Loading history...</p>}
+          {!ridesLoading && rides.length === 0 && (
+            <p className="device-info-text">{t('auth.rideHistoryEmpty')}</p>
+          )}
+          {!ridesLoading && rides.length > 0 && (
+            <ul className="ride-history-list">
+              {rides.map((r) => (
+                <li key={r.id} className="ride-history-item">
+                  <div className="ride-history-date">{formatRideDate(r.createdAt)}</div>
+                  <div className="ride-history-stats">{rideStatsLine(r)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {message && <p className="auth-message">{message}</p>}
       </section>
     );
   }
 
   return (
-    <section id="account-panel" className="device-card auth-card">
-      <div className="device-card-head">
-        <div>
-          <h2>{t('auth.profile')}</h2>
-          <p>
-            {user.profile.displayName || user.email}
-            <br />
-            <span className="auth-email">{user.email}</span>
-          </p>
-        </div>
+    <section className="auth-card" id="account-panel">
+      <div className="auth-tabs">
+        <button
+          type="button"
+          className={`tab-btn ${mode === 'login' ? 'active' : ''}`}
+          onClick={() => setMode('login')}
+        >
+          <LogIn className="icon-xs" />
+          {t('auth.login')}
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${mode === 'register' ? 'active' : ''}`}
+          onClick={() => setMode('register')}
+        >
+          <UserPlus className="icon-xs" />
+          {t('auth.register')}
+        </button>
       </div>
+
       <form
-        className="auth-form"
         onSubmit={(e) => {
           e.preventDefault();
-          void onSaveProfile({ displayName, weightKg, ftp, bikeWeightKg });
+          if (mode === 'login') {
+            void onLogin(email, password);
+          } else {
+            void onRegister(email, password, displayName);
+          }
         }}
+        className="auth-form"
       >
-        <label>
-          {t('auth.displayName')}
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={t('auth.displayNamePlaceholder')}
-          />
-        </label>
-        <label>
-          {t('auth.weight')}
-          <input
-            type="number"
-            min={1}
-            step={0.1}
-            value={weightKg}
-            onChange={(e) => setWeightKg(e.target.value)}
-          />
-        </label>
-        <label>
-          {t('auth.ftp')}
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={ftp}
-            onChange={(e) => setFtp(e.target.value)}
-          />
-        </label>
-        <label>
-          {t('auth.bikeWeight')}
-          <input
-            type="number"
-            min={1}
-            step={0.1}
-            value={bikeWeightKg}
-            onChange={(e) => setBikeWeightKg(e.target.value)}
-          />
-        </label>
-        <div className="btn-row">
-          <button type="submit" className="btn btn-secondary" disabled={busy}>
-            {busy ? '…' : t('auth.saveProfile')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={busy}
-            onClick={() => void onLogout()}
-          >
-            {t('auth.logOut')}
-          </button>
-        </div>
-      </form>
-      {message && <p className="auth-message">{message}</p>}
-
-      <div className="ride-history">
-        <h3>{t('auth.rideHistory')}</h3>
-        <p className="ride-history-hint">{t('auth.rideHistoryHint')}</p>
-        {ridesLoading ? (
-          <p className="muted-text">…</p>
-        ) : rides.length === 0 ? (
-          <p className="muted-text">{t('auth.rideHistoryEmpty')}</p>
-        ) : (
-          <ul className="ride-history-list">
-            {rides.map((ride) => (
-              <li key={ride.id} className="ride-history-item">
-                <div className="ride-history-title">
-                  {ride.routeName || t('auth.rideUntitled')}
-                </div>
-                <div className="ride-history-meta">{formatRideDate(ride.startedAt)}</div>
-                <div className="ride-history-stats">{rideStatsLine(ride)}</div>
-              </li>
-            ))}
-          </ul>
+        {mode === 'register' && (
+          <div className="input-group">
+            <label htmlFor="reg-name">
+              <UserIcon className="icon-xs" />
+              {t('auth.displayName')}
+            </label>
+            <input
+              id="reg-name"
+              type="text"
+              required
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
         )}
-      </div>
+
+        <div className="input-group">
+          <label htmlFor="auth-email">
+            <Mail className="icon-xs" />
+            {t('auth.email')}
+          </label>
+          <input
+            id="auth-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <div className="input-group">
+          <label htmlFor="auth-pass">
+            <Lock className="icon-xs" />
+            {t('auth.password')}
+          </label>
+          <input
+            id="auth-pass"
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary" disabled={busy}>
+          {busy
+            ? 'Please wait...'
+            : mode === 'login'
+              ? t('auth.logIn')
+              : t('auth.createAccount')}
+        </button>
+      </form>
+
+      {message && <p className="auth-message">{message}</p>}
     </section>
   );
 }

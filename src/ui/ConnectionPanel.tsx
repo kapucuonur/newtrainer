@@ -4,6 +4,16 @@ import { getBluetoothSupportCode, isWebBluetoothSupported } from '../bluetooth/w
 import { useT } from '../i18n';
 import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import {
+  Bluetooth,
+  Wifi,
+  Heart,
+  Sliders,
+  X,
+  ShieldCheck,
+  Zap,
+  Radio,
+} from 'lucide-react';
 
 type Props = {
   devicesEnabled: boolean;
@@ -71,9 +81,14 @@ export function ConnectionPanel({
   return (
     <aside className="connection-panel" id="connection-panel" aria-label={t('shell.controls')}>
       <div className="panel-sheet-handle" aria-hidden="true" />
+
       <header className="panel-header">
         <div className="panel-header-row">
-          <p className="brand-mark">ROADLAB</p>
+          <div className="brand-badge">
+            <Zap className="icon-sm icon-accent" />
+            <span className="brand-mark">ROADLAB</span>
+            <span className="brand-tag">PRO</span>
+          </div>
           {onClosePanel ? (
             <button
               type="button"
@@ -81,6 +96,7 @@ export function ConnectionPanel({
               onClick={onClosePanel}
               aria-label={t('shell.closeControls')}
             >
+              <X className="icon-xs" />
               {t('shell.close')}
             </button>
           ) : null}
@@ -91,8 +107,11 @@ export function ConnectionPanel({
       </header>
 
       <div className="support-card">
-        <strong>{t('browser.title')}</strong>
-        <p>{t(getBluetoothSupportCode())}</p>
+        <ShieldCheck className="icon-sm icon-ok" />
+        <div>
+          <strong>{t('browser.title')}</strong>
+          <p>{t(getBluetoothSupportCode())}</p>
+        </div>
       </div>
 
       {deviceGateMessage && (
@@ -104,98 +123,143 @@ export function ConnectionPanel({
         </div>
       )}
 
-      <section className="device-card">
-        <div className="device-card-head">
-          <StatusDot state={trainerState} />
-          <div>
-            <h2>{t('trainer.title')}</h2>
-            <p>
-              {trainerLabel} · {trainerStatus}
-            </p>
-            {!devicesEnabled && <p className="muted-text">{t('devices.helpTrainer')}</p>}
-          </div>
-        </div>
-        {devicesEnabled ? (
-          <>
-            <div className="btn-row">
-              {trainerState === 'connected' ? (
-                <button type="button" className="btn btn-ghost" onClick={onDisconnectTrainer}>
-                  {t('trainer.disconnect')}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={onConnectTrainer}
-                  disabled={!btOk || trainerState === 'connecting'}
-                >
-                  {trainerState === 'connecting' ? t('trainer.connecting') : t('trainer.connect')}
-                </button>
-              )}
-              <button type="button" className="btn btn-secondary" onClick={onUseMock}>
-                {t('trainer.useDemo')}
-              </button>
-            </div>
-            {usingMock && (
-              <label className="effort-slider">
-                <span>{t('trainer.demoEffort')}</span>
-                <input
-                  type="range"
-                  min={0.3}
-                  max={1}
-                  step={0.01}
-                  value={mockEffort}
-                  onChange={(e) => onMockEffort(Number(e.target.value))}
-                />
-              </label>
-            )}
-          </>
-        ) : null}
-      </section>
+      {/* Hardware Device Section */}
+      <section className="device-section">
+        <h2>
+          <Radio className="icon-xs" />
+          Hardware & Sensors
+        </h2>
 
-      <section className="device-card">
-        <div className="device-card-head">
-          <StatusDot state={hrState} />
-          <div>
-            <h2>{t('hr.title')}</h2>
-            <p>
-              {hrName} · {hrStatus}
-              {hrBpm != null ? ` · ${hrBpm} bpm` : ''}
-            </p>
-            {!devicesEnabled && <p className="muted-text">{t('devices.helpHr')}</p>}
+        {/* FTMS Smart Trainer Card */}
+        <article className="device-card">
+          <div className="device-card-head">
+            <div className="device-title">
+              <Bluetooth className="icon-sm icon-accent" />
+              <div>
+                <h3>{t('trainer.title')}</h3>
+                <p className="device-name">{trainerLabel}</p>
+              </div>
+            </div>
+            <StatusDot state={usingMock ? 'connected' : trainerState} />
           </div>
-        </div>
-        {devicesEnabled ? (
+
+          <div className="device-status-row">
+            <span className="status-label">{trainerStatus}</span>
+          </div>
+
+          <div className="btn-row">
+            {trainerState === 'connected' && !usingMock ? (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={onDisconnectTrainer}
+              >
+                {t('trainer.disconnect')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={!devicesEnabled || !btOk || trainerState === 'connecting'}
+                onClick={onConnectTrainer}
+              >
+                {trainerState === 'connecting' ? t('trainer.connecting') : t('trainer.connect')}
+              </button>
+            )}
+
+            <button
+              type="button"
+              className={`btn btn-sm ${usingMock ? 'btn-accent' : 'btn-ghost'}`}
+              disabled={!devicesEnabled}
+              onClick={onUseMock}
+            >
+              {t('trainer.useDemo')}
+            </button>
+          </div>
+
+          {usingMock && (
+            <div className="mock-control">
+              <label htmlFor="mock-effort-slider">
+                <Sliders className="icon-xs" />
+                {t('trainer.demoEffort')} ({ (mockEffort * 100).toFixed(0) }%)
+              </label>
+              <input
+                id="mock-effort-slider"
+                type="range"
+                min="0.3"
+                max="1.5"
+                step="0.05"
+                value={mockEffort}
+                onChange={(e) => onMockEffort(Number.parseFloat(e.target.value))}
+              />
+            </div>
+          )}
+        </article>
+
+        {/* Heart Rate Monitor Card */}
+        <article className="device-card">
+          <div className="device-card-head">
+            <div className="device-title">
+              <Heart className="icon-sm icon-heart" />
+              <div>
+                <h3>{t('hr.title')}</h3>
+                <p className="device-name">{hrName}</p>
+              </div>
+            </div>
+            <StatusDot state={hrState} />
+          </div>
+
+          <div className="device-status-row">
+            <span className="status-label">
+              {hrStatus} {hrBpm != null ? `(${hrBpm} bpm)` : ''}
+            </span>
+          </div>
+
           <div className="btn-row">
             {hrState === 'connected' ? (
-              <button type="button" className="btn btn-ghost" onClick={onDisconnectHr}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={onDisconnectHr}
+              >
                 {t('hr.disconnect')}
               </button>
             ) : (
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-sm"
+                disabled={!devicesEnabled || !btOk || hrState === 'connecting'}
                 onClick={onConnectHr}
-                disabled={!btOk || hrState === 'connecting'}
               >
-                {hrState === 'connecting' ? t('hr.connecting') : t('hr.connect')}
+                {t('hr.connect')}
               </button>
             )}
           </div>
-        ) : null}
-      </section>
+        </article>
 
-      <section className="device-card device-card-muted">
-        <h2>{t('wifi.title')}</h2>
-        <p>{wifiMessage}</p>
-        {!devicesEnabled && <p className="muted-text">{t('devices.helpWifi')}</p>}
-        {devicesEnabled ? (
-          <button type="button" className="btn btn-ghost" onClick={onProbeWifi}>
+        {/* Wi-Fi Bridge Card */}
+        <article className="device-card">
+          <div className="device-card-head">
+            <div className="device-title">
+              <Wifi className="icon-sm icon-accent" />
+              <div>
+                <h3>{t('wifi.title')}</h3>
+              </div>
+            </div>
+          </div>
+          <p className="device-info-text">{wifiMessage}</p>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={!devicesEnabled}
+            onClick={onProbeWifi}
+          >
             {t('wifi.probe')}
           </button>
-        ) : null}
+        </article>
       </section>
 
+      {/* Account & Group Ride Children */}
       {children}
     </aside>
   );
