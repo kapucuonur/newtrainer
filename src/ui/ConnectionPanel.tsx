@@ -48,7 +48,7 @@ export function ConnectionPanel({
         <p className="brand-mark">ROADLAB</p>
         <h1>Indoor Road Ride</h1>
         <p className="panel-sub">
-          Free Zwift-style trainer — FTMS Bluetooth, real-road routes, elevation resistance.
+          FTMS Bluetooth trainer, heart rate, and real-road elevation — map first, ride ready.
         </p>
       </header>
 

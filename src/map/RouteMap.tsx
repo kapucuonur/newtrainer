@@ -5,10 +5,16 @@ import {
   Marker,
   NavigationControl,
   ScaleControl,
+  setWorkerUrl,
 } from 'maplibre-gl';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { EnrichedRoute, LatLng } from '../routing/types';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
+// resolves a sibling maplibre-gl-worker.mjs that never exists in production.
+setWorkerUrl(maplibreWorkerUrl);
 
 const STYLE_URL =
   import.meta.env.VITE_MAP_STYLE_URL ??
@@ -76,10 +82,10 @@ export function RouteMap({
         type: 'line',
         source: 'route',
         paint: {
-          'line-color': '#3dd6c6',
-          'line-width': 10,
-          'line-opacity': 0.22,
-          'line-blur': 2,
+          'line-color': '#2ec4ff',
+          'line-width': 12,
+          'line-opacity': 0.28,
+          'line-blur': 1.5,
         },
       });
       map.addLayer({
@@ -88,7 +94,7 @@ export function RouteMap({
         source: 'route',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#7CFFB2',
+          'line-color': '#5ee1ff',
           'line-width': 4,
         },
       });
