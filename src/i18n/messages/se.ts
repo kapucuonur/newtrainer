@@ -136,6 +136,13 @@ export const se: Messages = {
   'route.gateLogin':
     'Logga in eller registrera dig för att ansluta enheter, välja start/mål och bygga en rutt.',
   'route.gateCta': 'Öppna konto',
+  'route.alternatives': 'Ruttalternativ',
+  'route.pickAlternative': 'Välj en rutt',
+  'route.alternativeN': 'Rutt {{n}}',
+  'route.selected': 'Vald',
+  'route.ascentPending': 'Stigning…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Tur och retur (A → B → A)',
 
   'map.pickBanner': 'Tryck på kartan för punkt {{point}}',
   'map.followBanner': 'Följ väg · 3D-kamera',

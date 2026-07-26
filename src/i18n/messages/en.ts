@@ -132,6 +132,13 @@ export const en = {
   'route.gateLogin':
     'Log in or register to connect devices, pick start/end points, and build a route.',
   'route.gateCta': 'Open Account',
+  'route.alternatives': 'Route options',
+  'route.pickAlternative': 'Choose a route',
+  'route.alternativeN': 'Route {{n}}',
+  'route.selected': 'Selected',
+  'route.ascentPending': 'Ascent…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Round trip (A → B → A)',
 
   'map.pickBanner': 'Tap the map to set point {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',

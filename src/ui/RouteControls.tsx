@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { EnrichedRoute, LatLng } from '../routing/types';
+import { useState, useEffect, type CSSProperties } from 'react';
+import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
+import { routeAltColor } from '../routing/osrm';
 import type { RidePhase } from '../simulation/rideEngine';
 import { searchLocation, type GeocodedPlace } from '../routing/geocoding';
 import { useT } from '../i18n';
@@ -26,6 +27,11 @@ type Props = {
   pointB: LatLng | null;
   pickMode: 'A' | 'B' | null;
   route: EnrichedRoute | null;
+  routeAlternatives?: RouteResult[];
+  selectedAlternativeIndex?: number;
+  elevByAlternative?: Record<number, { elevGainMeters: number; elevLossMeters: number }>;
+  elevatingAlternative?: boolean;
+  onSelectAlternative?: (index: number) => void;
   loading: boolean;
   error: string | null;
   phase: RidePhase;
@@ -178,6 +184,11 @@ export function RouteControls({
   pointB,
   pickMode,
   route,
+  routeAlternatives = [],
+  selectedAlternativeIndex = 0,
+  elevByAlternative = {},
+  elevatingAlternative = false,
+  onSelectAlternative,
   loading,
   error,
   phase,
@@ -210,6 +221,11 @@ export function RouteControls({
   const t = useT();
   const showComplete = phase === 'finished' && hasExport;
   const locked = !routePlanningEnabled;
+  const canPickAlternative =
+    routePlanningEnabled &&
+    routeAlternatives.length > 1 &&
+    (phase === 'idle' || phase === 'ready' || phase === 'finished');
+  const showAltPicker = routeAlternatives.length > 1;
 
   return (
     <section className="route-controls" aria-label="Route Controls">
@@ -325,6 +341,51 @@ export function RouteControls({
         </div>
       )}
 
+      {showAltPicker && (
+        <div className="route-alt-picker" role="listbox" aria-label={t('route.alternatives')}>
+          <div className="route-alt-picker-label">
+            <Compass className="icon-xs icon-accent" />
+            <span>{t('route.pickAlternative')}</span>
+          </div>
+          <div className="route-alt-cards">
+            {routeAlternatives.map((alt, index) => {
+              const selected = index === selectedAlternativeIndex;
+              const elev = elevByAlternative[index];
+              const color = routeAltColor(index);
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  className={`route-alt-card ${selected ? 'is-selected' : ''}`}
+                  style={{ '--alt-color': color } as CSSProperties}
+                  disabled={!canPickAlternative || elevatingAlternative || selected}
+                  onClick={() => onSelectAlternative?.(index)}
+                >
+                  <span className="route-alt-swatch" aria-hidden />
+                  <span className="route-alt-card-body">
+                    <span className="route-alt-title">
+                      {t('route.alternativeN', { n: index + 1 })}
+                      {selected ? ` · ${t('route.selected')}` : ''}
+                    </span>
+                    <span className="route-alt-stats">
+                      {formatDistance(alt.distanceMeters)}
+                      {' · '}
+                      ~{formatDuration(alt.durationSeconds)}
+                      {' · '}
+                      {elev
+                        ? t('route.ascent', { gain: elev.elevGainMeters })
+                        : t('route.ascentPending')}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Route Metadata Summary */}
       <div className="route-meta">
         <span className="meta-badge">
@@ -335,7 +396,7 @@ export function RouteControls({
         </span>
         {isRoundTrip && (
           <span className="meta-badge highlight">
-            <Repeat className="icon-xs" /> Round Trip (A → B → A)
+            <Repeat className="icon-xs" /> {t('route.roundTrip')}
           </span>
         )}
         {route && (

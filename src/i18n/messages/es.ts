@@ -136,6 +136,13 @@ export const es: Messages = {
   'route.gateLogin':
     'Inicia sesión o regístrate para conectar dispositivos, elegir inicio/fin y crear una ruta.',
   'route.gateCta': 'Abrir cuenta',
+  'route.alternatives': 'Opciones de ruta',
+  'route.pickAlternative': 'Elige una ruta',
+  'route.alternativeN': 'Ruta {{n}}',
+  'route.selected': 'Seleccionada',
+  'route.ascentPending': 'Ascenso…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Ida y vuelta (A → B → A)',
 
   'map.pickBanner': 'Toca el mapa para el punto {{point}}',
   'map.followBanner': 'Seguir carretera · cámara 3D',

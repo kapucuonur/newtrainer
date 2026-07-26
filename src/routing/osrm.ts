@@ -3,6 +3,15 @@ import type { LatLng, RouteResult } from './types';
 const OSRM_BASE =
   import.meta.env.VITE_OSRM_URL ?? 'https://router.project-osrm.org';
 
+/** Distinct colors for alternative routes on the map / chips. */
+export const ROUTE_ALT_COLORS = [
+  '#1aa3d9',
+  '#ff9f0a',
+  '#af52de',
+  '#30d158',
+  '#ff3b30',
+] as const;
+
 function haversineMeters(a: LatLng, b: LatLng): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -31,55 +40,80 @@ function straightFallback(from: LatLng, to: LatLng): RouteResult {
   };
 }
 
+type OsrmRouteJson = {
+  distance: number;
+  duration: number;
+  geometry: { type: string; coordinates: number[][] };
+};
+
+function parseOsrmRoute(route: OsrmRouteJson): RouteResult {
+  const coordinates = route.geometry.coordinates.map(([lng, lat]) => ({
+    lat,
+    lng,
+  }));
+  return {
+    coordinates,
+    distanceMeters: route.distance,
+    durationSeconds: route.duration,
+    geometry: {
+      type: 'LineString',
+      coordinates: route.geometry.coordinates,
+    },
+    source: 'osrm',
+  };
+}
+
 /**
- * Route A→B using public OSRM cycling profile (free, no API key).
- * Falls back to a straight line if the service is unreachable.
+ * Fetch A→B (or A→B→A round-trip) with OSRM alternatives.
+ * Returns 1–N routes (often 1–3). Falls back to a single straight line on failure.
  */
-export async function fetchRoute(
+export async function fetchRouteAlternatives(
   from: LatLng,
   to: LatLng,
   isRoundTrip = false,
-): Promise<RouteResult> {
+): Promise<RouteResult[]> {
   const path = isRoundTrip
     ? `${from.lng},${from.lat};${to.lng},${to.lat};${from.lng},${from.lat}`
     : `${from.lng},${from.lat};${to.lng},${to.lat}`;
-  const url = `${OSRM_BASE}/route/v1/cycling/${path}?overview=full&geometries=geojson&steps=false`;
+  const url =
+    `${OSRM_BASE}/route/v1/cycling/${path}` +
+    `?overview=full&geometries=geojson&steps=false&alternatives=true`;
 
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`OSRM HTTP ${response.status}`);
     const json = (await response.json()) as {
       code?: string;
-      routes?: Array<{
-        distance: number;
-        duration: number;
-        geometry: { type: string; coordinates: number[][] };
-      }>;
+      routes?: OsrmRouteJson[];
     };
 
-    const route = json.routes?.[0];
-    if (json.code !== 'Ok' || !route?.geometry?.coordinates?.length) {
+    const routes = json.routes ?? [];
+    if (json.code !== 'Ok' || routes.length === 0) {
       throw new Error('OSRM returned no route');
     }
 
-    const coordinates = route.geometry.coordinates.map(([lng, lat]) => ({
-      lat,
-      lng,
-    }));
+    const parsed = routes
+      .filter((r) => r.geometry?.coordinates?.length)
+      .map(parseOsrmRoute);
 
-    return {
-      coordinates,
-      distanceMeters: route.distance,
-      durationSeconds: route.duration,
-      geometry: {
-        type: 'LineString',
-        coordinates: route.geometry.coordinates,
-      },
-      source: 'osrm',
-    };
+    if (parsed.length === 0) throw new Error('OSRM returned no route');
+    return parsed;
   } catch {
-    return straightFallback(from, to);
+    return [straightFallback(from, to)];
   }
+}
+
+/**
+ * Route A→B using public OSRM cycling profile (free, no API key).
+ * Returns the primary alternative. Prefer fetchRouteAlternatives for multi-route UI.
+ */
+export async function fetchRoute(
+  from: LatLng,
+  to: LatLng,
+  isRoundTrip = false,
+): Promise<RouteResult> {
+  const alts = await fetchRouteAlternatives(from, to, isRoundTrip);
+  return alts[0];
 }
 
 export function densifyRoute(
@@ -103,4 +137,8 @@ export function densifyRoute(
     }
   }
   return out;
+}
+
+export function routeAltColor(index: number): string {
+  return ROUTE_ALT_COLORS[index % ROUTE_ALT_COLORS.length];
 }

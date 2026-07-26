@@ -11,7 +11,8 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
-import type { EnrichedRoute, LatLng } from '../routing/types';
+import { routeAltColor } from '../routing/osrm';
+import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { bearingAlongRoute, lerpBearing } from './bearing';
 import { hasMapillaryToken } from './mapillary';
 import { StreetViewPanel } from './StreetViewPanel';
@@ -36,6 +37,10 @@ type Props = {
   pointA: LatLng | null;
   pointB: LatLng | null;
   route: EnrichedRoute | null;
+  /** OSRM alternatives shown faded until selected (planning only). */
+  routeAlternatives?: RouteResult[];
+  selectedAlternativeIndex?: number;
+  onSelectAlternative?: (index: number) => void;
   rider: LatLng | null;
   ridePhase: RidePhase;
   distanceMeters: number;
@@ -110,6 +115,9 @@ export function RouteMap({
   pointA,
   pointB,
   route,
+  routeAlternatives = [],
+  selectedAlternativeIndex = 0,
+  onSelectAlternative,
   rider,
   ridePhase,
   distanceMeters,
@@ -129,12 +137,14 @@ export function RouteMap({
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
   const pickingEnabledRef = useRef(pickingEnabled);
+  const onSelectAlternativeRef = useRef(onSelectAlternative);
   const bearingRef = useRef(0);
   const [heading, setHeading] = useState(0);
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
   const activePickMode = pickingEnabled ? pickMode : null;
   const streetViewEnabled = followRoad && !groupMode;
+  const showAlternatives = !followRoad && routeAlternatives.length > 1;
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -147,6 +157,10 @@ export function RouteMap({
   useEffect(() => {
     pickingEnabledRef.current = pickingEnabled;
   }, [pickingEnabled]);
+
+  useEffect(() => {
+    onSelectAlternativeRef.current = onSelectAlternative;
+  }, [onSelectAlternative]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -176,11 +190,35 @@ export function RouteMap({
         data: { type: 'FeatureCollection', features: [] },
       });
       map.addLayer({
+        id: 'route-alt-hit',
+        type: 'line',
+        source: 'route',
+        filter: ['==', ['get', 'selected'], 0],
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 18,
+          'line-opacity': 0.01,
+        },
+      });
+      map.addLayer({
+        id: 'route-alt-line',
+        type: 'line',
+        source: 'route',
+        filter: ['==', ['get', 'selected'], 0],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 4,
+          'line-opacity': 0.42,
+        },
+      });
+      map.addLayer({
         id: 'route-glow',
         type: 'line',
         source: 'route',
+        filter: ['==', ['get', 'selected'], 1],
         paint: {
-          'line-color': '#0b6e99',
+          'line-color': ['get', 'color'],
           'line-width': 12,
           'line-opacity': 0.35,
           'line-blur': 1.5,
@@ -190,12 +228,30 @@ export function RouteMap({
         id: 'route-line',
         type: 'line',
         source: 'route',
+        filter: ['==', ['get', 'selected'], 1],
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#1aa3d9',
-          'line-width': 5,
+          'line-color': ['get', 'color'],
+          'line-width': 5.5,
+          'line-opacity': 1,
         },
       });
+
+      const onAltClick = (e: { features?: Array<{ properties?: { index?: number } }> }) => {
+        const idx = e.features?.[0]?.properties?.index;
+        if (typeof idx === 'number' && Number.isFinite(idx)) {
+          onSelectAlternativeRef.current?.(idx);
+        }
+      };
+      map.on('click', 'route-alt-hit', onAltClick);
+      map.on('click', 'route-alt-line', onAltClick);
+      map.on('mouseenter', 'route-alt-hit', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'route-alt-hit', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
       tryEnable3dBuildings(map);
     });
 
@@ -303,23 +359,61 @@ export function RouteMap({
 
     const apply = () => {
       const source = map.getSource('route') as GeoJSONSource | undefined;
-      if (!source || !route) {
-        source?.setData({ type: 'FeatureCollection', features: [] });
+      if (!source) return;
+
+      if (!route && routeAlternatives.length === 0) {
+        source.setData({ type: 'FeatureCollection', features: [] });
         return;
       }
 
+      let alts: Array<{ geometry: RouteResult['geometry'] }>;
+      if (followRoad && route) {
+        alts = [route];
+      } else if (routeAlternatives.length > 0) {
+        alts = routeAlternatives;
+      } else if (route) {
+        alts = [route];
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
+      }
+
+      const features = alts.map((alt, index) => {
+        const isSelected = showAlternatives
+          ? index === selectedAlternativeIndex
+          : true;
+        const colorIndex = showAlternatives
+          ? index
+          : followRoad
+            ? selectedAlternativeIndex
+            : index;
+        return {
+          type: 'Feature' as const,
+          properties: {
+            index,
+            selected: isSelected ? 1 : 0,
+            color: routeAltColor(colorIndex),
+          },
+          geometry: alt.geometry,
+        };
+      });
+
+      // Draw unselected first so selected paints on top within filter layers.
+      features.sort((a, b) => a.properties.selected - b.properties.selected);
+
       source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: route.geometry,
+        type: 'FeatureCollection',
+        features,
       });
 
       // Overview fit only when not in follow-road ride camera.
       if (followRoad) return;
 
       const bounds = new LngLatBounds();
-      for (const [lng, lat] of route.geometry.coordinates) {
-        bounds.extend([lng, lat]);
+      for (const feature of features) {
+        for (const [lng, lat] of feature.geometry.coordinates) {
+          bounds.extend([lng, lat]);
+        }
       }
       if (!bounds.isEmpty()) {
         map.easeTo({ pitch: 0, bearing: 0, duration: 400 });
@@ -329,7 +423,13 @@ export function RouteMap({
 
     if (map.isStyleLoaded()) apply();
     else map.once('load', apply);
-  }, [route, followRoad]);
+  }, [
+    route,
+    routeAlternatives,
+    selectedAlternativeIndex,
+    showAlternatives,
+    followRoad,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;

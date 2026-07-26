@@ -29,8 +29,8 @@ import type { TrackPoint } from './export/types';
 import { useT, type MessageKey } from './i18n';
 import { RouteMap, type MapPeer } from './map/RouteMap';
 import { parseRoomRoute } from './routing/fromRoomRoute';
-import { fetchRoute } from './routing/osrm';
-import type { EnrichedRoute, LatLng } from './routing/types';
+import { fetchRouteAlternatives } from './routing/osrm';
+import type { EnrichedRoute, LatLng, RouteResult } from './routing/types';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
 import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
@@ -98,9 +98,16 @@ export default function App() {
   const [pickMode, setPickMode] = useState<'A' | 'B' | null>(null);
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [route, setRoute] = useState<EnrichedRoute | null>(null);
+  const [routeAlternatives, setRouteAlternatives] = useState<RouteResult[]>([]);
+  const [selectedAltIndex, setSelectedAltIndex] = useState(0);
+  const [enrichedByAlt, setEnrichedByAlt] = useState<Record<number, EnrichedRoute>>(
+    {},
+  );
+  const [elevatingAlt, setElevatingAlt] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<RideTelemetry>(idleTelemetry);
+  const altEnrichGenRef = useRef(0);
 
   const [user, setUser] = useState<User | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
@@ -238,6 +245,11 @@ export default function App() {
         setGroupMessage(t('group.badRoute'));
         return false;
       }
+      altEnrichGenRef.current += 1;
+      setRouteAlternatives([]);
+      setSelectedAltIndex(0);
+      setEnrichedByAlt({ 0: parsed });
+      setElevatingAlt(false);
       setRoute(parsed);
       engineRef.current.setRoute(parsed);
       const first = parsed.coordinates[0] ?? null;
@@ -249,6 +261,56 @@ export default function App() {
       return true;
     },
     [t],
+  );
+
+  const activateEnrichedRoute = useCallback((enriched: EnrichedRoute, index: number) => {
+    setSelectedAltIndex(index);
+    setRoute(enriched);
+    engineRef.current.setRoute(enriched);
+    setRouteError(enriched.elevationWarning ?? null);
+  }, []);
+
+  const enrichAndActivate = useCallback(
+    async (alts: RouteResult[], index: number, generation: number) => {
+      const base = alts[index];
+      if (!base) return;
+      setElevatingAlt(true);
+      try {
+        const enriched = await enrichRouteWithElevation(base);
+        if (altEnrichGenRef.current !== generation) return;
+        setEnrichedByAlt((prev) => ({ ...prev, [index]: enriched }));
+        activateEnrichedRoute(enriched, index);
+      } catch (error) {
+        if (altEnrichGenRef.current !== generation) return;
+        setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
+      } finally {
+        if (altEnrichGenRef.current === generation) setElevatingAlt(false);
+      }
+    },
+    [activateEnrichedRoute, t],
+  );
+
+  /** Background DEM for remaining alternatives (cheap when 2–3 alts). */
+  const enrichRemainingInBackground = useCallback(
+    (alts: RouteResult[], skipIndex: number, generation: number) => {
+      if (alts.length <= 1) return;
+      void (async () => {
+        for (let i = 0; i < alts.length; i++) {
+          if (i === skipIndex) continue;
+          if (altEnrichGenRef.current !== generation) return;
+          try {
+            const enriched = await enrichRouteWithElevation(alts[i]);
+            if (altEnrichGenRef.current !== generation) return;
+            setEnrichedByAlt((prev) =>
+              prev[i] ? prev : { ...prev, [i]: enriched },
+            );
+          } catch {
+            // Selected route elev is required; background failures are silent.
+          }
+        }
+      })();
+    },
+    [],
   );
 
   const beginGroupRide = useCallback(async () => {
@@ -439,41 +501,85 @@ export default function App() {
   const buildRoute = async (roundTripOverride?: boolean) => {
     if (!canPlanRoute || !pointA || !pointB) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
+    const generation = ++altEnrichGenRef.current;
     setLoadingRoute(true);
     setRouteError(null);
+    setElevatingAlt(false);
+    setRoute(null);
+    setRouteAlternatives([]);
+    setEnrichedByAlt({});
+    setSelectedAltIndex(0);
+    engineRef.current.setRoute(null);
     try {
-      const base = await fetchRoute(pointA, pointB, roundTrip);
-      const enriched = await enrichRouteWithElevation(base);
-      setRoute(enriched);
-      engineRef.current.setRoute(enriched);
-      setRouteError(enriched.elevationWarning ?? null);
+      const alts = await fetchRouteAlternatives(pointA, pointB, roundTrip);
+      if (altEnrichGenRef.current !== generation) return;
+      setRouteAlternatives(alts);
+      await enrichAndActivate(alts, 0, generation);
+      enrichRemainingInBackground(alts, 0, generation);
     } catch (error) {
+      if (altEnrichGenRef.current !== generation) return;
       setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
     } finally {
-      setLoadingRoute(false);
+      if (altEnrichGenRef.current === generation) setLoadingRoute(false);
     }
   };
 
   const handleSelectPreset = async (pA: LatLng, pB: LatLng, roundTripOverride?: boolean) => {
     if (!canPlanRoute) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
+    const generation = ++altEnrichGenRef.current;
     setPointA(pA);
     setPointB(pB);
     setPickMode(null);
     setLoadingRoute(true);
     setRouteError(null);
+    setElevatingAlt(false);
+    setRoute(null);
+    setRouteAlternatives([]);
+    setEnrichedByAlt({});
+    setSelectedAltIndex(0);
+    engineRef.current.setRoute(null);
     try {
-      const base = await fetchRoute(pA, pB, roundTrip);
-      const enriched = await enrichRouteWithElevation(base);
-      setRoute(enriched);
-      engineRef.current.setRoute(enriched);
-      setRouteError(enriched.elevationWarning ?? null);
+      const alts = await fetchRouteAlternatives(pA, pB, roundTrip);
+      if (altEnrichGenRef.current !== generation) return;
+      setRouteAlternatives(alts);
+      await enrichAndActivate(alts, 0, generation);
+      enrichRemainingInBackground(alts, 0, generation);
     } catch (error) {
+      if (altEnrichGenRef.current !== generation) return;
       setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
     } finally {
-      setLoadingRoute(false);
+      if (altEnrichGenRef.current === generation) setLoadingRoute(false);
     }
   };
+
+  const onSelectAlternative = useCallback(
+    (index: number) => {
+      if (index === selectedAltIndex) return;
+      const phase = engineRef.current.getPhase();
+      if (phase === 'riding' || phase === 'paused') return;
+      if (!routeAlternatives[index]) return;
+
+      setSelectedAltIndex(index);
+      const cached = enrichedByAlt[index];
+      if (cached) {
+        activateEnrichedRoute(cached, index);
+        return;
+      }
+      // Don't keep the previous route active while DEM loads for the new choice.
+      setRoute(null);
+      engineRef.current.setRoute(null);
+      const generation = altEnrichGenRef.current;
+      void enrichAndActivate(routeAlternatives, index, generation);
+    },
+    [
+      activateEnrichedRoute,
+      enrichAndActivate,
+      enrichedByAlt,
+      routeAlternatives,
+      selectedAltIndex,
+    ],
+  );
 
   const resetGroupState = useCallback(() => {
     disconnectRoomSocket();
@@ -493,7 +599,12 @@ export default function App() {
       setGroupMessage(null);
     }
     await engineRef.current.stop();
+    altEnrichGenRef.current += 1;
     setRoute(null);
+    setRouteAlternatives([]);
+    setSelectedAltIndex(0);
+    setEnrichedByAlt({});
+    setElevatingAlt(false);
     setPointA(null);
     setPointB(null);
     setPickMode(canPlanRoute ? 'A' : null);
@@ -838,6 +949,18 @@ export default function App() {
 
   const hideSoloStart = Boolean(room && room.status === 'lobby');
 
+  const elevByAlternative = useMemo(() => {
+    const out: Record<number, { elevGainMeters: number; elevLossMeters: number }> =
+      {};
+    for (const [key, enriched] of Object.entries(enrichedByAlt)) {
+      out[Number(key)] = {
+        elevGainMeters: enriched.elevGainMeters,
+        elevLossMeters: enriched.elevLossMeters,
+      };
+    }
+    return out;
+  }, [enrichedByAlt]);
+
   const shellClass = [
     'app-shell',
     panelOpen ? 'panel-open' : '',
@@ -941,6 +1064,11 @@ export default function App() {
             pointB={pointB}
             pickMode={pickMode}
             route={route}
+            routeAlternatives={routeAlternatives}
+            selectedAlternativeIndex={selectedAltIndex}
+            elevByAlternative={elevByAlternative}
+            elevatingAlternative={elevatingAlt}
+            onSelectAlternative={onSelectAlternative}
             loading={loadingRoute}
             error={routeError}
             phase={telemetry.phase}
@@ -984,6 +1112,11 @@ export default function App() {
             pointA={pointA}
             pointB={pointB}
             route={route}
+            routeAlternatives={routeAlternatives}
+            selectedAlternativeIndex={selectedAltIndex}
+            onSelectAlternative={
+              canPlanRoute && !inGroup ? onSelectAlternative : undefined
+            }
             rider={telemetry.position}
             ridePhase={telemetry.phase}
             distanceMeters={telemetry.distanceMeters}

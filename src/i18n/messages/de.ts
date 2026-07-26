@@ -135,6 +135,13 @@ export const de: Messages = {
   'route.gateLogin':
     'Melden Sie sich an oder registrieren Sie sich, um Geräte zu verbinden, Start/Ziel zu setzen und eine Route zu bauen.',
   'route.gateCta': 'Konto öffnen',
+  'route.alternatives': 'Routenoptionen',
+  'route.pickAlternative': 'Route wählen',
+  'route.alternativeN': 'Route {{n}}',
+  'route.selected': 'Ausgewählt',
+  'route.ascentPending': 'Anstieg…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Hin und zurück (A → B → A)',
 
   'map.pickBanner': 'Tippen Sie auf die Karte für Punkt {{point}}',
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',

@@ -134,6 +134,13 @@ export const tr: Messages = {
   'route.gateLogin':
     'Cihaz bağlamak, başlangıç/bitiş seçmek ve rota oluşturmak için giriş yapın veya kayıt olun.',
   'route.gateCta': 'Hesabı aç',
+  'route.alternatives': 'Rota seçenekleri',
+  'route.pickAlternative': 'Bir rota seçin',
+  'route.alternativeN': 'Rota {{n}}',
+  'route.selected': 'Seçili',
+  'route.ascentPending': 'Tırmanış…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Gidiş-dönüş (A → B → A)',
 
   'map.pickBanner': 'Nokta {{point}} için haritaya dokunun',
   'map.followBanner': 'Yolu takip · 3D sürüş kamerası',

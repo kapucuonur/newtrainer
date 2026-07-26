@@ -136,6 +136,13 @@ export const no: Messages = {
   'route.gateLogin':
     'Logg inn eller registrer deg for å koble til enheter, velge start/slutt og bygge en rute.',
   'route.gateCta': 'Åpne konto',
+  'route.alternatives': 'Rutealternativer',
+  'route.pickAlternative': 'Velg en rute',
+  'route.alternativeN': 'Rute {{n}}',
+  'route.selected': 'Valgt',
+  'route.ascentPending': 'Stigning…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Tur-retur (A → B → A)',
 
   'map.pickBanner': 'Trykk på kartet for punkt {{point}}',
   'map.followBanner': 'Følg vei · 3D-kamera',

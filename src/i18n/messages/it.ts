@@ -136,6 +136,13 @@ export const it: Messages = {
   'route.gateLogin':
     'Accedi o registrati per collegare i dispositivi, scegliere inizio/fine e creare un percorso.',
   'route.gateCta': 'Apri Account',
+  'route.alternatives': 'Opzioni percorso',
+  'route.pickAlternative': 'Scegli un percorso',
+  'route.alternativeN': 'Percorso {{n}}',
+  'route.selected': 'Selezionato',
+  'route.ascentPending': 'Salita…',
+  'route.ascent': '↑{{gain}}m',
+  'route.roundTrip': 'Andata e ritorno (A → B → A)',
 
   'map.pickBanner': 'Tocca la mappa per il punto {{point}}',
   'map.followBanner': 'Segui strada · camera 3D',

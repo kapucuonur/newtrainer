@@ -136,6 +136,13 @@ export const ru: Messages = {
   'route.gateLogin':
     'Войдите или зарегистрируйтесь, чтобы подключить устройства, выбрать точки и построить маршрут.',
   'route.gateCta': 'Открыть аккаунт',
+  'route.alternatives': 'Варианты маршрута',
+  'route.pickAlternative': 'Выберите маршрут',
+  'route.alternativeN': 'Маршрут {{n}}',
+  'route.selected': 'Выбран',
+  'route.ascentPending': 'Набор…',
+  'route.ascent': '↑{{gain}}м',
+  'route.roundTrip': 'Туда-обратно (A → B → A)',
 
   'map.pickBanner': 'Нажмите на карту, чтобы задать точку {{point}}',
   'map.followBanner': 'Следование по дороге · 3D-камера',

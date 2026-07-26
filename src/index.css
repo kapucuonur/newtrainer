@@ -740,6 +740,95 @@ select {
   color: var(--accent);
 }
 
+.route-alt-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.route-alt-picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.route-alt-cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.route-alt-card {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: min(100%, 168px);
+  flex: 1 1 160px;
+  max-width: 240px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.route-alt-card:hover:not(:disabled) {
+  border-color: var(--alt-color, var(--accent));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.route-alt-card.is-selected {
+  border-color: var(--alt-color, var(--accent));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--alt-color, var(--accent)) 55%, transparent);
+  background: color-mix(in srgb, var(--alt-color, var(--accent)) 12%, transparent);
+}
+
+.route-alt-card:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.route-alt-card:disabled:not(.is-selected) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.route-alt-swatch {
+  width: 5px;
+  flex-shrink: 0;
+  background: var(--alt-color, var(--accent));
+}
+
+.route-alt-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.route-alt-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+.route-alt-stats {
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .route-meta {
   display: flex;
   align-items: center;
