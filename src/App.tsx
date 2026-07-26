@@ -29,6 +29,11 @@ import { downloadRideFit, downloadRideGpx } from './export';
 import type { TrackPoint } from './export/types';
 import { useT, type MessageKey } from './i18n';
 import { RouteMap, type MapPeer } from './map/RouteMap';
+import {
+  loadStoredMapStyleId,
+  storeMapStyleId,
+  type MapStyleId,
+} from './map/mapStyles';
 import { parseRoomRoute } from './routing/fromRoomRoute';
 import { fetchRouteAlternatives } from './routing/osrm';
 import { toRoomRoutePayload } from './routing/toRoomRoute';
@@ -44,6 +49,7 @@ import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
 import { ElevationProfile } from './ui/ElevationProfile';
 import { GroupRidePanel } from './ui/GroupRidePanel';
+import { MapStylePicker } from './ui/MapStylePicker';
 import { RideChrome } from './ui/RideChrome';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
@@ -138,6 +144,7 @@ export default function App() {
       ? window.matchMedia('(min-width: 1025px)').matches
       : true,
   );
+  const [mapStyleId, setMapStyleId] = useState<MapStyleId>(() => loadStoredMapStyleId());
   const [routePeekOpen, setRoutePeekOpen] = useState(false);
   const [videoPanelOpen, setVideoPanelOpen] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -1031,6 +1038,13 @@ export default function App() {
 
   const showRoutePanel = !immersiveRide || routePeekOpen;
   const toggleVideoPanel = () => setVideoPanelOpen((open) => !open);
+  const followRoad =
+    telemetry.phase === 'riding' || telemetry.phase === 'paused';
+  const showMapStylePicker = !followRoad;
+  const onMapStyleChange = (id: MapStyleId) => {
+    storeMapStyleId(id);
+    setMapStyleId(id);
+  };
 
   const shellClass = [
     'app-shell',
@@ -1094,9 +1108,18 @@ export default function App() {
             <Menu className="icon-sm" aria-hidden="true" />
             <span>{t('shell.menu')}</span>
           </button>
-          <div className="live-pill shell-chrome-status" data-phase={telemetry.phase}>
-            <span className="live-dot" />
-            {rideLabel}
+          <div className="shell-chrome-chips" role="group">
+            <div className="live-pill shell-chrome-status" data-phase={telemetry.phase}>
+              <span className="live-dot" />
+              {rideLabel}
+            </div>
+            {showMapStylePicker && (
+              <MapStylePicker
+                className="shell-chrome-styles"
+                styleId={mapStyleId}
+                onChange={onMapStyleChange}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1244,6 +1267,9 @@ export default function App() {
               pickingEnabled={canPlanRoute && !inGroup}
               peers={mapPeers}
               groupMode={groupMode}
+              styleId={mapStyleId}
+              onStyleIdChange={onMapStyleChange}
+              showStylePicker={panelOpen && showMapStylePicker}
             />
             <div className="bottom-dashboard-deck">
               <ElevationProfile

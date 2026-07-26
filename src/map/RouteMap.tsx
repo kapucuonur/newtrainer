@@ -16,8 +16,8 @@ import { routeAltColor } from '../routing/osrm';
 import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
+import { MapStylePicker } from '../ui/MapStylePicker';
 import {
-  MAP_STYLE_PRESETS,
   loadStoredMapStyleId,
   resolveStyleUrl,
   storeMapStyleId,
@@ -69,6 +69,10 @@ type Props = {
   peers?: MapPeer[];
   /** Group mode: colored map + peer markers. */
   groupMode?: boolean;
+  /** When false, host UI owns the style chips (e.g. closed-panel chrome). */
+  showStylePicker?: boolean;
+  styleId?: MapStyleId;
+  onStyleIdChange?: (id: MapStyleId) => void;
 };
 
 function pinClassForIndex(index: number, total: number): string {
@@ -228,6 +232,9 @@ export function RouteMap({
   pickingEnabled = true,
   peers = [],
   groupMode = false,
+  showStylePicker: showStylePickerProp,
+  styleId: styleIdProp,
+  onStyleIdChange,
 }: Props) {
   const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -242,12 +249,17 @@ export function RouteMap({
   const lastFocusedWaypointRef = useRef<string | null>(null);
   const bearingRef = useRef(0);
   const appliedStyleIdRef = useRef<MapStyleId | null>(null);
-  const [styleId, setStyleId] = useState<MapStyleId>(() => loadStoredMapStyleId());
+  const [uncontrolledStyleId, setUncontrolledStyleId] = useState<MapStyleId>(() =>
+    loadStoredMapStyleId(),
+  );
+  const styleId = styleIdProp ?? uncontrolledStyleId;
+  const setStyleId = onStyleIdChange ?? setUncontrolledStyleId;
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
   const activePickMode = pickingEnabled && pickMode;
   const showAlternatives = !followRoad && routeAlternatives.length > 1;
-  const showStylePicker = !followRoad;
+  const showStylePicker =
+    showStylePickerProp !== undefined ? showStylePickerProp : !followRoad;
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -591,22 +603,7 @@ export function RouteMap({
     >
       <div ref={containerRef} className="route-map-canvas" />
       {showStylePicker && (
-        <div className="map-style-picker" role="group" aria-label={t('map.stylePicker')}>
-          {MAP_STYLE_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className={
-                styleId === preset.id
-                  ? 'map-style-picker-btn map-style-picker-btn-active'
-                  : 'map-style-picker-btn'
-              }
-              onClick={() => setStyleId(preset.id)}
-            >
-              {t(preset.labelKey)}
-            </button>
-          ))}
-        </div>
+        <MapStylePicker styleId={styleId} onChange={setStyleId} />
       )}
       {!pickingEnabled && !followRoad && (
         <div className="map-pick-banner map-lock-banner">{t('map.lockedBanner')}</div>

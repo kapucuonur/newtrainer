@@ -2,7 +2,10 @@
 
 :root {
   /* cache-bust: force new hashed CSS after Cloudflare edge 404s on prior hash */
-  --asset-epoch: 2026-07-26-5;
+  --asset-epoch: 2026-07-26-6;
+  --shell-chrome-inset-x: calc(18px + var(--safe-left));
+  --shell-chrome-inset-y: calc(16px + var(--safe-top));
+  --shell-chrome-group-gap: 14px;
   --bg-0: #080a0f;
   --bg-1: #0d111a;
   --bg-2: #141c28;
@@ -251,13 +254,13 @@ select {
 /* Top-left map chrome: one glass bar for Menu + ride status */
 .shell-map-chrome {
   position: fixed;
-  top: calc(12px + var(--safe-top));
-  left: calc(12px + var(--safe-left));
+  top: var(--shell-chrome-inset-y);
+  left: var(--shell-chrome-inset-x);
   z-index: 80;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px;
+  gap: var(--shell-chrome-group-gap);
+  padding: 6px 8px 6px 6px;
   border: 1px solid rgba(94, 225, 255, 0.2);
   border-radius: 14px;
   background: rgba(8, 10, 15, 0.88);
@@ -303,6 +306,13 @@ select {
   outline-offset: 2px;
 }
 
+.shell-chrome-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .shell-chrome-status {
   align-self: center;
   margin: 0;
@@ -312,11 +322,23 @@ select {
   border-radius: 10px;
 }
 
-/* World route panel sits below the map chrome bar */
+/* Style chips inside closed-panel chrome — not a second overlapping layer */
+.shell-map-chrome .map-style-picker,
+.shell-map-chrome .shell-chrome-styles {
+  position: static;
+  top: auto;
+  left: auto;
+  z-index: auto;
+  min-height: 0;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* World route panel sits below the map chrome + style row */
 .app-shell:not(.panel-open) .stage-top {
-  top: calc(72px + var(--safe-top));
-  left: calc(12px + var(--safe-left));
-  right: calc(12px + var(--safe-right));
+  top: calc(var(--shell-chrome-inset-y) + 72px);
+  left: var(--shell-chrome-inset-x);
+  right: calc(18px + var(--safe-right));
 }
 
 .brand-badge {
@@ -1209,17 +1231,24 @@ select {
 
 .map-style-picker {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 16px;
+  left: 16px;
   z-index: 21;
   display: inline-flex;
-  gap: 2px;
-  padding: 3px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
   background: rgba(13, 17, 26, 0.88);
   backdrop-filter: blur(12px);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   pointer-events: auto;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Panel open: sit beside IDLE pill, not jammed under it */
+.app-shell.panel-open .map-style-picker {
+  left: calc(16px + 5.75rem + var(--shell-chrome-group-gap));
 }
 
 .map-style-picker-btn {
@@ -1228,13 +1257,14 @@ select {
   background: transparent;
   color: var(--muted);
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 6px 10px;
-  border-radius: 7px;
+  padding: 8px 12px;
+  border-radius: 8px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -1807,15 +1837,24 @@ select {
   }
 
   /* Sit below mobile header; status already shown in mobile-chrome */
+  .app-shell:not(.panel-open) {
+    --shell-chrome-inset-y: calc(62px + var(--safe-top));
+    --shell-chrome-inset-x: calc(16px + var(--safe-left));
+  }
+
   .shell-map-chrome {
-    top: calc(58px + var(--safe-top));
+    top: var(--shell-chrome-inset-y);
+    left: var(--shell-chrome-inset-x);
+    right: calc(16px + var(--safe-right));
+    max-width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
     padding: 0;
-    gap: 0;
+    gap: var(--shell-chrome-group-gap);
     border: none;
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow: none;
+    flex-wrap: wrap;
   }
 
   .shell-open-panel-btn {
@@ -1827,8 +1866,27 @@ select {
     display: none;
   }
 
+  .shell-map-chrome .map-style-picker,
+  .shell-map-chrome .shell-chrome-styles {
+    background: rgba(13, 17, 26, 0.9);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
+  }
+
+  .app-shell.panel-open .map-style-picker {
+    left: 16px;
+  }
+
   .app-shell:not(.panel-open) .stage-top {
-    top: calc(112px + var(--safe-top));
+    top: calc(var(--shell-chrome-inset-y) + 68px);
+    left: var(--shell-chrome-inset-x);
+    right: calc(16px + var(--safe-right));
+  }
+
+  /* Narrow phones: MENU + style chips may wrap to two rows */
+  @media (max-width: 420px) {
+    .app-shell:not(.panel-open) .stage-top {
+      top: calc(var(--shell-chrome-inset-y) + 112px);
+    }
   }
 
   .connection-panel {
