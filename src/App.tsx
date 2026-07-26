@@ -31,6 +31,12 @@ import { RouteMap, type MapPeer } from './map/RouteMap';
 import { parseRoomRoute } from './routing/fromRoomRoute';
 import { fetchRouteAlternatives } from './routing/osrm';
 import type { EnrichedRoute, LatLng, RouteResult } from './routing/types';
+import {
+  MAX_WAYPOINTS,
+  canAddWaypoint,
+  canBuildRoute,
+  nextWaypointLabel,
+} from './routing/waypoints';
 import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
 import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
@@ -93,9 +99,8 @@ export default function App() {
   const [mockEffort, setMockEffort] = useState(0.72);
   const [wifiCode, setWifiCode] = useState<MessageKey>('wifi.default');
 
-  const [pointA, setPointA] = useState<LatLng | null>(null);
-  const [pointB, setPointB] = useState<LatLng | null>(null);
-  const [pickMode, setPickMode] = useState<'A' | 'B' | null>(null);
+  const [waypoints, setWaypoints] = useState<LatLng[]>([]);
+  const [pickMode, setPickMode] = useState(false);
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [route, setRoute] = useState<EnrichedRoute | null>(null);
   const [routeAlternatives, setRouteAlternatives] = useState<RouteResult[]>([]);
@@ -182,12 +187,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!canPlanRoute) {
-      setPickMode(null);
+    if (!canPlanRoute || inGroup) {
+      setPickMode(false);
       return;
     }
-    setPickMode((prev) => prev ?? 'A');
-  }, [canPlanRoute]);
+    if (waypoints.length === 0) {
+      setPickMode(true);
+    }
+  }, [canPlanRoute, inGroup, waypoints.length]);
 
   useEffect(() => {
     if (canUseDevices) return;
@@ -252,11 +259,15 @@ export default function App() {
       setElevatingAlt(false);
       setRoute(parsed);
       engineRef.current.setRoute(parsed);
-      const first = parsed.coordinates[0] ?? null;
-      const last = parsed.coordinates[parsed.coordinates.length - 1] ?? null;
-      setPointA(first);
-      setPointB(last);
-      setPickMode(null);
+      const first = parsed.coordinates[0];
+      const last = parsed.coordinates[parsed.coordinates.length - 1];
+      const roomWaypoints: LatLng[] = [];
+      if (first) roomWaypoints.push(first);
+      if (last && (!first || first.lat !== last.lat || first.lng !== last.lng)) {
+        roomWaypoints.push(last);
+      }
+      setWaypoints(roomWaypoints);
+      setPickMode(false);
       setRouteError(null);
       return true;
     },
@@ -476,30 +487,44 @@ export default function App() {
     setHrName(t('hr.defaultName'));
   };
 
-  const onPick = useCallback(
+  const addWaypoint = useCallback(
     (point: LatLng) => {
       if (!canPlanRoute) return;
-      if (pickMode === 'A') {
-        setPointA(point);
-        setPickMode(pointB ? null : 'B');
-      } else if (pickMode === 'B') {
-        setPointB(point);
-        setPickMode(null);
-      }
+      setWaypoints((prev) => {
+        if (!canAddWaypoint(prev.length)) return prev;
+        const next = [...prev, point];
+        if (!canAddWaypoint(next.length)) {
+          queueMicrotask(() => setPickMode(false));
+        }
+        return next;
+      });
     },
-    [canPlanRoute, pickMode, pointB],
+    [canPlanRoute],
+  );
+
+  const removeLastWaypoint = useCallback(() => {
+    if (!canPlanRoute) return;
+    setWaypoints((prev) => prev.slice(0, -1));
+  }, [canPlanRoute]);
+
+  const onPick = useCallback(
+    (point: LatLng) => {
+      if (!canPlanRoute || !pickMode) return;
+      addWaypoint(point);
+    },
+    [addWaypoint, canPlanRoute, pickMode],
   );
 
   const onSetPickMode = useCallback(
-    (mode: 'A' | 'B' | null) => {
+    (active: boolean) => {
       if (!canPlanRoute) return;
-      setPickMode(mode);
+      setPickMode(active);
     },
     [canPlanRoute],
   );
 
   const buildRoute = async (roundTripOverride?: boolean) => {
-    if (!canPlanRoute || !pointA || !pointB) return;
+    if (!canPlanRoute || !canBuildRoute(waypoints)) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
     const generation = ++altEnrichGenRef.current;
     setLoadingRoute(true);
@@ -509,9 +534,10 @@ export default function App() {
     setRouteAlternatives([]);
     setEnrichedByAlt({});
     setSelectedAltIndex(0);
+    setPickMode(false);
     engineRef.current.setRoute(null);
     try {
-      const alts = await fetchRouteAlternatives(pointA, pointB, roundTrip);
+      const alts = await fetchRouteAlternatives(waypoints, roundTrip);
       if (altEnrichGenRef.current !== generation) return;
       setRouteAlternatives(alts);
       await enrichAndActivate(alts, 0, generation);
@@ -524,13 +550,15 @@ export default function App() {
     }
   };
 
-  const handleSelectPreset = async (pA: LatLng, pB: LatLng, roundTripOverride?: boolean) => {
-    if (!canPlanRoute) return;
+  const handleSelectPreset = async (
+    nextWaypoints: LatLng[],
+    roundTripOverride?: boolean,
+  ) => {
+    if (!canPlanRoute || !canBuildRoute(nextWaypoints)) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
     const generation = ++altEnrichGenRef.current;
-    setPointA(pA);
-    setPointB(pB);
-    setPickMode(null);
+    setWaypoints(nextWaypoints.slice(0, MAX_WAYPOINTS));
+    setPickMode(false);
     setLoadingRoute(true);
     setRouteError(null);
     setElevatingAlt(false);
@@ -540,7 +568,7 @@ export default function App() {
     setSelectedAltIndex(0);
     engineRef.current.setRoute(null);
     try {
-      const alts = await fetchRouteAlternatives(pA, pB, roundTrip);
+      const alts = await fetchRouteAlternatives(nextWaypoints, roundTrip);
       if (altEnrichGenRef.current !== generation) return;
       setRouteAlternatives(alts);
       await enrichAndActivate(alts, 0, generation);
@@ -605,9 +633,8 @@ export default function App() {
     setSelectedAltIndex(0);
     setEnrichedByAlt({});
     setElevatingAlt(false);
-    setPointA(null);
-    setPointB(null);
-    setPickMode(canPlanRoute ? 'A' : null);
+    setWaypoints([]);
+    setPickMode(canPlanRoute);
     engineRef.current.setRoute(null);
     setTelemetry(idleTelemetry);
     setSavedRideId(null);
@@ -1060,8 +1087,7 @@ export default function App() {
             {rideLabel}
           </div>
           <RouteControls
-            pointA={pointA}
-            pointB={pointB}
+            waypoints={waypoints}
             pickMode={pickMode}
             route={route}
             routeAlternatives={routeAlternatives}
@@ -1080,15 +1106,11 @@ export default function App() {
             isRoundTrip={isRoundTrip}
             onOpenAccount={onOpenAccount}
             onSetPickMode={onSetPickMode}
-            onSetPointA={(pt) => {
-              setPointA(pt);
-            }}
-            onSetPointB={(pt) => {
-              setPointB(pt);
-            }}
+            onAddWaypoint={addWaypoint}
+            onRemoveLastWaypoint={removeLastWaypoint}
             onToggleRoundTrip={(nextRoundTrip) => {
               setIsRoundTrip(nextRoundTrip);
-              if (pointA && pointB) void buildRoute(nextRoundTrip);
+              if (canBuildRoute(waypoints)) void buildRoute(nextRoundTrip);
             }}
             onBuildRoute={() => void buildRoute()}
             onClear={() => void clearRoute()}
@@ -1103,14 +1125,18 @@ export default function App() {
             saveMessage={saveMessage}
             onSaveToProfile={() => void onSaveToProfile()}
             hideStart={hideSoloStart}
-            onSelectPresetRoute={(pA, pB) => void handleSelectPreset(pA, pB)}
+            onSelectPresetRoute={(pts) => void handleSelectPreset(pts)}
           />
         </div>
 
         <div className="viewer-stage">
           <RouteMap
-            pointA={pointA}
-            pointB={pointB}
+            waypoints={waypoints}
+            nextWaypointLabel={
+              canAddWaypoint(waypoints.length)
+                ? nextWaypointLabel(waypoints.length)
+                : null
+            }
             route={route}
             routeAlternatives={routeAlternatives}
             selectedAlternativeIndex={selectedAltIndex}

@@ -104,7 +104,7 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
       <div className="hud-grid">
         {/* Speed */}
         <Stat
-          icon={<Compass className="icon-xs" />}
+          icon={<Compass className="icon-sm" />}
           label={t('hud.speed')}
           value={(telemetry.speedKmh || 0).toFixed(1)}
           unit="km/h"
@@ -113,7 +113,7 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
 
         {/* Power (Watts + W/kg + Zone) */}
         <Stat
-          icon={<Zap className="icon-xs icon-zap" />}
+          icon={<Zap className="icon-sm icon-zap" />}
           label={t('hud.power')}
           value={String(watts)}
           unit={`W (${wKg} W/kg)`}
@@ -124,7 +124,7 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
 
         {/* Cadence (RPM) */}
         <Stat
-          icon={<Activity className="icon-xs" />}
+          icon={<Activity className="icon-sm" />}
           label={t('hud.cadence')}
           value={String(Math.round(telemetry.cadenceRpm || 0))}
           unit="rpm"
@@ -132,7 +132,7 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
 
         {/* Heart Rate */}
         <Stat
-          icon={<Heart className="icon-xs icon-heart" />}
+          icon={<Heart className="icon-sm icon-heart" />}
           label={t('hud.heartRate')}
           value={bpm != null ? String(bpm) : '—'}
           unit={bpm != null ? 'bpm' : undefined}
@@ -142,14 +142,14 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
 
         {/* Grade % */}
         <Stat
-          icon={<TrendingUp className="icon-xs" />}
+          icon={<TrendingUp className="icon-sm" />}
           label={t('hud.grade')}
           value={formatGrade(gradePercent)}
         />
 
         {/* Elevation */}
         <Stat
-          icon={<Mountain className="icon-xs" />}
+          icon={<Mountain className="icon-sm" />}
           label={t('hud.elevation')}
           value={String(Math.round(telemetry.elevationMeters))}
           unit="m"
@@ -157,14 +157,14 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
 
         {/* Distance */}
         <Stat
-          icon={<Ruler className="icon-xs" />}
+          icon={<Ruler className="icon-sm" />}
           label={t('hud.distance')}
           value={formatDistance(telemetry.distanceMeters)}
         />
 
         {/* Time */}
         <Stat
-          icon={<Clock className="icon-xs" />}
+          icon={<Clock className="icon-sm" />}
           label={t('hud.time')}
           value={formatDuration(telemetry.elapsedSeconds)}
         />

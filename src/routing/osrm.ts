@@ -1,4 +1,5 @@
 import type { LatLng, RouteResult } from './types';
+import { MIN_WAYPOINTS } from './waypoints';
 
 const OSRM_BASE =
   import.meta.env.VITE_OSRM_URL ?? 'https://router.project-osrm.org';
@@ -25,16 +26,18 @@ function haversineMeters(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function straightFallback(from: LatLng, to: LatLng): RouteResult {
-  const distanceMeters = haversineMeters(from, to);
-  const coordinates = [from, to];
+function straightFallback(points: LatLng[]): RouteResult {
+  let distanceMeters = 0;
+  for (let i = 1; i < points.length; i++) {
+    distanceMeters += haversineMeters(points[i - 1], points[i]);
+  }
   return {
-    coordinates,
+    coordinates: points,
     distanceMeters,
     durationSeconds: distanceMeters / 6, // ~21.6 km/h cycling estimate
     geometry: {
       type: 'LineString',
-      coordinates: coordinates.map((c) => [c.lng, c.lat]),
+      coordinates: points.map((c) => [c.lng, c.lat]),
     },
     source: 'straight',
   };
@@ -63,21 +66,31 @@ function parseOsrmRoute(route: OsrmRouteJson): RouteResult {
   };
 }
 
+function buildOsrmPath(waypoints: LatLng[], isRoundTrip: boolean): LatLng[] {
+  if (waypoints.length < MIN_WAYPOINTS) return waypoints;
+  if (isRoundTrip) return [...waypoints, waypoints[0]];
+  return waypoints;
+}
+
 /**
- * Fetch A→B (or A→B→A round-trip) with OSRM alternatives.
- * Returns 1–N routes (often 1–3). Falls back to a single straight line on failure.
+ * Fetch a route through ordered waypoints (A→B→C→…).
+ * Round-trip appends start at the end. Alternatives only when exactly 2 points.
+ * Falls back to a single straight polyline on failure.
  */
 export async function fetchRouteAlternatives(
-  from: LatLng,
-  to: LatLng,
+  waypoints: LatLng[],
   isRoundTrip = false,
 ): Promise<RouteResult[]> {
-  const path = isRoundTrip
-    ? `${from.lng},${from.lat};${to.lng},${to.lat};${from.lng},${from.lat}`
-    : `${from.lng},${from.lat};${to.lng},${to.lat}`;
+  if (waypoints.length < MIN_WAYPOINTS) {
+    return [];
+  }
+
+  const pathPoints = buildOsrmPath(waypoints, isRoundTrip);
+  const path = pathPoints.map((p) => `${p.lng},${p.lat}`).join(';');
+  const wantAlts = waypoints.length === 2;
   const url =
     `${OSRM_BASE}/route/v1/cycling/${path}` +
-    `?overview=full&geometries=geojson&steps=false&alternatives=true`;
+    `?overview=full&geometries=geojson&steps=false&alternatives=${wantAlts}`;
 
   try {
     const response = await fetch(url);
@@ -99,20 +112,22 @@ export async function fetchRouteAlternatives(
     if (parsed.length === 0) throw new Error('OSRM returned no route');
     return parsed;
   } catch {
-    return [straightFallback(from, to)];
+    return [straightFallback(pathPoints)];
   }
 }
 
 /**
- * Route A→B using public OSRM cycling profile (free, no API key).
- * Returns the primary alternative. Prefer fetchRouteAlternatives for multi-route UI.
+ * Route through waypoints using public OSRM cycling profile.
+ * Returns the primary alternative.
  */
 export async function fetchRoute(
-  from: LatLng,
-  to: LatLng,
+  waypoints: LatLng[],
   isRoundTrip = false,
 ): Promise<RouteResult> {
-  const alts = await fetchRouteAlternatives(from, to, isRoundTrip);
+  const alts = await fetchRouteAlternatives(waypoints, isRoundTrip);
+  if (alts.length === 0) {
+    return straightFallback(waypoints);
+  }
   return alts[0];
 }
 

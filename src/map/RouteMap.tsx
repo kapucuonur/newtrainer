@@ -8,11 +8,12 @@ import {
   setWorkerUrl,
 } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
 import { routeAltColor } from '../routing/osrm';
 import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
+import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
 import { hasMapillaryToken } from './mapillary';
 import { StreetViewPanel } from './StreetViewPanel';
@@ -34,8 +35,9 @@ export type MapPeer = {
 };
 
 type Props = {
-  pointA: LatLng | null;
-  pointB: LatLng | null;
+  waypoints: LatLng[];
+  /** Next label shown in pick banner (A, B, C…). */
+  nextWaypointLabel?: string | null;
   route: EnrichedRoute | null;
   /** OSRM alternatives shown faded until selected (planning only). */
   routeAlternatives?: RouteResult[];
@@ -45,13 +47,20 @@ type Props = {
   ridePhase: RidePhase;
   distanceMeters: number;
   onPick: (point: LatLng) => void;
-  pickMode: 'A' | 'B' | null;
+  /** When true, map clicks append the next waypoint. */
+  pickMode: boolean;
   pickingEnabled?: boolean;
   /** Other riders on the shared route (group rides). */
   peers?: MapPeer[];
   /** Group mode: colored map + peers only — no Mapillary / street view. */
   groupMode?: boolean;
 };
+
+function pinClassForIndex(index: number, total: number): string {
+  if (index === 0) return 'map-pin-a';
+  if (index === total - 1 && total > 1) return 'map-pin-b';
+  return 'map-pin-via';
+}
 
 function tryEnable3dBuildings(map: Map): void {
   if (map.getLayer('roadlab-3d-buildings')) return;
@@ -112,8 +121,8 @@ function tryEnable3dBuildings(map: Map): void {
 }
 
 export function RouteMap({
-  pointA,
-  pointB,
+  waypoints,
+  nextWaypointLabel = null,
   route,
   routeAlternatives = [],
   selectedAlternativeIndex = 0,
@@ -130,19 +139,19 @@ export function RouteMap({
   const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
-  const markerA = useRef<Marker | null>(null);
-  const markerB = useRef<Marker | null>(null);
+  const waypointMarkersRef = useRef<Marker[]>([]);
   const markerRider = useRef<Marker | null>(null);
   const peerMarkersRef = useRef(new globalThis.Map<number, Marker>());
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
   const pickingEnabledRef = useRef(pickingEnabled);
   const onSelectAlternativeRef = useRef(onSelectAlternative);
+  const lastFocusedWaypointRef = useRef<string | null>(null);
   const bearingRef = useRef(0);
   const [heading, setHeading] = useState(0);
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
-  const activePickMode = pickingEnabled ? pickMode : null;
+  const activePickMode = pickingEnabled && pickMode;
   const streetViewEnabled = followRoad && !groupMode;
   const showAlternatives = !followRoad && routeAlternatives.length > 1;
 
@@ -272,8 +281,8 @@ export function RouteMap({
 
     return () => {
       resizeObserver?.disconnect();
-      markerA.current?.remove();
-      markerB.current?.remove();
+      for (const marker of waypointMarkersRef.current) marker.remove();
+      waypointMarkersRef.current = [];
       markerRider.current?.remove();
       for (const marker of peerMarkersRef.current.values()) marker.remove();
       peerMarkersRef.current.clear();
@@ -286,39 +295,56 @@ export function RouteMap({
     const map = mapRef.current;
     if (!map) return;
 
-    const syncMarker = (
-      ref: MutableRefObject<Marker | null>,
-      point: LatLng | null,
-      className: string,
-      label: string,
-    ) => {
-      if (!point) {
-        ref.current?.remove();
-        ref.current = null;
-        return;
-      }
-      if (!ref.current) {
+    const markers = waypointMarkersRef.current;
+
+    while (markers.length > waypoints.length) {
+      markers.pop()?.remove();
+    }
+
+    for (let i = 0; i < waypoints.length; i++) {
+      const point = waypoints[i];
+      const label = waypointLabel(i);
+      const className = pinClassForIndex(i, waypoints.length);
+      let marker = markers[i];
+      if (!marker) {
         const el = document.createElement('div');
         el.className = `map-pin ${className}`;
         el.textContent = label;
-        ref.current = new Marker({ element: el })
+        marker = new Marker({ element: el })
           .setLngLat([point.lng, point.lat])
           .addTo(map);
+        markers[i] = marker;
       } else {
-        ref.current.setLngLat([point.lng, point.lat]);
+        marker.setLngLat([point.lng, point.lat]);
+        const el = marker.getElement();
+        el.className = `map-pin ${className}`;
+        el.textContent = label;
       }
-    };
-
-    syncMarker(markerA, pointA, 'map-pin-a', 'A START');
-    syncMarker(markerB, pointB, 'map-pin-b', 'B FINISH');
-    syncMarker(markerRider, rider, 'map-pin-rider', '🚴');
-
-    if (pointA && !route) {
-      map.easeTo({ center: [pointA.lng, pointA.lat], zoom: 13, duration: 700 });
-    } else if (pointB && !route) {
-      map.easeTo({ center: [pointB.lng, pointB.lat], zoom: 13, duration: 700 });
     }
-  }, [pointA, pointB, rider, route]);
+
+    if (!markerRider.current && rider) {
+      const el = document.createElement('div');
+      el.className = 'map-pin map-pin-rider';
+      el.textContent = '🚴';
+      markerRider.current = new Marker({ element: el })
+        .setLngLat([rider.lng, rider.lat])
+        .addTo(map);
+    } else if (markerRider.current && rider) {
+      markerRider.current.setLngLat([rider.lng, rider.lat]);
+    } else if (markerRider.current && !rider) {
+      markerRider.current.remove();
+      markerRider.current = null;
+    }
+
+    if (!route && waypoints.length > 0) {
+      const last = waypoints[waypoints.length - 1];
+      const focusKey = `${waypoints.length}:${last.lat.toFixed(5)},${last.lng.toFixed(5)}`;
+      if (lastFocusedWaypointRef.current !== focusKey) {
+        lastFocusedWaypointRef.current = focusKey;
+        map.easeTo({ center: [last.lng, last.lat], zoom: 13, duration: 700 });
+      }
+    }
+  }, [waypoints, rider, route]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -470,9 +496,9 @@ export function RouteMap({
       {!pickingEnabled && !followRoad && (
         <div className="map-pick-banner map-lock-banner">{t('map.lockedBanner')}</div>
       )}
-      {activePickMode && (
+      {activePickMode && nextWaypointLabel && (
         <div className="map-pick-banner">
-          {t('map.pickBanner', { point: activePickMode })}
+          {t('map.pickBanner', { point: nextWaypointLabel })}
         </div>
       )}
       {followRoad && (

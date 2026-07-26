@@ -1,6 +1,13 @@
 import { useState, useEffect, type CSSProperties } from 'react';
 import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { routeAltColor } from '../routing/osrm';
+import {
+  MAX_WAYPOINTS,
+  canAddWaypoint,
+  canBuildRoute,
+  nextWaypointLabel,
+  waypointLabel,
+} from '../routing/waypoints';
 import type { RidePhase } from '../simulation/rideEngine';
 import { searchLocation, type GeocodedPlace } from '../routing/geocoding';
 import { useT } from '../i18n';
@@ -20,12 +27,13 @@ import {
   Repeat,
   Search,
   Loader2,
+  Plus,
+  Undo2,
 } from 'lucide-react';
 
 type Props = {
-  pointA: LatLng | null;
-  pointB: LatLng | null;
-  pickMode: 'A' | 'B' | null;
+  waypoints: LatLng[];
+  pickMode: boolean;
   route: EnrichedRoute | null;
   routeAlternatives?: RouteResult[];
   selectedAlternativeIndex?: number;
@@ -42,9 +50,9 @@ type Props = {
   gateMessage: string | null;
   isRoundTrip: boolean;
   onOpenAccount: () => void;
-  onSetPickMode: (mode: 'A' | 'B' | null) => void;
-  onSetPointA?: (point: LatLng) => void;
-  onSetPointB?: (point: LatLng) => void;
+  onSetPickMode: (active: boolean) => void;
+  onAddWaypoint?: (point: LatLng) => void;
+  onRemoveLastWaypoint?: () => void;
   onToggleRoundTrip: (isRoundTrip: boolean) => void;
   onBuildRoute: () => void;
   onClear: () => void;
@@ -60,7 +68,7 @@ type Props = {
   onSaveToProfile?: () => void;
   hideStart?: boolean;
   /** Direct preset route selector callback */
-  onSelectPresetRoute?: (pointA: LatLng, pointB: LatLng) => void;
+  onSelectPresetRoute?: (waypoints: LatLng[]) => void;
 };
 
 // Preset iconic cycling routes for instant indoor training
@@ -69,35 +77,39 @@ const PRESET_ROUTES = [
     id: 'alps-pass',
     name: 'Alps Pass Climb',
     desc: 'High elevation alpine climb (8.4 km)',
-    pointA: { lat: 45.0934, lng: 6.0682 }, // Alpe d'Huez base
-    pointB: { lat: 45.1158, lng: 6.0665 },
+    waypoints: [
+      { lat: 45.0934, lng: 6.0682 }, // Alpe d'Huez base
+      { lat: 45.1158, lng: 6.0665 },
+    ],
   },
   {
     id: 'coastal-flat',
     name: 'Coastal Flat 10K',
     desc: 'Smooth coastal endurance loop (10 km)',
-    pointA: { lat: 43.6957, lng: 7.2714 }, // Nice Promenade des Anglais
-    pointB: { lat: 43.6845, lng: 7.3321 },
+    waypoints: [
+      { lat: 43.6957, lng: 7.2714 }, // Nice Promenade des Anglais
+      { lat: 43.6845, lng: 7.3321 },
+    ],
   },
   {
     id: 'rolling-hills',
     name: 'Tuscany Rolling Hills',
     desc: 'Varied tempo terrain & punchy climbs (12 km)',
-    pointA: { lat: 43.4674, lng: 11.0431 }, // San Gimignano
-    pointB: { lat: 43.4912, lng: 11.1152 },
+    waypoints: [
+      { lat: 43.4674, lng: 11.0431 }, // San Gimignano
+      { lat: 43.4912, lng: 11.1152 },
+    ],
   },
 ];
 
 function LocationSearchBox({
   badge,
   placeholder,
-  point,
   disabled,
   onSelectPoint,
 }: {
   badge: string;
   placeholder: string;
-  point: LatLng | null;
   disabled?: boolean;
   onSelectPoint?: (point: LatLng) => void;
 }) {
@@ -134,11 +146,7 @@ function LocationSearchBox({
           className="search-input"
           value={query}
           disabled={disabled}
-          placeholder={
-            point
-              ? `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`
-              : placeholder
-          }
+          placeholder={placeholder}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (results.length > 0) setOpen(true);
@@ -180,8 +188,7 @@ function LocationSearchBox({
 }
 
 export function RouteControls({
-  pointA,
-  pointB,
+  waypoints,
   pickMode,
   route,
   routeAlternatives = [],
@@ -200,8 +207,8 @@ export function RouteControls({
   isRoundTrip,
   onOpenAccount,
   onSetPickMode,
-  onSetPointA,
-  onSetPointB,
+  onAddWaypoint,
+  onRemoveLastWaypoint,
   onToggleRoundTrip,
   onBuildRoute,
   onClear,
@@ -221,11 +228,15 @@ export function RouteControls({
   const t = useT();
   const showComplete = phase === 'finished' && hasExport;
   const locked = !routePlanningEnabled;
+  const canBuild = canBuildRoute(waypoints);
+  const canAdd = canAddWaypoint(waypoints.length);
+  const nextLabel = nextWaypointLabel(waypoints.length);
   const canPickAlternative =
     routePlanningEnabled &&
     routeAlternatives.length > 1 &&
+    waypoints.length === 2 &&
     (phase === 'idle' || phase === 'ready' || phase === 'finished');
-  const showAltPicker = routeAlternatives.length > 1;
+  const showAltPicker = routeAlternatives.length > 1 && waypoints.length === 2;
 
   return (
     <section className="route-controls" aria-label="Route Controls">
@@ -238,44 +249,48 @@ export function RouteControls({
           </div>
         </div>
 
-        {/* Step by step map pin buttons */}
         <div className="btn-row route-pin-row">
           <button
             type="button"
-            className={`btn ${pickMode === 'A' ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={locked}
-            onClick={() => onSetPickMode(pickMode === 'A' ? null : 'A')}
+            className={`btn ${pickMode ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={locked || !canAdd}
+            onClick={() => onSetPickMode(!pickMode)}
+            title={
+              canAdd
+                ? t('route.addWaypointHint', { point: nextLabel })
+                : t('route.maxWaypoints', { n: MAX_WAYPOINTS })
+            }
           >
-            <MapPin className="icon-xs" />
-            {t('route.setA')} {pointA ? '✓' : ''}
+            <Plus className="icon-xs" />
+            {t('route.addWaypoint')}
+            {canAdd ? ` (${nextLabel})` : ''}
           </button>
 
           <button
             type="button"
-            className={`btn ${pickMode === 'B' ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={locked}
-            onClick={() => onSetPickMode(pickMode === 'B' ? null : 'B')}
+            className="btn btn-secondary"
+            disabled={locked || waypoints.length === 0}
+            onClick={() => onRemoveLastWaypoint?.()}
           >
-            <MapPin className="icon-xs" />
-            {t('route.setB')} {pointB ? '✓' : ''}
+            <Undo2 className="icon-xs" />
+            {t('route.removeLast')}
           </button>
 
-          {/* Out & Back Return Route Toggle */}
           <button
             type="button"
             className={`btn ${isRoundTrip ? 'btn-accent' : 'btn-secondary'}`}
             disabled={locked}
             onClick={() => onToggleRoundTrip(!isRoundTrip)}
-            title="Return option: Ride to B and back to A (A → B → A)"
+            title={t('route.roundTrip')}
           >
             <Repeat className="icon-xs" />
-            {isRoundTrip ? 'Return (A→B→A)' : 'One Way (A→B)'}
+            {isRoundTrip ? t('route.roundTripShort') : t('route.oneWay')}
           </button>
 
           <button
             type="button"
             className="btn btn-primary btn-glow"
-            disabled={locked || !pointA || !pointB || loading}
+            disabled={locked || !canBuild || loading}
             onClick={onBuildRoute}
           >
             <Sparkles className="icon-xs" />
@@ -289,27 +304,30 @@ export function RouteControls({
         </div>
       </div>
 
-      {/* Address / Location Search Bar Row */}
       {routePlanningEnabled && (
         <div className="route-search-row">
           <LocationSearchBox
-            badge="Start A"
-            placeholder="Search city, address or mountain (e.g. Alpe d'Huez)"
-            point={pointA}
-            disabled={locked}
-            onSelectPoint={onSetPointA}
-          />
-          <LocationSearchBox
-            badge="Finish B"
-            placeholder="Search destination address or city"
-            point={pointB}
-            disabled={locked}
-            onSelectPoint={onSetPointB}
+            badge={canAdd ? nextLabel : '—'}
+            placeholder={t('route.searchPlaceholder')}
+            disabled={locked || !canAdd}
+            onSelectPoint={onAddWaypoint}
           />
         </div>
       )}
 
-      {/* Preset Routes Quick Chips */}
+      {routePlanningEnabled && waypoints.length > 0 && (
+        <ul className="waypoint-list" aria-label={t('route.waypoints')}>
+          {waypoints.map((point, index) => (
+            <li key={`${index}-${point.lat}-${point.lng}`} className="waypoint-list-item">
+              <span className="waypoint-list-badge">{waypointLabel(index)}</span>
+              <span className="waypoint-list-coords">
+                {point.lat.toFixed(4)}, {point.lng.toFixed(4)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {routePlanningEnabled && !route && (
         <div className="preset-routes-bar">
           <span className="preset-label">Quick Presets:</span>
@@ -319,9 +337,9 @@ export function RouteControls({
               type="button"
               className="chip-preset"
               onClick={() => {
-                onSetPickMode(null);
+                onSetPickMode(false);
                 if (onSelectPresetRoute) {
-                  onSelectPresetRoute(preset.pointA, preset.pointB);
+                  onSelectPresetRoute(preset.waypoints);
                 }
               }}
             >
@@ -386,13 +404,10 @@ export function RouteControls({
         </div>
       )}
 
-      {/* Route Metadata Summary */}
       <div className="route-meta">
         <span className="meta-badge">
-          <MapPin className="icon-xs" /> A: {pointA ? `${pointA.lat.toFixed(4)}, ${pointA.lng.toFixed(4)}` : '—'}
-        </span>
-        <span className="meta-badge">
-          <MapPin className="icon-xs" /> B: {pointB ? `${pointB.lat.toFixed(4)}, ${pointB.lng.toFixed(4)}` : '—'}
+          <MapPin className="icon-xs" />{' '}
+          {t('route.waypointCount', { count: waypoints.length, max: MAX_WAYPOINTS })}
         </span>
         {isRoundTrip && (
           <span className="meta-badge highlight">
@@ -417,7 +432,6 @@ export function RouteControls({
 
       {error && <p className="error-text">{error}</p>}
 
-      {/* Ride Complete Summary Card */}
       {showComplete && (
         <div className="ride-complete" role="status">
           <div className="ride-complete-copy">
@@ -456,7 +470,6 @@ export function RouteControls({
         </div>
       )}
 
-      {/* Main Ride Control Actions */}
       <div className="btn-row ride-actions">
         {!hideStart && (phase === 'ready' || phase === 'finished') && (
           <button
