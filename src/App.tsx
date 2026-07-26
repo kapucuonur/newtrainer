@@ -19,6 +19,7 @@ import type { BikeTrainer, ConnectionState } from './bluetooth/types';
 import { probeWifiBridge } from './bluetooth/wifiBridge';
 import { enrichRouteWithElevation } from './elevation/service';
 import { buildFit, buildGpx, downloadRideFit, downloadRideGpx } from './export';
+import { useT, type MessageKey } from './i18n';
 import { RouteMap } from './map/RouteMap';
 import { fetchRoute } from './routing/osrm';
 import type { EnrichedRoute, LatLng } from './routing/types';
@@ -51,6 +52,7 @@ function avg(values: number[]): number | null {
 }
 
 export default function App() {
+  const t = useT();
   const engineRef = useRef(new RideEngine());
   const hrRef = useRef(new HeartRateMonitor());
   const mockRef = useRef(new MockTrainer());
@@ -64,13 +66,11 @@ export default function App() {
   const [hrName, setHrName] = useState('Heart Rate');
   const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [mockEffort, setMockEffort] = useState(0.72);
-  const [wifiMessage, setWifiMessage] = useState(
-    'WiFi/ANT+ trainers need a local bridge (browser sandbox). Bluetooth FTMS works natively in Chrome/Edge.',
-  );
+  const [wifiCode, setWifiCode] = useState<MessageKey>('wifi.default');
 
   const [pointA, setPointA] = useState<LatLng | null>(null);
   const [pointB, setPointB] = useState<LatLng | null>(null);
-  const [pickMode, setPickMode] = useState<'A' | 'B' | null>('A');
+  const [pickMode, setPickMode] = useState<'A' | 'B' | null>(null);
   const [route, setRoute] = useState<EnrichedRoute | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
@@ -82,6 +82,9 @@ export default function App() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [savedRideId, setSavedRideId] = useState<number | null>(null);
+
+  const cloudEnabled = isCloudApiEnabled();
+  const canPlanRoute = Boolean(cloudEnabled && user);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -129,6 +132,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!canPlanRoute) {
+      setPickMode(null);
+      return;
+    }
+    setPickMode((prev) => prev ?? 'A');
+  }, [canPlanRoute]);
+
+  useEffect(() => {
     if (telemetry.phase === 'finished') {
       setSavedRideId(null);
       setSaveMessage(null);
@@ -157,7 +168,7 @@ export default function App() {
       attachTrainer(ftms, false);
       await ftms.connect();
     } catch (error) {
-      setRouteError(error instanceof Error ? error.message : 'Trainer connection failed');
+      setRouteError(error instanceof Error ? error.message : t('trainer.connectFailed'));
     }
   };
 
@@ -174,7 +185,7 @@ export default function App() {
         await mock.connect();
       }
     } catch (error) {
-      setRouteError(error instanceof Error ? error.message : 'Mock trainer failed');
+      setRouteError(error instanceof Error ? error.message : t('trainer.mockFailed'));
     }
   };
 
@@ -186,7 +197,7 @@ export default function App() {
     engineRef.current.attachTrainer(null);
     setUsingMock(false);
     setTrainerState('disconnected');
-    setTrainerName('FTMS Trainer');
+    setTrainerName(t('trainer.defaultName'));
   };
 
   const connectHr = async () => {
@@ -194,7 +205,7 @@ export default function App() {
       setRouteError(null);
       await hrRef.current.connect();
     } catch (error) {
-      setRouteError(error instanceof Error ? error.message : 'HR connection failed');
+      setRouteError(error instanceof Error ? error.message : t('hr.connectFailed'));
     }
   };
 
@@ -202,10 +213,12 @@ export default function App() {
     await hrRef.current.disconnect();
     setHrBpm(null);
     engineRef.current.setHeartRate(null);
+    setHrName(t('hr.defaultName'));
   };
 
   const onPick = useCallback(
     (point: LatLng) => {
+      if (!canPlanRoute) return;
       if (pickMode === 'A') {
         setPointA(point);
         setPickMode(pointB ? null : 'B');
@@ -214,11 +227,19 @@ export default function App() {
         setPickMode(null);
       }
     },
-    [pickMode, pointB],
+    [canPlanRoute, pickMode, pointB],
+  );
+
+  const onSetPickMode = useCallback(
+    (mode: 'A' | 'B' | null) => {
+      if (!canPlanRoute) return;
+      setPickMode(mode);
+    },
+    [canPlanRoute],
   );
 
   const buildRoute = async () => {
-    if (!pointA || !pointB) return;
+    if (!canPlanRoute || !pointA || !pointB) return;
     setLoadingRoute(true);
     setRouteError(null);
     try {
@@ -227,7 +248,7 @@ export default function App() {
       setRoute(enriched);
       engineRef.current.setRoute(enriched);
     } catch (error) {
-      setRouteError(error instanceof Error ? error.message : 'Route build failed');
+      setRouteError(error instanceof Error ? error.message : t('route.buildFailed'));
     } finally {
       setLoadingRoute(false);
     }
@@ -238,7 +259,7 @@ export default function App() {
     setRoute(null);
     setPointA(null);
     setPointB(null);
-    setPickMode('A');
+    setPickMode(canPlanRoute ? 'A' : null);
     engineRef.current.setRoute(null);
     setTelemetry(idleTelemetry);
     setSavedRideId(null);
@@ -247,21 +268,34 @@ export default function App() {
 
   const onProbeWifi = async () => {
     const status = await probeWifiBridge();
-    setWifiMessage(status.message);
+    setWifiCode(status.code);
+  };
+
+  const onOpenAccount = () => {
+    document.getElementById('account-panel')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    });
   };
 
   const rideLabel = useMemo(() => {
-    if (telemetry.phase === 'riding') return 'LIVE';
-    if (telemetry.phase === 'paused') return 'PAUSED';
-    if (telemetry.phase === 'finished') return 'FINISH';
-    if (telemetry.phase === 'ready') return 'READY';
-    return 'IDLE';
-  }, [telemetry.phase]);
+    if (telemetry.phase === 'riding') return t('phase.riding');
+    if (telemetry.phase === 'paused') return t('phase.paused');
+    if (telemetry.phase === 'finished') return t('phase.finished');
+    if (telemetry.phase === 'ready') return t('phase.ready');
+    return t('phase.idle');
+  }, [t, telemetry.phase]);
+
+  const gateMessage = !cloudEnabled
+    ? t('route.gateNoApi')
+    : !user
+      ? t('route.gateLogin')
+      : null;
 
   const onDownloadFit = () => {
     const ride = engineRef.current.getExport();
     if (!ride || ride.points.length === 0) {
-      setRouteError('No ride track to export yet');
+      setRouteError(t('route.noExport'));
       return;
     }
     setRouteError(null);
@@ -271,7 +305,7 @@ export default function App() {
   const onDownloadGpx = () => {
     const ride = engineRef.current.getExport();
     if (!ride || ride.points.length === 0) {
-      setRouteError('No ride track to export yet');
+      setRouteError(t('route.noExport'));
       return;
     }
     setRouteError(null);
@@ -281,7 +315,7 @@ export default function App() {
   const withAuthError = (error: unknown): string => {
     if (error instanceof ApiError) return error.message;
     if (error instanceof Error) return error.message;
-    return 'Request failed';
+    return t('auth.requestFailed');
   };
 
   const onLogin = async (email: string, password: string) => {
@@ -290,7 +324,7 @@ export default function App() {
     try {
       const res = await apiLogin(email, password);
       setUser(res.user);
-      setAuthMessage('Logged in');
+      setAuthMessage(t('auth.loggedIn'));
     } catch (error) {
       setAuthMessage(withAuthError(error));
     } finally {
@@ -304,7 +338,7 @@ export default function App() {
     try {
       const res = await apiRegister(email, password, displayName || undefined);
       setUser(res.user);
-      setAuthMessage('Account created');
+      setAuthMessage(t('auth.accountCreated'));
     } catch (error) {
       setAuthMessage(withAuthError(error));
     } finally {
@@ -318,7 +352,7 @@ export default function App() {
     try {
       await apiLogout();
       setUser(null);
-      setAuthMessage('Logged out');
+      setAuthMessage(t('auth.loggedOut'));
     } catch (error) {
       setStoredToken(null);
       setUser(null);
@@ -354,7 +388,7 @@ export default function App() {
         bikeWeightKg: parseNum(fields.bikeWeightKg),
       });
       setUser(next);
-      setAuthMessage('Profile saved');
+      setAuthMessage(t('auth.profileSaved'));
     } catch (error) {
       setAuthMessage(withAuthError(error));
     } finally {
@@ -365,15 +399,15 @@ export default function App() {
   const onSaveToProfile = async () => {
     const ride = engineRef.current.getExport();
     if (!ride || ride.points.length === 0) {
-      setSaveMessage('No ride track to save');
+      setSaveMessage(t('route.noSave'));
       return;
     }
     if (!user) {
-      setSaveMessage('Log in to save rides');
+      setSaveMessage(t('route.loginToSave'));
       return;
     }
     if (savedRideId != null) {
-      setSaveMessage('Already saved this ride');
+      setSaveMessage(t('route.alreadySaved'));
       return;
     }
 
@@ -404,7 +438,7 @@ export default function App() {
         gpx: gpxBlob,
       });
       setSavedRideId(saved.id);
-      setSaveMessage(`Saved to profile (#${saved.id})`);
+      setSaveMessage(t('route.saved', { id: saved.id }));
     } catch (error) {
       setSaveMessage(withAuthError(error));
     } finally {
@@ -423,7 +457,7 @@ export default function App() {
         hrName={hrName}
         hrBpm={hrBpm}
         usingMock={usingMock}
-        wifiMessage={wifiMessage}
+        wifiMessage={t(wifiCode)}
         mockEffort={mockEffort}
         onConnectTrainer={() => void connectFtms()}
         onDisconnectTrainer={() => void disconnectTrainer()}
@@ -461,7 +495,10 @@ export default function App() {
             hasExport={telemetry.hasExport}
             completedDistanceMeters={telemetry.distanceMeters}
             completedElapsedSeconds={telemetry.elapsedSeconds}
-            onSetPickMode={setPickMode}
+            routePlanningEnabled={canPlanRoute}
+            gateMessage={gateMessage}
+            onOpenAccount={onOpenAccount}
+            onSetPickMode={onSetPickMode}
             onBuildRoute={() => void buildRoute()}
             onClear={() => void clearRoute()}
             onStart={() => void engineRef.current.start()}
@@ -486,19 +523,14 @@ export default function App() {
           distanceMeters={telemetry.distanceMeters}
           onPick={onPick}
           pickMode={pickMode}
+          pickingEnabled={canPlanRoute}
         />
 
         <RideHUD telemetry={telemetry} />
 
         <footer className="app-footer">
-          <span>
-            Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre /
-            OpenFreeMap · Mapillary
-          </span>
-          <span>
-            Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no
-            Web Bluetooth
-          </span>
+          <span>{t('footer.protocols')}</span>
+          <span>{t('footer.test')}</span>
         </footer>
       </main>
     </div>

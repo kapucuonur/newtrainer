@@ -1,0 +1,147 @@
+import type { Messages } from './en';
+
+export const se: Messages = {
+  'app.title': 'Inomhus landsväg',
+  'app.subtitle':
+    'FTMS Bluetooth-trainer, puls och verklig väggradient — karta först, sedan cykling.',
+  'lang.label': 'Språk',
+
+  'browser.title': 'Webbläsare',
+  'bt.noBrowser': 'Bluetooth finns bara i en webbläsare.',
+  'bt.iosSafari':
+    'Web Bluetooth stöds inte i iOS Safari. Använd Chrome eller Edge på Android, Windows eller macOS — eller en Bluefy-liknande webbläsare på iOS.',
+  'bt.needsHttps': 'Web Bluetooth kräver HTTPS eller localhost.',
+  'bt.unsupported': 'Den här webbläsaren stöder inte Web Bluetooth. Använd Chrome eller Edge.',
+  'bt.available':
+    'Web Bluetooth är tillgängligt. Parkoppla FTMS-trainer eller pulsband när du uppmanas.',
+
+  'conn.unsupported': 'stöds inte',
+  'conn.disconnected': 'frånkopplad',
+  'conn.connecting': 'ansluter',
+  'conn.connected': 'ansluten',
+  'conn.error': 'fel',
+
+  'trainer.title': 'Cykeltrainer',
+  'trainer.demoName': 'Demo-trainer (Mock)',
+  'trainer.defaultName': 'FTMS Trainer',
+  'trainer.disconnect': 'Koppla från',
+  'trainer.connect': 'Anslut FTMS',
+  'trainer.connecting': 'Ansluter…',
+  'trainer.useDemo': 'Använd demo-trainer',
+  'trainer.demoEffort': 'Demo-ansträngning',
+  'trainer.connectFailed': 'Traineranslutning misslyckades',
+  'trainer.mockFailed': 'Demo-trainer misslyckades',
+
+  'hr.title': 'Puls',
+  'hr.defaultName': 'Puls',
+  'hr.disconnect': 'Koppla från HR',
+  'hr.connect': 'Anslut HR-band',
+  'hr.connecting': 'Ansluter…',
+  'hr.connectFailed': 'HR-anslutning misslyckades',
+
+  'wifi.title': 'WiFi / ANT+',
+  'wifi.probe': 'Testa lokal brygga',
+  'wifi.default':
+    'WiFi/ANT+-trainers behöver en lokal brygga (webbläsarens sandbox). Bluetooth FTMS fungerar nativt i Chrome/Edge.',
+  'wifi.wsUnavailable': 'WebSocket är inte tillgängligt i den här miljön.',
+  'wifi.openFailed':
+    'Kunde inte öppna lokal WiFi-bryggga. Använd Bluetooth FTMS i webbläsaren eller kör en lokal brygga för nätverkstrainers.',
+  'wifi.noBridge':
+    'Ingen lokal brygga på 127.0.0.1:8787. WiFi-trainers behöver en skrivbordsbrygga (ANT+/protokoll → WebSocket). Bluetooth FTMS fungerar utan.',
+  'wifi.online': 'Lokal WiFi-trainerbrygga är online.',
+  'wifi.browserLimited':
+    'WiFi-trainers är begränsade i webbläsaren. Föredra Bluetooth FTMS eller en lokal brygga för nätverk/ANT+.',
+
+  'auth.cloudTitle': 'Molnprofil',
+  'auth.cloudDisabled':
+    'Ett molnkonto krävs för att bygga rutter. Ange VITE_API_URL till din Pi-API och registrera dig eller logga in.',
+  'auth.accountTitle': 'Konto',
+  'auth.accountHint': 'Logga in eller registrera dig först för att välja A–B på kartan och bygga en rutt.',
+  'auth.login': 'Logga in',
+  'auth.register': 'Registrera',
+  'auth.displayName': 'Visningsnamn',
+  'auth.displayNamePlaceholder': 'Cyklist',
+  'auth.email': 'E-post',
+  'auth.password': 'Lösenord',
+  'auth.logIn': 'Logga in',
+  'auth.createAccount': 'Skapa konto',
+  'auth.profile': 'Profil',
+  'auth.weight': 'Vikt (kg)',
+  'auth.ftp': 'FTP (W)',
+  'auth.bikeWeight': 'Cykelvikt (kg)',
+  'auth.saveProfile': 'Spara profil',
+  'auth.logOut': 'Logga ut',
+  'auth.loggedIn': 'Inloggad',
+  'auth.accountCreated': 'Konto skapat',
+  'auth.loggedOut': 'Utloggad',
+  'auth.profileSaved': 'Profil sparad',
+  'auth.requestFailed': 'Begäran misslyckades',
+
+  'phase.idle': 'INAKTIV',
+  'phase.ready': 'REDO',
+  'phase.riding': 'LIVE',
+  'phase.paused': 'PAUS',
+  'phase.finished': 'KLAR',
+
+  'route.title': 'Världsrutt',
+  'route.subtitle':
+    'Välj A → B på kartan. OSRM hittar vägarna; lutningen styr trainern.',
+  'route.setA': 'Sätt A',
+  'route.setB': 'Sätt B',
+  'route.build': 'Bygg rutt',
+  'route.building': 'Bygger…',
+  'route.clear': 'Rensa',
+  'route.rideComplete': 'Passet klart',
+  'route.rideCompleteHint':
+    '{{distance}} · {{duration}} — ladda ner för Garmin Connect (manuell import).',
+  'route.downloadFit': 'Ladda ner FIT',
+  'route.downloadGpx': 'Ladda ner GPX',
+  'route.saveRide': 'Spara pass till profil',
+  'route.saving': 'Sparar…',
+  'route.start': 'Starta pass',
+  'route.pause': 'Pausa',
+  'route.resume': 'Fortsätt',
+  'route.stop': 'Stopp',
+  'route.done': 'Klar',
+  'route.buildFailed': 'Kunde inte bygga rutt',
+  'route.noExport': 'Ingen spårning att exportera ännu',
+  'route.noSave': 'Ingen spårning att spara',
+  'route.loginToSave': 'Logga in för att spara pass',
+  'route.alreadySaved': 'Detta pass är redan sparat',
+  'route.saved': 'Sparat till profil (#{{id}})',
+  'route.gateNoApi':
+    'Ruttbygge kräver ett molnkonto. Konfigurera VITE_API_URL till din Pi-API och registrera dig.',
+  'route.gateLogin': 'Logga in eller registrera dig för att välja start/mål och bygga en rutt.',
+  'route.gateCta': 'Öppna konto',
+
+  'map.pickBanner': 'Tryck på kartan för punkt {{point}}',
+  'map.followBanner': 'Följ väg · 3D-kamera',
+  'map.followMapillary': ' · Mapillary på',
+  'map.lockedBanner': 'Logga in för att sätta A–B på kartan',
+
+  'hud.aria': 'Passmått',
+  'hud.speed': 'Hastighet',
+  'hud.power': 'Effekt',
+  'hud.cadence': 'Kadens',
+  'hud.heartRate': 'Puls',
+  'hud.grade': 'Lutning',
+  'hud.elevation': 'Höjd',
+  'hud.distance': 'Distans',
+  'hud.time': 'Tid',
+  'hud.resistance': 'Motståndsmål ≈ {{value}} · {{load}}-belastning',
+  'hud.climb': 'Stigning',
+  'hud.descent': 'Nedför',
+
+  'street.aria': 'Mapillary gatuvy',
+  'street.label': 'Gatubilder',
+  'street.alt': 'Mapillary gatuvy längs rutten',
+  'street.empty': 'Inga gatubilder här',
+  'street.error': 'Gatubilder otillgängliga',
+  'street.loading': 'Laddar gatubilder…',
+  'street.compass': 'Bildriktning {{capture}}° · cykling {{ride}}°',
+
+  'footer.protocols':
+    'Protokoll: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+  'footer.test':
+    'Test: Chrome/Edge + FTMS-trainer · Demo-trainer utan hårdvara · iOS Safari: ingen Web Bluetooth',
+};

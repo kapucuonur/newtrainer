@@ -12,10 +12,17 @@
  * gracefully when no bridge is running — without inventing paid cloud services.
  */
 
+export type WifiBridgeMessageCode =
+  | 'wifi.wsUnavailable'
+  | 'wifi.openFailed'
+  | 'wifi.noBridge'
+  | 'wifi.online'
+  | 'wifi.browserLimited';
+
 export interface WifiBridgeStatus {
   available: boolean;
   url: string;
-  message: string;
+  code: WifiBridgeMessageCode;
 }
 
 export const DEFAULT_WIFI_BRIDGE_URL = 'ws://127.0.0.1:8787';
@@ -28,7 +35,7 @@ export async function probeWifiBridge(
     return {
       available: false,
       url,
-      message: 'WebSocket is not available in this environment.',
+      code: 'wifi.wsUnavailable',
     };
   }
 
@@ -52,8 +59,7 @@ export async function probeWifiBridge(
       finish({
         available: false,
         url,
-        message:
-          'Could not open local WiFi trainer bridge. Use Bluetooth FTMS in-browser, or run a local bridge for network trainers.',
+        code: 'wifi.openFailed',
       });
       return;
     }
@@ -62,8 +68,7 @@ export async function probeWifiBridge(
       finish({
         available: false,
         url,
-        message:
-          'No local bridge at 127.0.0.1:8787. WiFi trainers need a small desktop bridge (ANT+/vendor protocol → WebSocket). Bluetooth FTMS works without it.',
+        code: 'wifi.noBridge',
       });
     }, timeoutMs);
 
@@ -72,7 +77,7 @@ export async function probeWifiBridge(
       finish({
         available: true,
         url,
-        message: 'Local WiFi trainer bridge is online.',
+        code: 'wifi.online',
       });
     };
 
@@ -81,8 +86,7 @@ export async function probeWifiBridge(
       finish({
         available: false,
         url,
-        message:
-          'WiFi trainers are browser-limited. Pair via Bluetooth FTMS when possible, or run a local bridge for network/ANT+ devices.',
+        code: 'wifi.browserLimited',
       });
     };
   });

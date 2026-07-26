@@ -1,0 +1,147 @@
+import type { Messages } from './en';
+
+export const ru: Messages = {
+  'app.title': 'Домашняя дорожная езда',
+  'app.subtitle':
+    'FTMS Bluetooth-тренажёр, пульс и реальный уклон дороги — сначала карта, потом езда.',
+  'lang.label': 'Язык',
+
+  'browser.title': 'Браузер',
+  'bt.noBrowser': 'Bluetooth доступен только в браузере.',
+  'bt.iosSafari':
+    'Web Bluetooth не поддерживается в iOS Safari. Используйте Chrome или Edge на Android, Windows или macOS — либо браузер вроде Bluefy на iOS.',
+  'bt.needsHttps': 'Для Web Bluetooth нужен HTTPS или localhost.',
+  'bt.unsupported': 'Этот браузер не поддерживает Web Bluetooth. Используйте Chrome или Edge.',
+  'bt.available':
+    'Web Bluetooth доступен. Подключите FTMS-тренажёр или пульсометр по запросу.',
+
+  'conn.unsupported': 'не поддерживается',
+  'conn.disconnected': 'отключено',
+  'conn.connecting': 'подключение',
+  'conn.connected': 'подключено',
+  'conn.error': 'ошибка',
+
+  'trainer.title': 'Велотренажёр',
+  'trainer.demoName': 'Демо-тренажёр (Mock)',
+  'trainer.defaultName': 'FTMS Trainer',
+  'trainer.disconnect': 'Отключить',
+  'trainer.connect': 'Подключить FTMS',
+  'trainer.connecting': 'Подключение…',
+  'trainer.useDemo': 'Демо-тренажёр',
+  'trainer.demoEffort': 'Демо-усилие',
+  'trainer.connectFailed': 'Не удалось подключить тренажёр',
+  'trainer.mockFailed': 'Ошибка демо-тренажёра',
+
+  'hr.title': 'Пульс',
+  'hr.defaultName': 'Пульс',
+  'hr.disconnect': 'Отключить HR',
+  'hr.connect': 'Подключить HR-ремень',
+  'hr.connecting': 'Подключение…',
+  'hr.connectFailed': 'Не удалось подключить HR',
+
+  'wifi.title': 'WiFi / ANT+',
+  'wifi.probe': 'Проверить локальный мост',
+  'wifi.default':
+    'WiFi/ANT+ тренажёрам нужен локальный мост (ограничения браузера). Bluetooth FTMS работает в Chrome/Edge.',
+  'wifi.wsUnavailable': 'WebSocket недоступен в этой среде.',
+  'wifi.openFailed':
+    'Не удалось открыть локальный WiFi-мост. Используйте Bluetooth FTMS в браузере или запустите мост для сетевых тренажёров.',
+  'wifi.noBridge':
+    'Нет моста на 127.0.0.1:8787. WiFi-тренажёрам нужен настольный мост (ANT+/протокол → WebSocket). Bluetooth FTMS работает без него.',
+  'wifi.online': 'Локальный WiFi-мост тренажёра онлайн.',
+  'wifi.browserLimited':
+    'WiFi-тренажёры ограничены в браузере. По возможности подключайтесь через Bluetooth FTMS или используйте локальный мост для сети/ANT+.',
+
+  'auth.cloudTitle': 'Облачный профиль',
+  'auth.cloudDisabled':
+    'Для построения маршрута нужен облачный аккаунт. Укажите VITE_API_URL к API на Pi, затем зарегистрируйтесь или войдите.',
+  'auth.accountTitle': 'Аккаунт',
+  'auth.accountHint': 'Сначала войдите или зарегистрируйтесь, чтобы выбрать A–B на карте и построить маршрут.',
+  'auth.login': 'Вход',
+  'auth.register': 'Регистрация',
+  'auth.displayName': 'Имя',
+  'auth.displayNamePlaceholder': 'Гонщик',
+  'auth.email': 'Email',
+  'auth.password': 'Пароль',
+  'auth.logIn': 'Войти',
+  'auth.createAccount': 'Создать аккаунт',
+  'auth.profile': 'Профиль',
+  'auth.weight': 'Вес (кг)',
+  'auth.ftp': 'FTP (Вт)',
+  'auth.bikeWeight': 'Вес велосипеда (кг)',
+  'auth.saveProfile': 'Сохранить профиль',
+  'auth.logOut': 'Выйти',
+  'auth.loggedIn': 'Вход выполнен',
+  'auth.accountCreated': 'Аккаунт создан',
+  'auth.loggedOut': 'Выход выполнен',
+  'auth.profileSaved': 'Профиль сохранён',
+  'auth.requestFailed': 'Запрос не выполнен',
+
+  'phase.idle': 'ОЖИДАНИЕ',
+  'phase.ready': 'ГОТОВ',
+  'phase.riding': 'В ЭФИРЕ',
+  'phase.paused': 'ПАУЗА',
+  'phase.finished': 'ФИНИШ',
+
+  'route.title': 'Мировой маршрут',
+  'route.subtitle':
+    'Выберите A → B на карте. OSRM строит дороги; уклон задаёт сопротивление тренажёра.',
+  'route.setA': 'Точка A',
+  'route.setB': 'Точка B',
+  'route.build': 'Построить маршрут',
+  'route.building': 'Строим…',
+  'route.clear': 'Сбросить',
+  'route.rideComplete': 'Заезд завершён',
+  'route.rideCompleteHint':
+    '{{distance}} · {{duration}} — скачайте для Garmin Connect (ручной импорт).',
+  'route.downloadFit': 'Скачать FIT',
+  'route.downloadGpx': 'Скачать GPX',
+  'route.saveRide': 'Сохранить в профиль',
+  'route.saving': 'Сохранение…',
+  'route.start': 'Начать заезд',
+  'route.pause': 'Пауза',
+  'route.resume': 'Продолжить',
+  'route.stop': 'Стоп',
+  'route.done': 'Готово',
+  'route.buildFailed': 'Не удалось построить маршрут',
+  'route.noExport': 'Нет трека для экспорта',
+  'route.noSave': 'Нет трека для сохранения',
+  'route.loginToSave': 'Войдите, чтобы сохранять заезды',
+  'route.alreadySaved': 'Этот заезд уже сохранён',
+  'route.saved': 'Сохранено в профиль (#{{id}})',
+  'route.gateNoApi':
+    'Для маршрутов нужен облачный аккаунт. Настройте VITE_API_URL к API на Pi, затем зарегистрируйтесь.',
+  'route.gateLogin': 'Войдите или зарегистрируйтесь, чтобы выбрать точки и построить маршрут.',
+  'route.gateCta': 'Открыть аккаунт',
+
+  'map.pickBanner': 'Нажмите на карту, чтобы задать точку {{point}}',
+  'map.followBanner': 'Следование по дороге · 3D-камера',
+  'map.followMapillary': ' · Mapillary вкл.',
+  'map.lockedBanner': 'Войдите, чтобы задать A–B на карте',
+
+  'hud.aria': 'Метрики заезда',
+  'hud.speed': 'Скорость',
+  'hud.power': 'Мощность',
+  'hud.cadence': 'Каденс',
+  'hud.heartRate': 'Пульс',
+  'hud.grade': 'Уклон',
+  'hud.elevation': 'Высота',
+  'hud.distance': 'Дистанция',
+  'hud.time': 'Время',
+  'hud.resistance': 'Цель сопротивления ≈ {{value}} · нагрузка {{load}}',
+  'hud.climb': 'Подъём',
+  'hud.descent': 'Спуск',
+
+  'street.aria': 'Уличные кадры Mapillary',
+  'street.label': 'Уличные кадры',
+  'street.alt': 'Уличный вид Mapillary вдоль маршрута',
+  'street.empty': 'Здесь нет уличных кадров',
+  'street.error': 'Уличные кадры недоступны',
+  'street.loading': 'Загрузка уличных кадров…',
+  'street.compass': 'Съёмка {{capture}}° · езда {{ride}}°',
+
+  'footer.protocols':
+    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+  'footer.test':
+    'Тест: Chrome/Edge + FTMS · Демо-тренажёр без железа · iOS Safari: нет Web Bluetooth',
+};

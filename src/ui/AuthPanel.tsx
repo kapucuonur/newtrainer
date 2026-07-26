@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isCloudApiEnabled } from '../api/config';
 import type { User } from '../api/types';
+import { useT } from '../i18n';
 
 type Props = {
   user: User | null;
@@ -26,6 +27,7 @@ export function AuthPanel({
   onLogout,
   onSaveProfile,
 }: Props) {
+  const t = useT();
   const cloud = isCloudApiEnabled();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -47,11 +49,11 @@ export function AuthPanel({
 
   if (!cloud) {
     return (
-      <section className="device-card auth-card">
+      <section id="account-panel" className="device-card auth-card">
         <div className="device-card-head">
           <div>
-            <h2>Cloud profile</h2>
-            <p>Optional. Set VITE_API_URL to your Pi API to sync profile & rides.</p>
+            <h2>{t('auth.cloudTitle')}</h2>
+            <p>{t('auth.cloudDisabled')}</p>
           </div>
         </div>
       </section>
@@ -60,11 +62,11 @@ export function AuthPanel({
 
   if (!user) {
     return (
-      <section className="device-card auth-card">
+      <section id="account-panel" className="device-card auth-card">
         <div className="device-card-head">
           <div>
-            <h2>Account</h2>
-            <p>Register or log in to save rides on your Pi.</p>
+            <h2>{t('auth.accountTitle')}</h2>
+            <p>{t('auth.accountHint')}</p>
           </div>
         </div>
         <div className="btn-row" style={{ marginBottom: 10 }}>
@@ -73,14 +75,14 @@ export function AuthPanel({
             className={`btn ${mode === 'login' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setMode('login')}
           >
-            Login
+            {t('auth.login')}
           </button>
           <button
             type="button"
             className={`btn ${mode === 'register' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setMode('register')}
           >
-            Register
+            {t('auth.register')}
           </button>
         </div>
         <form
@@ -93,18 +95,18 @@ export function AuthPanel({
         >
           {mode === 'register' && (
             <label>
-              Display name
+              {t('auth.displayName')}
               <input
                 type="text"
                 autoComplete="nickname"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Rider"
+                placeholder={t('auth.displayNamePlaceholder')}
               />
             </label>
           )}
           <label>
-            Email
+            {t('auth.email')}
             <input
               type="email"
               required
@@ -114,7 +116,7 @@ export function AuthPanel({
             />
           </label>
           <label>
-            Password
+            {t('auth.password')}
             <input
               type="password"
               required
@@ -125,7 +127,7 @@ export function AuthPanel({
             />
           </label>
           <button type="submit" className="btn btn-secondary" disabled={busy}>
-            {busy ? '…' : mode === 'login' ? 'Log in' : 'Create account'}
+            {busy ? '…' : mode === 'login' ? t('auth.logIn') : t('auth.createAccount')}
           </button>
         </form>
         {message && <p className="auth-message">{message}</p>}
@@ -134,10 +136,10 @@ export function AuthPanel({
   }
 
   return (
-    <section className="device-card auth-card">
+    <section id="account-panel" className="device-card auth-card">
       <div className="device-card-head">
         <div>
-          <h2>Profile</h2>
+          <h2>{t('auth.profile')}</h2>
           <p>
             {user.profile.displayName || user.email}
             <br />
@@ -153,16 +155,16 @@ export function AuthPanel({
         }}
       >
         <label>
-          Display name
+          {t('auth.displayName')}
           <input
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Rider"
+            placeholder={t('auth.displayNamePlaceholder')}
           />
         </label>
         <label>
-          Weight (kg)
+          {t('auth.weight')}
           <input
             type="number"
             min={1}
@@ -172,7 +174,7 @@ export function AuthPanel({
           />
         </label>
         <label>
-          FTP (W)
+          {t('auth.ftp')}
           <input
             type="number"
             min={1}
@@ -182,7 +184,7 @@ export function AuthPanel({
           />
         </label>
         <label>
-          Bike weight (kg)
+          {t('auth.bikeWeight')}
           <input
             type="number"
             min={1}
@@ -193,7 +195,7 @@ export function AuthPanel({
         </label>
         <div className="btn-row">
           <button type="submit" className="btn btn-secondary" disabled={busy}>
-            {busy ? '…' : 'Save profile'}
+            {busy ? '…' : t('auth.saveProfile')}
           </button>
           <button
             type="button"
@@ -201,7 +203,7 @@ export function AuthPanel({
             disabled={busy}
             onClick={() => void onLogout()}
           >
-            Log out
+            {t('auth.logOut')}
           </button>
         </div>
       </form>

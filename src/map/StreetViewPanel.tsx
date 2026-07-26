@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import type { LatLng } from '../routing/types';
 import {
   hasMapillaryToken,
@@ -20,6 +21,7 @@ type PanelStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
  * (MapLibre follow-road camera stays primary).
  */
 export function StreetViewPanel({ enabled, position, heading }: Props) {
+  const t = useT();
   const clientRef = useRef(new MapillaryNearestClient());
   const hasImageRef = useRef(false);
   const [image, setImage] = useState<MapillaryImage | null>(null);
@@ -67,12 +69,15 @@ export function StreetViewPanel({ enabled, position, heading }: Props) {
   const showImage = status === 'ready' && image && !imgFailed;
 
   return (
-    <aside className="street-view-panel" aria-label="Mapillary street view">
-      <div className="street-view-label">Street imagery</div>
+    <aside className="street-view-panel" aria-label={t('street.aria')}>
+      <div className="street-view-label">{t('street.label')}</div>
       {typeof compass === 'number' && (
         <div
           className="street-view-compass"
-          title={`Capture bearing ${Math.round(compass)}° · ride ${Math.round(heading)}°`}
+          title={t('street.compass', {
+            capture: Math.round(compass),
+            ride: Math.round(heading),
+          })}
           aria-hidden
         >
           <span
@@ -85,17 +90,17 @@ export function StreetViewPanel({ enabled, position, heading }: Props) {
         <img
           key={image.id}
           src={image.thumbUrl}
-          alt="Mapillary street-level view along the route"
+          alt={t('street.alt')}
           className="street-view-image"
           onError={() => setImgFailed(true)}
         />
       ) : (
         <div className="street-view-fallback" role="status">
           {status === 'empty' || imgFailed
-            ? 'No street imagery here'
+            ? t('street.empty')
             : status === 'error'
-              ? 'Street imagery unavailable'
-              : 'Loading street imagery…'}
+              ? t('street.error')
+              : t('street.loading')}
         </div>
       )}
       <div className="street-view-attribution">

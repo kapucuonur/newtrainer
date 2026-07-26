@@ -1,0 +1,148 @@
+export const en = {
+  'app.title': 'Indoor Road Ride',
+  'app.subtitle':
+    'FTMS Bluetooth trainer, heart rate, and real-road elevation — map first, ride ready.',
+  'lang.label': 'Language',
+
+  'browser.title': 'Browser',
+  'bt.noBrowser': 'Bluetooth is only available in a browser.',
+  'bt.iosSafari':
+    'Web Bluetooth is not supported in iOS Safari. Use Chrome or Edge on Android, Windows, or macOS — or install a Bluefy-style browser on iOS.',
+  'bt.needsHttps': 'Web Bluetooth requires HTTPS or localhost.',
+  'bt.unsupported': 'This browser does not support Web Bluetooth. Use Chrome or Edge.',
+  'bt.available':
+    'Web Bluetooth is available. Pair your FTMS trainer or heart-rate strap when prompted.',
+
+  'conn.unsupported': 'unsupported',
+  'conn.disconnected': 'disconnected',
+  'conn.connecting': 'connecting',
+  'conn.connected': 'connected',
+  'conn.error': 'error',
+
+  'trainer.title': 'Bike trainer',
+  'trainer.demoName': 'Demo Trainer (Mock)',
+  'trainer.defaultName': 'FTMS Trainer',
+  'trainer.disconnect': 'Disconnect',
+  'trainer.connect': 'Connect FTMS',
+  'trainer.connecting': 'Connecting…',
+  'trainer.useDemo': 'Use demo trainer',
+  'trainer.demoEffort': 'Demo effort',
+  'trainer.connectFailed': 'Trainer connection failed',
+  'trainer.mockFailed': 'Mock trainer failed',
+
+  'hr.title': 'Heart rate',
+  'hr.defaultName': 'Heart Rate',
+  'hr.disconnect': 'Disconnect HR',
+  'hr.connect': 'Connect HR strap',
+  'hr.connecting': 'Connecting…',
+  'hr.connectFailed': 'HR connection failed',
+
+  'wifi.title': 'WiFi / ANT+',
+  'wifi.probe': 'Probe local bridge',
+  'wifi.default':
+    'WiFi/ANT+ trainers need a local bridge (browser sandbox). Bluetooth FTMS works natively in Chrome/Edge.',
+  'wifi.wsUnavailable': 'WebSocket is not available in this environment.',
+  'wifi.openFailed':
+    'Could not open local WiFi trainer bridge. Use Bluetooth FTMS in-browser, or run a local bridge for network trainers.',
+  'wifi.noBridge':
+    'No local bridge at 127.0.0.1:8787. WiFi trainers need a small desktop bridge (ANT+/vendor protocol → WebSocket). Bluetooth FTMS works without it.',
+  'wifi.online': 'Local WiFi trainer bridge is online.',
+  'wifi.browserLimited':
+    'WiFi trainers are browser-limited. Pair via Bluetooth FTMS when possible, or run a local bridge for network/ANT+ devices.',
+
+  'auth.cloudTitle': 'Cloud profile',
+  'auth.cloudDisabled':
+    'Cloud account is required to build routes. Set VITE_API_URL to your Pi API, then register or log in.',
+  'auth.accountTitle': 'Account',
+  'auth.accountHint': 'Log in or register first to pick A–B on the map and build a route.',
+  'auth.login': 'Login',
+  'auth.register': 'Register',
+  'auth.displayName': 'Display name',
+  'auth.displayNamePlaceholder': 'Rider',
+  'auth.email': 'Email',
+  'auth.password': 'Password',
+  'auth.logIn': 'Log in',
+  'auth.createAccount': 'Create account',
+  'auth.profile': 'Profile',
+  'auth.weight': 'Weight (kg)',
+  'auth.ftp': 'FTP (W)',
+  'auth.bikeWeight': 'Bike weight (kg)',
+  'auth.saveProfile': 'Save profile',
+  'auth.logOut': 'Log out',
+  'auth.loggedIn': 'Logged in',
+  'auth.accountCreated': 'Account created',
+  'auth.loggedOut': 'Logged out',
+  'auth.profileSaved': 'Profile saved',
+  'auth.requestFailed': 'Request failed',
+
+  'phase.idle': 'IDLE',
+  'phase.ready': 'READY',
+  'phase.riding': 'LIVE',
+  'phase.paused': 'PAUSED',
+  'phase.finished': 'FINISH',
+
+  'route.title': 'World route',
+  'route.subtitle':
+    'Pick A → B anywhere on the map. OSRM bikes the roads; elevation drives trainer grade.',
+  'route.setA': 'Set A',
+  'route.setB': 'Set B',
+  'route.build': 'Build route',
+  'route.building': 'Building…',
+  'route.clear': 'Clear',
+  'route.rideComplete': 'Ride complete',
+  'route.rideCompleteHint':
+    '{{distance}} · {{duration}} — download for Garmin Connect (manual import).',
+  'route.downloadFit': 'Download FIT',
+  'route.downloadGpx': 'Download GPX',
+  'route.saveRide': 'Save ride to profile',
+  'route.saving': 'Saving…',
+  'route.start': 'Start ride',
+  'route.pause': 'Pause',
+  'route.resume': 'Resume',
+  'route.stop': 'Stop',
+  'route.done': 'Done',
+  'route.buildFailed': 'Route build failed',
+  'route.noExport': 'No ride track to export yet',
+  'route.noSave': 'No ride track to save',
+  'route.loginToSave': 'Log in to save rides',
+  'route.alreadySaved': 'Already saved this ride',
+  'route.saved': 'Saved to profile (#{{id}})',
+  'route.gateNoApi':
+    'Route building requires a cloud account. Configure VITE_API_URL to your Pi API, then register.',
+  'route.gateLogin': 'Log in or register to pick start/end points and build a route.',
+  'route.gateCta': 'Open Account',
+
+  'map.pickBanner': 'Tap the map to set point {{point}}',
+  'map.followBanner': 'Follow road · 3D ride camera',
+  'map.followMapillary': ' · Mapillary on',
+  'map.lockedBanner': 'Sign in to set A–B on the map',
+
+  'hud.aria': 'Ride metrics',
+  'hud.speed': 'Speed',
+  'hud.power': 'Power',
+  'hud.cadence': 'Cadence',
+  'hud.heartRate': 'Heart rate',
+  'hud.grade': 'Grade',
+  'hud.elevation': 'Elevation',
+  'hud.distance': 'Distance',
+  'hud.time': 'Time',
+  'hud.resistance': 'Resistance target ≈ {{value}} · {{load}} load',
+  'hud.climb': 'Climb',
+  'hud.descent': 'Descent',
+
+  'street.aria': 'Mapillary street view',
+  'street.label': 'Street imagery',
+  'street.alt': 'Mapillary street-level view along the route',
+  'street.empty': 'No street imagery here',
+  'street.error': 'Street imagery unavailable',
+  'street.loading': 'Loading street imagery…',
+  'street.compass': 'Capture bearing {{capture}}° · ride {{ride}}°',
+
+  'footer.protocols':
+    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+  'footer.test':
+    'Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no Web Bluetooth',
+} as const;
+
+export type MessageKey = keyof typeof en;
+export type Messages = Record<MessageKey, string>;

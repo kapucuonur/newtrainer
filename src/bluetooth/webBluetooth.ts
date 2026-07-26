@@ -19,26 +19,26 @@ export async function isBluetoothAvailable(): Promise<boolean> {
   }
 }
 
-export function getBluetoothSupportMessage(): string {
+export type BluetoothSupportCode =
+  | 'bt.noBrowser'
+  | 'bt.iosSafari'
+  | 'bt.needsHttps'
+  | 'bt.unsupported'
+  | 'bt.available';
+
+export function getBluetoothSupportCode(): BluetoothSupportCode {
   if (typeof navigator === 'undefined') {
-    return 'Bluetooth is only available in a browser.';
+    return 'bt.noBrowser';
   }
 
   const ua = navigator.userAgent;
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
 
-  if (isIOS || isSafari) {
-    return 'Web Bluetooth is not supported in iOS Safari. Use Chrome or Edge on Android, Windows, or macOS — or install a Bluefy-style browser on iOS.';
-  }
-
-  if (!isSecureContextAvailable()) {
-    return 'Web Bluetooth requires HTTPS or localhost.';
-  }
-
-  if (!navigator.bluetooth) {
-    return 'This browser does not support Web Bluetooth. Use Chrome or Edge.';
-  }
-
-  return 'Web Bluetooth is available. Pair your FTMS trainer or heart-rate strap when prompted.';
+  if (isIOS || isSafari) return 'bt.iosSafari';
+  if (!isSecureContextAvailable()) return 'bt.needsHttps';
+  if (!navigator.bluetooth) return 'bt.unsupported';
+  return 'bt.available';
 }

@@ -1,0 +1,147 @@
+import type { Messages } from './en';
+
+export const es: Messages = {
+  'app.title': 'Ruta de carretera indoor',
+  'app.subtitle':
+    'Rodillo FTMS Bluetooth, ritmo cardiaco y pendiente real — primero el mapa, luego la ruta.',
+  'lang.label': 'Idioma',
+
+  'browser.title': 'Navegador',
+  'bt.noBrowser': 'Bluetooth solo está disponible en el navegador.',
+  'bt.iosSafari':
+    'Web Bluetooth no es compatible con iOS Safari. Usa Chrome o Edge en Android, Windows o macOS — o un navegador tipo Bluefy en iOS.',
+  'bt.needsHttps': 'Web Bluetooth requiere HTTPS o localhost.',
+  'bt.unsupported': 'Este navegador no admite Web Bluetooth. Usa Chrome o Edge.',
+  'bt.available':
+    'Web Bluetooth disponible. Empareja tu rodillo FTMS o banda de pulso cuando se solicite.',
+
+  'conn.unsupported': 'no admitido',
+  'conn.disconnected': 'desconectado',
+  'conn.connecting': 'conectando',
+  'conn.connected': 'conectado',
+  'conn.error': 'error',
+
+  'trainer.title': 'Rodillo',
+  'trainer.demoName': 'Rodillo demo (Mock)',
+  'trainer.defaultName': 'FTMS Trainer',
+  'trainer.disconnect': 'Desconectar',
+  'trainer.connect': 'Conectar FTMS',
+  'trainer.connecting': 'Conectando…',
+  'trainer.useDemo': 'Usar rodillo demo',
+  'trainer.demoEffort': 'Esfuerzo demo',
+  'trainer.connectFailed': 'Falló la conexión del rodillo',
+  'trainer.mockFailed': 'Falló el rodillo demo',
+
+  'hr.title': 'Ritmo cardiaco',
+  'hr.defaultName': 'Ritmo cardiaco',
+  'hr.disconnect': 'Desconectar HR',
+  'hr.connect': 'Conectar banda HR',
+  'hr.connecting': 'Conectando…',
+  'hr.connectFailed': 'Falló la conexión HR',
+
+  'wifi.title': 'WiFi / ANT+',
+  'wifi.probe': 'Probar puente local',
+  'wifi.default':
+    'Los rodillos WiFi/ANT+ necesitan un puente local (sandbox del navegador). Bluetooth FTMS funciona de forma nativa en Chrome/Edge.',
+  'wifi.wsUnavailable': 'WebSocket no está disponible en este entorno.',
+  'wifi.openFailed':
+    'No se pudo abrir el puente WiFi local. Usa Bluetooth FTMS en el navegador o ejecuta un puente para rodillos de red.',
+  'wifi.noBridge':
+    'No hay puente en 127.0.0.1:8787. Los rodillos WiFi necesitan un puente de escritorio (ANT+/protocolo → WebSocket). Bluetooth FTMS funciona sin él.',
+  'wifi.online': 'Puente WiFi local en línea.',
+  'wifi.browserLimited':
+    'Los rodillos WiFi están limitados en el navegador. Prefiere Bluetooth FTMS o un puente local para red/ANT+.',
+
+  'auth.cloudTitle': 'Perfil en la nube',
+  'auth.cloudDisabled':
+    'Se requiere una cuenta en la nube para crear rutas. Configura VITE_API_URL con tu API de Pi y regístrate o inicia sesión.',
+  'auth.accountTitle': 'Cuenta',
+  'auth.accountHint': 'Inicia sesión o regístrate antes de elegir A–B en el mapa y crear una ruta.',
+  'auth.login': 'Entrar',
+  'auth.register': 'Registrarse',
+  'auth.displayName': 'Nombre visible',
+  'auth.displayNamePlaceholder': 'Ciclista',
+  'auth.email': 'Email',
+  'auth.password': 'Contraseña',
+  'auth.logIn': 'Iniciar sesión',
+  'auth.createAccount': 'Crear cuenta',
+  'auth.profile': 'Perfil',
+  'auth.weight': 'Peso (kg)',
+  'auth.ftp': 'FTP (W)',
+  'auth.bikeWeight': 'Peso de la bici (kg)',
+  'auth.saveProfile': 'Guardar perfil',
+  'auth.logOut': 'Cerrar sesión',
+  'auth.loggedIn': 'Sesión iniciada',
+  'auth.accountCreated': 'Cuenta creada',
+  'auth.loggedOut': 'Sesión cerrada',
+  'auth.profileSaved': 'Perfil guardado',
+  'auth.requestFailed': 'Solicitud fallida',
+
+  'phase.idle': 'INACTIVO',
+  'phase.ready': 'LISTO',
+  'phase.riding': 'EN VIVO',
+  'phase.paused': 'PAUSA',
+  'phase.finished': 'FIN',
+
+  'route.title': 'Ruta mundial',
+  'route.subtitle':
+    'Elige A → B en el mapa. OSRM encuentra las carreteras; la pendiente mueve el rodillo.',
+  'route.setA': 'Fijar A',
+  'route.setB': 'Fijar B',
+  'route.build': 'Crear ruta',
+  'route.building': 'Creando…',
+  'route.clear': 'Borrar',
+  'route.rideComplete': 'Ruta completada',
+  'route.rideCompleteHint':
+    '{{distance}} · {{duration}} — descarga para Garmin Connect (importación manual).',
+  'route.downloadFit': 'Descargar FIT',
+  'route.downloadGpx': 'Descargar GPX',
+  'route.saveRide': 'Guardar ruta en el perfil',
+  'route.saving': 'Guardando…',
+  'route.start': 'Iniciar ruta',
+  'route.pause': 'Pausa',
+  'route.resume': 'Reanudar',
+  'route.stop': 'Parar',
+  'route.done': 'Hecho',
+  'route.buildFailed': 'No se pudo crear la ruta',
+  'route.noExport': 'Aún no hay pista para exportar',
+  'route.noSave': 'No hay pista para guardar',
+  'route.loginToSave': 'Inicia sesión para guardar rutas',
+  'route.alreadySaved': 'Esta ruta ya está guardada',
+  'route.saved': 'Guardada en el perfil (#{{id}})',
+  'route.gateNoApi':
+    'Crear rutas requiere una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
+  'route.gateLogin': 'Inicia sesión o regístrate para elegir inicio/fin y crear una ruta.',
+  'route.gateCta': 'Abrir cuenta',
+
+  'map.pickBanner': 'Toca el mapa para el punto {{point}}',
+  'map.followBanner': 'Seguir carretera · cámara 3D',
+  'map.followMapillary': ' · Mapillary on',
+  'map.lockedBanner': 'Inicia sesión para fijar A–B en el mapa',
+
+  'hud.aria': 'Métricas de la ruta',
+  'hud.speed': 'Velocidad',
+  'hud.power': 'Potencia',
+  'hud.cadence': 'Cadencia',
+  'hud.heartRate': 'Ritmo cardiaco',
+  'hud.grade': 'Pendiente',
+  'hud.elevation': 'Altitud',
+  'hud.distance': 'Distancia',
+  'hud.time': 'Tiempo',
+  'hud.resistance': 'Objetivo de resistencia ≈ {{value}} · carga {{load}}',
+  'hud.climb': 'Subida',
+  'hud.descent': 'Bajada',
+
+  'street.aria': 'Vista de calle Mapillary',
+  'street.label': 'Imágenes de calle',
+  'street.alt': 'Vista de calle Mapillary a lo largo de la ruta',
+  'street.empty': 'No hay imágenes de calle aquí',
+  'street.error': 'Imágenes de calle no disponibles',
+  'street.loading': 'Cargando imágenes de calle…',
+  'street.compass': 'Captura {{capture}}° · ruta {{ride}}°',
+
+  'footer.protocols':
+    'Protocolos: FTMS (0x1826) · HR (0x180D) · OSRM · OpenTopoData · MapLibre / OpenFreeMap · Mapillary',
+  'footer.test':
+    'Prueba: Chrome/Edge + rodillo FTMS · Rodillo demo sin hardware · iOS Safari: sin Web Bluetooth',
+};

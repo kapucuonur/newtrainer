@@ -9,6 +9,7 @@ import {
 } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
 import type { EnrichedRoute, LatLng } from '../routing/types';
 import { bearingAlongRoute, lerpBearing } from './bearing';
@@ -34,6 +35,7 @@ type Props = {
   distanceMeters: number;
   onPick: (point: LatLng) => void;
   pickMode: 'A' | 'B' | null;
+  pickingEnabled?: boolean;
 };
 
 function tryEnable3dBuildings(map: Map): void {
@@ -103,7 +105,9 @@ export function RouteMap({
   distanceMeters,
   onPick,
   pickMode,
+  pickingEnabled = true,
 }: Props) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const markerA = useRef<Marker | null>(null);
@@ -111,10 +115,12 @@ export function RouteMap({
   const markerRider = useRef<Marker | null>(null);
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
+  const pickingEnabledRef = useRef(pickingEnabled);
   const bearingRef = useRef(0);
   const [heading, setHeading] = useState(0);
 
   const followRoad = ridePhase === 'riding' || ridePhase === 'paused';
+  const activePickMode = pickingEnabled ? pickMode : null;
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -123,6 +129,10 @@ export function RouteMap({
   useEffect(() => {
     pickModeRef.current = pickMode;
   }, [pickMode]);
+
+  useEffect(() => {
+    pickingEnabledRef.current = pickingEnabled;
+  }, [pickingEnabled]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -142,7 +152,7 @@ export function RouteMap({
     map.addControl(new ScaleControl({ unit: 'metric' }));
 
     map.on('click', (e: { lngLat: { lat: number; lng: number } }) => {
-      if (!pickModeRef.current) return;
+      if (!pickingEnabledRef.current || !pickModeRef.current) return;
       onPickRef.current({ lat: e.lngLat.lat, lng: e.lngLat.lng });
     });
 
@@ -286,20 +296,23 @@ export function RouteMap({
 
   return (
     <div
-      className={`route-map ${pickMode ? 'route-map-picking' : ''} ${
+      className={`route-map ${activePickMode ? 'route-map-picking' : ''} ${
         followRoad ? 'route-map-follow' : ''
-      }`}
+      } ${!pickingEnabled ? 'route-map-locked' : ''}`}
     >
       <div ref={containerRef} className="route-map-canvas" />
-      {pickMode && (
+      {!pickingEnabled && !followRoad && (
+        <div className="map-pick-banner map-lock-banner">{t('map.lockedBanner')}</div>
+      )}
+      {activePickMode && (
         <div className="map-pick-banner">
-          Tap the map to set point {pickMode}
+          {t('map.pickBanner', { point: activePickMode })}
         </div>
       )}
       {followRoad && (
         <div className="map-follow-banner" role="status">
-          Follow road · 3D ride camera
-          {hasMapillaryToken() ? ' · Mapillary on' : ''}
+          {t('map.followBanner')}
+          {hasMapillaryToken() ? t('map.followMapillary') : ''}
         </div>
       )}
       <StreetViewPanel

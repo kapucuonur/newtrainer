@@ -1,5 +1,6 @@
 import type { EnrichedRoute, LatLng } from '../routing/types';
 import type { RidePhase } from '../simulation/rideEngine';
+import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
 
 type Props = {
@@ -13,6 +14,9 @@ type Props = {
   hasExport: boolean;
   completedDistanceMeters: number;
   completedElapsedSeconds: number;
+  routePlanningEnabled: boolean;
+  gateMessage: string | null;
+  onOpenAccount: () => void;
   onSetPickMode: (mode: 'A' | 'B' | null) => void;
   onBuildRoute: () => void;
   onClear: () => void;
@@ -40,6 +44,9 @@ export function RouteControls({
   hasExport,
   completedDistanceMeters,
   completedElapsedSeconds,
+  routePlanningEnabled,
+  gateMessage,
+  onOpenAccount,
   onSetPickMode,
   onBuildRoute,
   onClear,
@@ -54,43 +61,56 @@ export function RouteControls({
   saveMessage = null,
   onSaveToProfile,
 }: Props) {
+  const t = useT();
   const showComplete = phase === 'finished' && hasExport;
+  const locked = !routePlanningEnabled;
 
   return (
     <section className="route-controls">
       <div className="route-controls-top">
         <div>
-          <h2>World route</h2>
-          <p>Pick A → B anywhere on the map. OSRM bikes the roads; elevation drives trainer grade.</p>
+          <h2>{t('route.title')}</h2>
+          <p>{t('route.subtitle')}</p>
         </div>
         <div className="btn-row">
           <button
             type="button"
             className={`btn ${pickMode === 'A' ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={locked}
             onClick={() => onSetPickMode(pickMode === 'A' ? null : 'A')}
           >
-            Set A
+            {t('route.setA')}
           </button>
           <button
             type="button"
             className={`btn ${pickMode === 'B' ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={locked}
             onClick={() => onSetPickMode(pickMode === 'B' ? null : 'B')}
           >
-            Set B
+            {t('route.setB')}
           </button>
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!pointA || !pointB || loading}
+            disabled={locked || !pointA || !pointB || loading}
             onClick={onBuildRoute}
           >
-            {loading ? 'Building…' : 'Build route'}
+            {loading ? t('route.building') : t('route.build')}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onClear}>
-            Clear
+            {t('route.clear')}
           </button>
         </div>
       </div>
+
+      {gateMessage && (
+        <div className="auth-gate-banner" role="status">
+          <p>{gateMessage}</p>
+          <button type="button" className="btn btn-accent" onClick={onOpenAccount}>
+            {t('route.gateCta')}
+          </button>
+        </div>
+      )}
 
       <div className="route-meta">
         <span>A: {pointA ? `${pointA.lat.toFixed(4)}, ${pointA.lng.toFixed(4)}` : '—'}</span>
@@ -112,18 +132,20 @@ export function RouteControls({
       {showComplete && (
         <div className="ride-complete" role="status">
           <div className="ride-complete-copy">
-            <h3>Ride complete</h3>
+            <h3>{t('route.rideComplete')}</h3>
             <p>
-              {formatDistance(completedDistanceMeters)} · {formatDuration(completedElapsedSeconds)} —
-              download for Garmin Connect (manual import).
+              {t('route.rideCompleteHint', {
+                distance: formatDistance(completedDistanceMeters),
+                duration: formatDuration(completedElapsedSeconds),
+              })}
             </p>
           </div>
           <div className="btn-row">
             <button type="button" className="btn btn-primary" onClick={onDownloadFit}>
-              Download FIT
+              {t('route.downloadFit')}
             </button>
             <button type="button" className="btn btn-secondary" onClick={onDownloadGpx}>
-              Download GPX
+              {t('route.downloadGpx')}
             </button>
             {canSaveToProfile && onSaveToProfile && (
               <button
@@ -132,7 +154,7 @@ export function RouteControls({
                 disabled={saveBusy}
                 onClick={onSaveToProfile}
               >
-                {saveBusy ? 'Saving…' : 'Save ride to profile'}
+                {saveBusy ? t('route.saving') : t('route.saveRide')}
               </button>
             )}
           </div>
@@ -143,27 +165,27 @@ export function RouteControls({
       <div className="btn-row ride-actions">
         {(phase === 'ready' || phase === 'finished') && (
           <button type="button" className="btn btn-accent" onClick={onStart} disabled={!route}>
-            Start ride
+            {t('route.start')}
           </button>
         )}
         {phase === 'riding' && (
           <button type="button" className="btn btn-secondary" onClick={onPause}>
-            Pause
+            {t('route.pause')}
           </button>
         )}
         {phase === 'paused' && (
           <button type="button" className="btn btn-accent" onClick={onResume}>
-            Resume
+            {t('route.resume')}
           </button>
         )}
         {(phase === 'riding' || phase === 'paused') && (
           <button type="button" className="btn btn-ghost" onClick={onStop}>
-            Stop
+            {t('route.stop')}
           </button>
         )}
         {phase === 'finished' && (
           <button type="button" className="btn btn-ghost" onClick={onStop}>
-            Done
+            {t('route.done')}
           </button>
         )}
       </div>

@@ -95,6 +95,62 @@ input {
   overflow: auto;
 }
 
+.language-switcher {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.language-switcher select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 12, 18, 0.72);
+  color: var(--text);
+  padding: 0.45rem 0.55rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.86rem;
+}
+
+.language-switcher select:focus {
+  outline: 1px solid var(--line-strong);
+}
+
+.auth-gate-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 180, 84, 0.35);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 180, 84, 0.08);
+}
+
+.auth-gate-banner p {
+  margin: 0;
+  flex: 1 1 220px;
+  color: var(--warn);
+  font-size: 0.86rem;
+}
+
+.route-map-locked .route-map-canvas {
+  cursor: not-allowed;
+}
+
+.map-lock-banner {
+  border-color: rgba(255, 180, 84, 0.4);
+  background: rgba(18, 14, 8, 0.82);
+  color: var(--warn);
+}
+
 .panel-header .brand-mark {
   margin: 0;
   letter-spacing: 0.34em;

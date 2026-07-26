@@ -1,4 +1,5 @@
 import type { RideTelemetry } from '../simulation/rideEngine';
+import { useT } from '../i18n';
 import { formatDistance, formatDuration, formatGrade } from './format';
 
 type Props = {
@@ -28,6 +29,7 @@ function Stat({
 }
 
 export function RideHUD({ telemetry }: Props) {
+  const t = useT();
   const gradeClass =
     telemetry.gradePercent > 1.5
       ? 'grade-up'
@@ -36,7 +38,7 @@ export function RideHUD({ telemetry }: Props) {
         : 'grade-flat';
 
   return (
-    <section className="ride-hud" aria-label="Ride metrics">
+    <section className="ride-hud" aria-label={t('hud.aria')}>
       <div className="hud-progress-track">
         <div
           className="hud-progress-fill"
@@ -45,33 +47,41 @@ export function RideHUD({ telemetry }: Props) {
       </div>
       <div className="hud-grid">
         <Stat
-          label="Speed"
+          label={t('hud.speed')}
           value={(telemetry.speedKmh || 0).toFixed(1)}
           unit="km/h"
           accent
         />
-        <Stat label="Power" value={String(Math.round(telemetry.powerWatts || 0))} unit="W" accent />
-        <Stat label="Cadence" value={String(Math.round(telemetry.cadenceRpm || 0))} unit="rpm" />
         <Stat
-          label="Heart rate"
+          label={t('hud.power')}
+          value={String(Math.round(telemetry.powerWatts || 0))}
+          unit="W"
+          accent
+        />
+        <Stat
+          label={t('hud.cadence')}
+          value={String(Math.round(telemetry.cadenceRpm || 0))}
+          unit="rpm"
+        />
+        <Stat
+          label={t('hud.heartRate')}
           value={telemetry.heartRateBpm != null ? String(telemetry.heartRateBpm) : '—'}
           unit={telemetry.heartRateBpm != null ? 'bpm' : undefined}
         />
+        <Stat label={t('hud.grade')} value={formatGrade(telemetry.gradePercent)} />
         <Stat
-          label="Grade"
-          value={formatGrade(telemetry.gradePercent)}
-        />
-        <Stat
-          label="Elevation"
+          label={t('hud.elevation')}
           value={String(Math.round(telemetry.elevationMeters))}
           unit="m"
         />
-        <Stat label="Distance" value={formatDistance(telemetry.distanceMeters)} />
-        <Stat label="Time" value={formatDuration(telemetry.elapsedSeconds)} />
+        <Stat label={t('hud.distance')} value={formatDistance(telemetry.distanceMeters)} />
+        <Stat label={t('hud.time')} value={formatDuration(telemetry.elapsedSeconds)} />
       </div>
       <div className={`hud-grade-chip ${gradeClass}`}>
-        Resistance target ≈ {telemetry.trainerResistanceHint.toFixed(0)} ·{' '}
-        {telemetry.gradePercent >= 0 ? 'Climb' : 'Descent'} load
+        {t('hud.resistance', {
+          value: telemetry.trainerResistanceHint.toFixed(0),
+          load: telemetry.gradePercent >= 0 ? t('hud.climb') : t('hud.descent'),
+        })}
       </div>
     </section>
   );
