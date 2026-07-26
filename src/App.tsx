@@ -1072,17 +1072,23 @@ export default function App() {
       </header>
 
       {!panelOpen && (
-        <button
-          type="button"
-          className="shell-open-panel-btn"
-          aria-expanded={false}
-          aria-controls="connection-panel"
-          aria-label={t('shell.menu')}
-          onClick={openPanel}
-        >
-          <Menu className="icon-sm" aria-hidden="true" />
-          <span>{t('shell.menu')}</span>
-        </button>
+        <div className="shell-map-chrome" role="group" aria-label={t('shell.controls')}>
+          <button
+            type="button"
+            className="shell-open-panel-btn"
+            aria-expanded={false}
+            aria-controls="connection-panel"
+            aria-label={t('shell.menu')}
+            onClick={openPanel}
+          >
+            <Menu className="icon-sm" aria-hidden="true" />
+            <span>{t('shell.menu')}</span>
+          </button>
+          <div className="live-pill shell-chrome-status" data-phase={telemetry.phase}>
+            <span className="live-dot" />
+            {rideLabel}
+          </div>
+        </div>
       )}
 
       <ConnectionPanel
@@ -1135,10 +1141,12 @@ export default function App() {
 
       <main className="main-stage" id="ride-viewer" tabIndex={-1}>
         <div className="stage-top">
-          <div className="live-pill stage-live-pill" data-phase={telemetry.phase}>
-            <span className="live-dot" />
-            {rideLabel}
-          </div>
+          {panelOpen && (
+            <div className="live-pill stage-live-pill" data-phase={telemetry.phase}>
+              <span className="live-dot" />
+              {rideLabel}
+            </div>
+          )}
           {immersiveRide && (
             <RideChrome
               phase={telemetry.phase}
