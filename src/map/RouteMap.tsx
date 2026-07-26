@@ -6,6 +6,7 @@ import {
   NavigationControl,
   ScaleControl,
   setWorkerUrl,
+  type StyleSpecification,
 } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useRef, useState } from 'react';
@@ -16,6 +17,7 @@ import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
 import { hasMapillaryToken } from './mapillary';
+import { sanitizeMapStyle } from './sanitizeMapStyle';
 import { StreetViewPanel } from './StreetViewPanel';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -27,6 +29,18 @@ setWorkerUrl(maplibreWorkerUrl);
 const STYLE_URL =
   import.meta.env.VITE_MAP_STYLE_URL ??
   'https://tiles.openfreemap.org/styles/liberty';
+
+async function loadMapStyle(): Promise<string | StyleSpecification> {
+  try {
+    const res = await fetch(STYLE_URL);
+    if (!res.ok) return STYLE_URL;
+    const json: unknown = await res.json();
+    if (!json || typeof json !== 'object') return STYLE_URL;
+    return sanitizeMapStyle(json as StyleSpecification);
+  } catch {
+    return STYLE_URL;
+  }
+}
 
 export type MapPeer = {
   userId: number;
@@ -174,119 +188,139 @@ export function RouteMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: [28.9784, 41.0082],
-      zoom: 11,
-      pitch: 0,
-      bearing: 0,
-      maxPitch: 70,
-      attributionControl: { compact: true },
-    });
-
-    map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-    map.addControl(new ScaleControl({ unit: 'metric' }));
-
-    map.on('click', (e: { lngLat: { lat: number; lng: number } }) => {
-      if (!pickingEnabledRef.current || !pickModeRef.current) return;
-      onPickRef.current({ lat: e.lngLat.lat, lng: e.lngLat.lng });
-    });
-
-    map.on('load', () => {
-      map.addSource('route', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      });
-      map.addLayer({
-        id: 'route-alt-hit',
-        type: 'line',
-        source: 'route',
-        filter: ['==', ['get', 'selected'], 0],
-        paint: {
-          'line-color': '#ffffff',
-          'line-width': 18,
-          'line-opacity': 0.01,
-        },
-      });
-      map.addLayer({
-        id: 'route-alt-line',
-        type: 'line',
-        source: 'route',
-        filter: ['==', ['get', 'selected'], 0],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 4,
-          'line-opacity': 0.42,
-        },
-      });
-      map.addLayer({
-        id: 'route-glow',
-        type: 'line',
-        source: 'route',
-        filter: ['==', ['get', 'selected'], 1],
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 12,
-          'line-opacity': 0.35,
-          'line-blur': 1.5,
-        },
-      });
-      map.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        filter: ['==', ['get', 'selected'], 1],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 5.5,
-          'line-opacity': 1,
-        },
-      });
-
-      const onAltClick = (e: { features?: Array<{ properties?: { index?: number } }> }) => {
-        const idx = e.features?.[0]?.properties?.index;
-        if (typeof idx === 'number' && Number.isFinite(idx)) {
-          onSelectAlternativeRef.current?.(idx);
-        }
-      };
-      map.on('click', 'route-alt-hit', onAltClick);
-      map.on('click', 'route-alt-line', onAltClick);
-      map.on('mouseenter', 'route-alt-hit', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'route-alt-hit', () => {
-        map.getCanvas().style.cursor = '';
-      });
-
-      tryEnable3dBuildings(map);
-    });
-
-    map.on('style.load', () => {
-      tryEnable3dBuildings(map);
-    });
-
-    mapRef.current = map;
-
+    let cancelled = false;
+    let map: Map | null = null;
+    let resizeObserver: ResizeObserver | null = null;
     const container = containerRef.current;
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            map.resize();
-          })
-        : null;
-    resizeObserver?.observe(container);
+
+    void (async () => {
+      const style = await loadMapStyle();
+      if (cancelled || !containerRef.current) return;
+
+      map = new Map({
+        container: containerRef.current,
+        style,
+        center: [28.9784, 41.0082],
+        zoom: 11,
+        pitch: 0,
+        bearing: 0,
+        maxPitch: 70,
+        attributionControl: { compact: true },
+      });
+
+      if (cancelled) {
+        map.remove();
+        map = null;
+        return;
+      }
+
+      const activeMap = map;
+
+      activeMap.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
+      activeMap.addControl(new ScaleControl({ unit: 'metric' }));
+
+      activeMap.on('click', (e: { lngLat: { lat: number; lng: number } }) => {
+        if (!pickingEnabledRef.current || !pickModeRef.current) return;
+        onPickRef.current({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      });
+
+      activeMap.on('load', () => {
+        activeMap.addSource('route', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        });
+        activeMap.addLayer({
+          id: 'route-alt-hit',
+          type: 'line',
+          source: 'route',
+          filter: ['==', ['get', 'selected'], 0],
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 18,
+            'line-opacity': 0.01,
+          },
+        });
+        activeMap.addLayer({
+          id: 'route-alt-line',
+          type: 'line',
+          source: 'route',
+          filter: ['==', ['get', 'selected'], 0],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': 4,
+            'line-opacity': 0.42,
+          },
+        });
+        activeMap.addLayer({
+          id: 'route-glow',
+          type: 'line',
+          source: 'route',
+          filter: ['==', ['get', 'selected'], 1],
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': 12,
+            'line-opacity': 0.35,
+            'line-blur': 1.5,
+          },
+        });
+        activeMap.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          filter: ['==', ['get', 'selected'], 1],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': 5.5,
+            'line-opacity': 1,
+          },
+        });
+
+        const onAltClick = (e: {
+          features?: Array<{ properties?: { index?: number } }>;
+        }) => {
+          const idx = e.features?.[0]?.properties?.index;
+          if (typeof idx === 'number' && Number.isFinite(idx)) {
+            onSelectAlternativeRef.current?.(idx);
+          }
+        };
+        activeMap.on('click', 'route-alt-hit', onAltClick);
+        activeMap.on('click', 'route-alt-line', onAltClick);
+        activeMap.on('mouseenter', 'route-alt-hit', () => {
+          activeMap.getCanvas().style.cursor = 'pointer';
+        });
+        activeMap.on('mouseleave', 'route-alt-hit', () => {
+          activeMap.getCanvas().style.cursor = '';
+        });
+
+        tryEnable3dBuildings(activeMap);
+      });
+
+      activeMap.on('style.load', () => {
+        tryEnable3dBuildings(activeMap);
+      });
+
+      mapRef.current = activeMap;
+
+      resizeObserver =
+        typeof ResizeObserver !== 'undefined'
+          ? new ResizeObserver(() => {
+              activeMap.resize();
+            })
+          : null;
+      resizeObserver?.observe(container);
+    })();
 
     return () => {
+      cancelled = true;
       resizeObserver?.disconnect();
       for (const marker of waypointMarkersRef.current) marker.remove();
       waypointMarkersRef.current = [];
       markerRider.current?.remove();
       for (const marker of peerMarkersRef.current.values()) marker.remove();
       peerMarkersRef.current.clear();
-      map.remove();
+      map?.remove();
       mapRef.current = null;
     };
   }, []);
