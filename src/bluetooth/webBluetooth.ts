@@ -34,11 +34,10 @@ export function getBluetoothSupportCode(): BluetoothSupportCode {
   const ua = navigator.userAgent;
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+    (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  if (isIOS || isSafari) return 'bt.iosSafari';
   if (!isSecureContextAvailable()) return 'bt.needsHttps';
-  if (!navigator.bluetooth) return 'bt.unsupported';
+  if (!navigator.bluetooth) return isIOS ? 'bt.iosSafari' : 'bt.unsupported';
   return 'bt.available';
 }
+

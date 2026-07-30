@@ -287,6 +287,7 @@ export function RouteMap({
     let cancelled = false;
     let map: Map | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let handleWinResize: (() => void) | null = null;
     const container = containerRef.current;
     const initialStyleId = styleId;
 
@@ -361,11 +362,21 @@ export function RouteMap({
             })
           : null;
       resizeObserver?.observe(container);
+
+      handleWinResize = () => activeMap.resize();
+      window.addEventListener('resize', handleWinResize);
+      window.addEventListener('orientationchange', handleWinResize);
+      setTimeout(() => activeMap.resize(), 300);
+      setTimeout(() => activeMap.resize(), 1000);
     })();
 
     return () => {
       cancelled = true;
       resizeObserver?.disconnect();
+      if (handleWinResize) {
+        window.removeEventListener('resize', handleWinResize);
+        window.removeEventListener('orientationchange', handleWinResize);
+      }
       for (const marker of waypointMarkersRef.current) marker.remove();
       waypointMarkersRef.current = [];
       markerRider.current?.remove();
