@@ -8,7 +8,7 @@ import {
   setWorkerUrl,
   type StyleSpecification,
 } from 'maplibre-gl';
-import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
@@ -249,6 +249,7 @@ export function RouteMap({
   const lastFocusedWaypointRef = useRef<string | null>(null);
   const bearingRef = useRef(0);
   const appliedStyleIdRef = useRef<MapStyleId | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [uncontrolledStyleId, setUncontrolledStyleId] = useState<MapStyleId>(() =>
     loadStoredMapStyleId(),
   );
@@ -292,6 +293,7 @@ export function RouteMap({
     const initialStyleId = styleId;
 
     void (async () => {
+      try {
       const style = await loadMapStyle(initialStyleId);
       if (cancelled || !containerRef.current) return;
 
@@ -304,6 +306,7 @@ export function RouteMap({
         bearing: 0,
         maxPitch: 70,
         attributionControl: { compact: true },
+        transformRequest: (url) => ({ url }),
       });
 
       if (cancelled) {
@@ -314,6 +317,7 @@ export function RouteMap({
 
       const activeMap = map;
       appliedStyleIdRef.current = initialStyleId;
+      setMapError(null);
 
       activeMap.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
       activeMap.addControl(new ScaleControl({ unit: 'metric' }));
@@ -368,6 +372,10 @@ export function RouteMap({
       window.addEventListener('orientationchange', handleWinResize);
       setTimeout(() => activeMap.resize(), 300);
       setTimeout(() => activeMap.resize(), 1000);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setMapError(msg);
+      }
     })();
 
     return () => {
@@ -612,7 +620,23 @@ export function RouteMap({
         followRoad ? 'route-map-follow' : ''
       } ${!pickingEnabled ? 'route-map-locked' : ''}`}
     >
-      <div ref={containerRef} className="route-map-canvas" />
+      <div ref={containerRef} className="route-map-canvas" style={{ width: '100%', height: '100%', minHeight: '200px' }} />
+      {mapError && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', background: 'rgba(8,10,15,0.85)',
+          color: '#ff9f0a', padding: '24px', textAlign: 'center', fontSize: '0.85rem', zIndex: 10
+        }}>
+          <span style={{ fontSize: '2rem', marginBottom: '12px' }}>🗺️</span>
+          <strong>Map failed to load</strong>
+          <p style={{ opacity: 0.7, marginTop: '8px', wordBreak: 'break-all' }}>{mapError}</p>
+          <button
+            type="button"
+            style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '8px', background: '#00f0ff', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+            onClick={() => { setMapError(null); mapRef.current?.remove(); mapRef.current = null; appliedStyleIdRef.current = null; }}
+          >Retry</button>
+        </div>
+      )}
       {showStylePicker && (
         <MapStylePicker styleId={styleId} onChange={setStyleId} />
       )}
