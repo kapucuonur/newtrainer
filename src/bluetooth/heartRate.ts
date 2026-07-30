@@ -80,8 +80,28 @@ export class HeartRateMonitor {
     this.setState('connecting');
     try {
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [HEART_RATE_SERVICE] }],
-        optionalServices: [HEART_RATE_SERVICE],
+        filters: [
+          { services: [HEART_RATE_SERVICE] },
+          { services: ['0000180d-0000-1000-8000-00805f9b34fb'] },
+          { namePrefix: 'Garmin' },
+          { namePrefix: 'Polar' },
+          { namePrefix: 'Wahoo' },
+          { namePrefix: 'Suunto' },
+          { namePrefix: 'TICKR' },
+          { namePrefix: 'HRM' },
+          { namePrefix: 'Heart' },
+          { namePrefix: 'H7' },
+          { namePrefix: 'H9' },
+          { namePrefix: 'H10' },
+          { namePrefix: 'OH1' },
+          { namePrefix: 'Magene' },
+          { namePrefix: 'WHOOP' },
+        ],
+        optionalServices: [
+          HEART_RATE_SERVICE,
+          '0000180f-0000-1000-8000-00805f9b34fb',
+          '0000180a-0000-1000-8000-00805f9b34fb',
+        ],
       });
       this.name = this.device.name ?? 'Heart Rate';
       this.device.addEventListener('gattserverdisconnected', this.boundOnDisconnected);

@@ -157,8 +157,35 @@ export class FtmsTrainer implements BikeTrainer {
     this.setState('connecting');
     try {
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [FTMS_SERVICE] }],
-        optionalServices: [FTMS_SERVICE],
+        filters: [
+          { services: [FTMS_SERVICE] },
+          { services: ['00001826-0000-1000-8000-00805f9b34fb'] },
+          { services: ['00001818-0000-1000-8000-00805f9b34fb'] },
+          { services: ['00001816-0000-1000-8000-00805f9b34fb'] },
+          { namePrefix: 'Wahoo' },
+          { namePrefix: 'KICKR' },
+          { namePrefix: 'Tacx' },
+          { namePrefix: 'Elite' },
+          { namePrefix: 'Garmin' },
+          { namePrefix: 'Assioma' },
+          { namePrefix: 'Favero' },
+          { namePrefix: 'Stages' },
+          { namePrefix: '4iiii' },
+          { namePrefix: 'Magene' },
+          { namePrefix: 'Zwift' },
+          { namePrefix: 'BKOOL' },
+          { namePrefix: 'Saris' },
+          { namePrefix: 'Wattbike' },
+        ],
+        optionalServices: [
+          FTMS_SERVICE,
+          0x1818,
+          0x1816,
+          '00002ad2-0000-1000-8000-00805f9b34fb',
+          '0000180d-0000-1000-8000-00805f9b34fb',
+          '0000180f-0000-1000-8000-00805f9b34fb',
+          '0000180a-0000-1000-8000-00805f9b34fb',
+        ],
       });
       this.name = this.device.name ?? 'FTMS Trainer';
       this.device.addEventListener('gattserverdisconnected', this.boundOnDisconnected);
