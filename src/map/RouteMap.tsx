@@ -28,16 +28,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
 // resolves a sibling maplibre-gl-worker.mjs that never exists in production.
-// For Safari WebKit compatibility: create a Blob worker wrapper with dynamic import()
-// so ES module syntax inside maplibre-gl-worker.mjs doesn't cause a SyntaxError in classic worker threads.
-try {
-  const fullWorkerUrl = new URL(maplibreWorkerUrl, window.location.href).href;
-  const blobCode = `import("${fullWorkerUrl}").catch(function() { importScripts("${fullWorkerUrl}"); });`;
-  const blob = new Blob([blobCode], { type: 'application/javascript' });
-  setWorkerUrl(URL.createObjectURL(blob));
-} catch {
-  setWorkerUrl(maplibreWorkerUrl);
-}
+setWorkerUrl(maplibreWorkerUrl);
 
 async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
   const url = resolveStyleUrl(styleId);
