@@ -247,7 +247,12 @@ export function RouteControls({
   const showAltPicker = routeAlternatives.length > 1 && waypoints.length === 2;
 
   return (
-    <section className="route-controls" aria-label="Route Controls">
+    <section
+      className={['route-controls', pickMode ? 'route-controls-picking' : '']
+        .filter(Boolean)
+        .join(' ')}
+      aria-label="Route Controls"
+    >
       <div className="route-controls-top">
         <div className="route-header-brand">
           <Route className="icon-md icon-accent" />

@@ -245,6 +245,8 @@ export const dk: Messages = {
   'hud.trainerTargetAria': 'Live stigning og træner-mål',
   'hud.climb': 'Op',
   'hud.descent': 'Ned',
+  'hud.collapseAria': 'Skjul tur-HUD',
+  'hud.expandAria': 'Vis tur-HUD',
 
   'footer.protocols':
     'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',

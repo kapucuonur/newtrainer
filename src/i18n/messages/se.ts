@@ -245,6 +245,8 @@ export const se: Messages = {
   'hud.trainerTargetAria': 'Live lutning och tränarmål',
   'hud.climb': 'Stigning',
   'hud.descent': 'Nedför',
+  'hud.collapseAria': 'Minimera pass-HUD',
+  'hud.expandAria': 'Expandera pass-HUD',
 
   'footer.protocols':
     'Protokoll: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',

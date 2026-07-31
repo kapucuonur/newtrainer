@@ -245,6 +245,8 @@ export const it: Messages = {
   'hud.trainerTargetAria': 'Pendenza live e target trainer',
   'hud.climb': 'Salita',
   'hud.descent': 'Discesa',
+  'hud.collapseAria': 'Comprimi HUD di corsa',
+  'hud.expandAria': 'Espandi HUD di corsa',
 
   'footer.protocols':
     'Protocolli: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',

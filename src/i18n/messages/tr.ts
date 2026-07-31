@@ -243,6 +243,8 @@ export const tr: Messages = {
   'hud.trainerTargetAria': 'Canlı eğim ve trainer hedefi',
   'hud.climb': 'Tırmanış',
   'hud.descent': 'İniş',
+  'hud.collapseAria': 'Sürüş HUD’unu daralt',
+  'hud.expandAria': 'Sürüş HUD’unu genişlet',
 
   'footer.protocols':
     'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',

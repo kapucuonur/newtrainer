@@ -150,6 +150,10 @@ select {
   border-color: rgba(0, 240, 255, 0.32);
 }
 
+.app-shell-immersive .bottom-dashboard-deck:has(.ride-hud-collapsed) {
+  padding: 8px 12px;
+}
+
 .app-shell-immersive .hud-value {
   font-size: 2.35rem;
 }
@@ -1563,6 +1567,103 @@ select {
   gap: 12px;
 }
 
+.hud-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-toolbar .hud-progress-track {
+  flex: 1;
+  min-width: 0;
+}
+
+.hud-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.hud-collapse-toggle-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c5ced9;
+}
+
+.hud-collapse-toggle-icon:hover {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.28);
+  color: #fff;
+}
+
+.ride-hud-collapsed {
+  gap: 0;
+}
+
+.ride-hud-collapsed .hud-collapse-toggle {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 4px 2px;
+  color: #fff;
+}
+
+.hud-collapsed-chip {
+  display: flex;
+  align-items: center;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.hud-collapsed-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hud-collapsed-k {
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.hud-collapsed-v {
+  font-size: 1.05rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.bottom-dashboard-deck:has(.ride-hud-collapsed) {
+  padding: 8px 12px;
+  gap: 0;
+}
+
+.bottom-dashboard-deck:has(.ride-hud-collapsed) .elevation-profile-container {
+  display: none;
+}
+
 .hud-progress-track {
   width: 100%;
   height: 6px;
@@ -2295,5 +2396,44 @@ select {
   .bottom-dashboard-deck {
     gap: 10px;
     padding: 12px;
+  }
+
+  .bottom-dashboard-deck:has(.ride-hud-collapsed) {
+    padding: 6px 10px;
+  }
+
+  .hud-collapsed-chip {
+    gap: 10px 14px;
+    padding: 6px 10px;
+  }
+
+  .hud-collapsed-v {
+    font-size: 0.98rem;
+  }
+
+  .route-controls {
+    padding: 10px 12px;
+    gap: 8px;
+    max-height: min(46vh, 420px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .route-header-brand .subtitle {
+    display: none;
+  }
+
+  .route-header-brand h2 {
+    font-size: 0.92rem;
+  }
+
+  .route-controls-picking .preset-routes-bar,
+  .route-controls-picking .route-search-row {
+    display: none;
+  }
+
+  .route-controls-picking .waypoint-list {
+    max-height: 4.5rem;
+    overflow-y: auto;
   }
 }

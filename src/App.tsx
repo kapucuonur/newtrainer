@@ -1310,18 +1310,20 @@ export default function App() {
               onStyleIdChange={onMapStyleChange}
               showStylePicker={panelOpen && showMapStylePicker}
             />
-            <div className="bottom-dashboard-deck">
-              <ElevationProfile
-                route={route}
-                currentDistanceMeters={telemetry.distanceMeters}
-                currentElevationMeters={telemetry.elevationMeters}
-              />
-              <RideHUD
-                telemetry={telemetry}
-                riderWeightKg={user?.profile?.weightKg ?? 75}
-                ftpWatts={ftpWatts}
-              />
-            </div>
+            {immersiveRide && (
+              <div className="bottom-dashboard-deck">
+                <ElevationProfile
+                  route={route}
+                  currentDistanceMeters={telemetry.distanceMeters}
+                  currentElevationMeters={telemetry.elevationMeters}
+                />
+                <RideHUD
+                  telemetry={telemetry}
+                  riderWeightKg={user?.profile?.weightKg ?? 75}
+                  ftpWatts={ftpWatts}
+                />
+              </div>
+            )}
           </div>
           <VideoPanel
             enabled={videoPanelOpen}

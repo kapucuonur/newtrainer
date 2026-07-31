@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { RideTelemetry } from '../simulation/rideEngine';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration, formatGrade } from './format';
@@ -12,6 +12,8 @@ import {
   Ruler,
   Mountain,
   Crosshair,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 type Props = {
@@ -78,8 +80,18 @@ function Stat({
   );
 }
 
+function isLiveRidePhase(phase: RideTelemetry['phase']): boolean {
+  return phase === 'riding' || phase === 'paused';
+}
+
 export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props) {
   const t = useT();
+  const rideLive = isLiveRidePhase(telemetry.phase);
+  const [expanded, setExpanded] = useState(true);
+
+  useEffect(() => {
+    if (rideLive) setExpanded(true);
+  }, [rideLive]);
 
   const watts = Math.max(0, Math.round(telemetry.powerWatts || 0));
   const wKg = (watts / riderWeightKg).toFixed(1);
@@ -118,13 +130,55 @@ export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props
         ? telemetry.trainerResistanceHint.toFixed(0)
         : formatGrade(telemetry.trainerGradeSent ?? gradePercent);
 
+  if (!rideLive) return null;
+
+  if (!expanded) {
+    return (
+      <section
+        className="ride-hud ride-hud-collapsed"
+        aria-label={t('hud.aria')}
+      >
+        <button
+          type="button"
+          className="hud-collapse-toggle"
+          aria-expanded={false}
+          aria-label={t('hud.expandAria')}
+          onClick={() => setExpanded(true)}
+        >
+          <div className={`hud-collapsed-chip ${gradeClass}`}>
+            <span className="hud-collapsed-metric">
+              <span className="hud-collapsed-k">{t('hud.grade')}</span>
+              <span className="hud-collapsed-v">{formatGrade(gradePercent)}</span>
+            </span>
+            <span className="hud-collapsed-metric">
+              <span className="hud-collapsed-k">{controlLabel}</span>
+              <span className="hud-collapsed-v">{controlValue}</span>
+            </span>
+          </div>
+          <ChevronUp className="icon-sm" aria-hidden="true" />
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="ride-hud" aria-label={t('hud.aria')}>
-      <div className="hud-progress-track">
-        <div
-          className="hud-progress-fill"
-          style={{ width: `${Math.min(1, Math.max(0, telemetry.progress)) * 100}%` }}
-        />
+      <div className="hud-toolbar">
+        <div className="hud-progress-track">
+          <div
+            className="hud-progress-fill"
+            style={{ width: `${Math.min(1, Math.max(0, telemetry.progress)) * 100}%` }}
+          />
+        </div>
+        <button
+          type="button"
+          className="hud-collapse-toggle hud-collapse-toggle-icon"
+          aria-expanded={true}
+          aria-label={t('hud.collapseAria')}
+          onClick={() => setExpanded(false)}
+        >
+          <ChevronDown className="icon-sm" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="hud-grid">

@@ -244,6 +244,8 @@ export const de: Messages = {
   'hud.trainerTargetAria': 'Aktuelle Steigung und Trainer-Ziel',
   'hud.climb': 'Anstieg',
   'hud.descent': 'Abfahrt',
+  'hud.collapseAria': 'Fahr-HUD einklappen',
+  'hud.expandAria': 'Fahr-HUD ausklappen',
 
   'footer.protocols':
     'Protokolle: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
