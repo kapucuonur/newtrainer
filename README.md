@@ -90,6 +90,14 @@ npm run build:android   # vite build → dist → cap sync android
 npm run open:android    # opens android/ in Android Studio
 ```
 
+`vite build` bakes env at **build time**. Production Android builds load [`.env.production`](./.env.production) (`VITE_API_URL=https://newtrainer-api.trihonor.com`), same API as the Vercel web app. Without that URL, Account / Group ride menus show the intentional “cloud API required” notices — not UI bugs.
+
+Override for a one-off build:
+
+```bash
+VITE_API_URL=https://newtrainer-api.trihonor.com npm run build:android
+```
+
 Then Run on a device/emulator. Grant Bluetooth (and Location on API ≤30) when prompted.
 
 Permissions are declared in `android/app/src/main/AndroidManifest.xml` (`BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT`, legacy BT + location). Cleartext HTTP is off; tiles/API must be HTTPS. Capacitor serves the app as `https://localhost` (secure context for MapLibre workers under `/maplibre-worker/`).
