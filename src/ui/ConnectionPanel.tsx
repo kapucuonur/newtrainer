@@ -1,6 +1,10 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { ConnectionState } from '../bluetooth/types';
-import { getBluetoothSupportCode, isWebBluetoothSupported } from '../bluetooth/webBluetooth';
+import {
+  describeBluetoothError,
+  getBluetoothSupportCode,
+  isWebBluetoothSupported,
+} from '../bluetooth/webBluetooth';
 import { useT } from '../i18n';
 import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -81,6 +85,21 @@ export function ConnectionPanel({
   const trainerLabel = usingMock ? t('trainer.demoName') : trainerName;
   const trainerStatus = t(CONN_KEYS[trainerState]);
   const hrStatus = t(CONN_KEYS[hrState]);
+  const [debugResult, setDebugResult] = useState<string | null>(null);
+  const [debugBusy, setDebugBusy] = useState(false);
+
+  const runBareBluetoothTest = async () => {
+    setDebugBusy(true);
+    setDebugResult(null);
+    try {
+      const device = await navigator.bluetooth!.requestDevice({ acceptAllDevices: true });
+      setDebugResult(`OK: picker opened, chose "${device.name ?? device.id}"`);
+    } catch (error) {
+      setDebugResult(`FAIL: ${describeBluetoothError(error)}`);
+    } finally {
+      setDebugBusy(false);
+    }
+  };
 
   return (
     <aside className="connection-panel" id="connection-panel" aria-label={t('shell.controls')}>
@@ -121,6 +140,25 @@ export function ConnectionPanel({
           <p>{t(getBluetoothSupportCode())}</p>
         </div>
       </div>
+
+      {btOk && (
+        <div className="support-card">
+          <Bluetooth className="icon-sm icon-accent" />
+          <div>
+            <strong>Debug: bare Bluetooth test</strong>
+            <p>Opens the picker with no filters — isolates whether requestDevice() itself works here.</p>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              disabled={debugBusy}
+              onClick={() => void runBareBluetoothTest()}
+            >
+              {debugBusy ? '…' : 'Run test'}
+            </button>
+            {debugResult && <p className="device-error-text">{debugResult}</p>}
+          </div>
+        </div>
+      )}
 
       {deviceGateMessage && (
         <div className="auth-gate-banner" role="status">
