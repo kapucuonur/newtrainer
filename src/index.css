@@ -2,7 +2,7 @@
 
 :root {
   /* cache-bust: force new hashed CSS after Cloudflare edge 404s on prior hash */
-  --asset-epoch: 2026-07-26-6;
+  --asset-epoch: 2026-07-31-1;
   --shell-chrome-inset-x: calc(18px + var(--safe-left));
   --shell-chrome-inset-y: calc(16px + var(--safe-top));
   --shell-chrome-group-gap: 14px;
@@ -179,7 +179,7 @@ select {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
-  z-index: 90;
+  z-index: 190;
   border: none;
   cursor: pointer;
   pointer-events: none;
@@ -215,7 +215,9 @@ select {
   flex-shrink: 0;
 }
 
-/* Connection Panel Sidebar Drawer — above backdrop so Close/controls receive clicks */
+/* Connection Panel Sidebar Drawer — above backdrop so Close/controls receive clicks.
+   Outer shell owns transform/backdrop; inner .connection-panel-scroll owns overflow.
+   (Android WebView will not scroll a node that also has transform + backdrop-filter.) */
 .connection-panel {
   background: var(--panel);
   backdrop-filter: blur(20px);
@@ -223,17 +225,38 @@ select {
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px;
+  gap: 0;
+  padding: 0;
   height: 100%;
-  overflow-y: auto;
-  z-index: 100;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  z-index: 200;
   box-shadow: var(--shadow);
   position: relative;
 }
 
+.connection-panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  padding-top: max(20px, var(--safe-top));
+  padding-right: 20px;
+  padding-bottom: max(20px, var(--safe-bottom));
+  padding-left: max(20px, var(--safe-left));
+}
+
 .panel-sheet-handle {
   display: none;
+  flex-shrink: 0;
 }
 
 .panel-header-row {
@@ -2089,6 +2112,11 @@ select {
     display: block;
   }
 
+  /* Drawer covers part of the stage; block map/HUD from eating scroll/taps */
+  .app-shell.panel-open .main-stage {
+    pointer-events: none;
+  }
+
   .mobile-chrome {
     display: flex;
   }
@@ -2151,20 +2179,30 @@ select {
     top: 0;
     left: 0;
     bottom: 0;
+    /* Prefer viewport-bound height over height:100% so overflow can engage in WebView */
+    height: auto;
+    max-height: 100dvh;
     width: min(320px, 88vw);
-    z-index: 100;
+    z-index: 200;
     transform: translateX(-100%);
     visibility: hidden;
     pointer-events: none;
+    overflow: hidden;
     transition:
       transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
       visibility 0.28s;
   }
 
   .app-shell.panel-open .connection-panel {
-    transform: translateX(0);
+    /* none (not translateX(0)) — avoids a lingering transform compositing layer */
+    transform: none;
     visibility: visible;
     pointer-events: auto;
+  }
+
+  .connection-panel-scroll {
+    /* Extra bottom room so Account / login aren't clipped under gesture bars */
+    padding-bottom: max(28px, calc(var(--safe-bottom) + 12px));
   }
 
   .viewer-stage-split {

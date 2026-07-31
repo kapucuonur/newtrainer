@@ -125,7 +125,7 @@ export function ConnectionPanel({
   return (
     <aside className="connection-panel" id="connection-panel" aria-label={t('shell.controls')}>
       <div className="panel-sheet-handle" aria-hidden="true" />
-
+      <div className="connection-panel-scroll">
       <header className="panel-header">
         <div className="panel-header-row">
           <div className="brand-badge">
@@ -349,6 +349,7 @@ export function ConnectionPanel({
 
       {/* Account & Group Ride Children */}
       {children}
+      </div>
     </aside>
   );
 }
