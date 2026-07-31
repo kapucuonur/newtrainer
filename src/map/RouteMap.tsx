@@ -28,7 +28,13 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // Served from /maplibre-worker/ (see vite.config.ts) alongside its sibling
 // maplibre-gl-shared.mjs chunk, which the worker module statically imports —
 // a plain `?url` asset import copies only the worker and leaves that import 404ing.
-setWorkerUrl(new URL('/maplibre-worker/maplibre-gl-worker.mjs', window.location.origin).href);
+// Capacitor Android serves the same paths from https://localhost (secure context).
+{
+  const base = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  setWorkerUrl(new URL(`${base}maplibre-worker/maplibre-gl-worker.mjs`, window.location.origin).href);
+}
 
 async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
   const url = resolveStyleUrl(styleId);

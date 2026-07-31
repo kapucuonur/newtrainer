@@ -15,6 +15,10 @@ export const se: Messages = {
   'bt.noBrowser': 'Bluetooth finns bara i en webbläsare.',
   'bt.iosSafari':
     'Web Bluetooth stöds inte i iOS Safari. Använd Chrome eller Edge på Android, Windows eller macOS — eller en Bluefy-liknande webbläsare på iOS.',
+  'bt.androidWebView':
+    'Detta Android-appskal använder en WebView utan Web Bluetooth. Öppna ROADLAB i Chrome Android för FTMS/HR, eller vänta på native BLE-plugin-bygget.',
+  'bt.androidHint':
+    'Web Bluetooth kräver Chrome eller Edge på Android (HTTPS). Tillåt Bluetooth (och plats på äldre Android) när du uppmanas.',
   'bt.needsHttps': 'Web Bluetooth kräver HTTPS eller localhost.',
   'bt.unsupported': 'Den här webbläsaren stöder inte Web Bluetooth. Använd Chrome eller Edge.',
   'bt.available':

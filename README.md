@@ -8,6 +8,7 @@ Free browser bike trainer inspired by Zwift/Rouvy: **Web Bluetooth FTMS**, heart
 - MapLibre + OpenFreeMap Bright (free outdoor tiles; no Google/Mapbox key)
 - OSRM public routing + OpenTopoData elevation
 - Web Bluetooth: FTMS `0x1826`, Heart Rate `0x180D`
+- Capacitor Android shell (`android/`) — maps/UI packaging; BLE via Chrome until native plugin
 
 ## Run
 
@@ -69,11 +70,38 @@ Copy `.env.example` → `.env` to override OSRM, elevation, map style, or API UR
 
 During rides, immersion uses the MapLibre pitched follow camera along the A→B polyline.
 
+## Android (Capacitor)
+
+Same Vite app in this repo; native shell under [`android/`](./android/).
+
+| Path | Bluetooth FTMS/HR | Maps | Notes |
+|------|-------------------|------|--------|
+| **Chrome Android** (recommended for BLE today) | Yes (Web Bluetooth) | Yes | Open the Vercel/HTTPS URL or `npm run preview` over HTTPS |
+| **Capacitor APK** | Not via WebView | Yes | Android System WebView has **no** `navigator.bluetooth` |
+| Phase 2 | Native BLE plugin | Already wired | e.g. `@capacitor-community/bluetooth-le` or Capgo Web Bluetooth shim |
+
+### Build / open in Android Studio
+
+Requires JDK + Android SDK (Android Studio install is enough).
+
+```bash
+npm install
+npm run build:android   # vite build → dist → cap sync android
+npm run open:android    # opens android/ in Android Studio
+```
+
+Then Run on a device/emulator. Grant Bluetooth (and Location on API ≤30) when prompted.
+
+Permissions are declared in `android/app/src/main/AndroidManifest.xml` (`BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT`, legacy BT + location). Cleartext HTTP is off; tiles/API must be HTTPS. Capacitor serves the app as `https://localhost` (secure context for MapLibre workers under `/maplibre-worker/`).
+
+**Important:** FTMS pairing still works best in **Chrome Android** until a native BLE plugin is integrated. The Capacitor shell is for installability, keep-awake, and map/UI packaging.
+
 ## Limitations
 
 | Area | Reality |
 |------|---------|
 | iOS Safari | No Web Bluetooth — use Chrome/Edge elsewhere, or a WebBLE-capable iOS browser |
+| Capacitor Android WebView | No Web Bluetooth — use Chrome Android, or add a native BLE plugin |
 | WiFi trainers | Not controllable from a sandboxed tab; probe `ws://127.0.0.1:8787` local bridge stub |
 | ANT+ | Needs USB stick + local bridge (documented in UI / `wifiBridge.ts`) |
 | Public OSRM / OpenTopoData | Rate limits; app falls back to straight line / synthetic elevation |

@@ -1,3 +1,5 @@
+import { isAndroidCapacitorApp, isAndroidDevice } from '../platform/native';
+
 export function isSecureContextAvailable(): boolean {
   return typeof window !== 'undefined' && window.isSecureContext;
 }
@@ -23,9 +25,13 @@ export function isAppleTouchDevice(): boolean {
 /**
  * Bluefy (and similar iOS WebBLE wrappers) expose navigator.bluetooth; Safari does not.
  * Their native bridge often fails on complex Chrome-style filters and returns bare codes.
+ *
+ * Never treat Android Chrome or Capacitor Android WebView as Bluefy — that would force
+ * acceptAllDevices and slow GATT settle timings meant only for iOS WebBLE bridges.
  */
 export function isBluefyBrowser(): boolean {
   if (typeof navigator === 'undefined') return false;
+  if (isAndroidDevice()) return false;
   if (/Bluefy/i.test(navigator.userAgent)) return true;
   return isAppleTouchDevice() && typeof navigator.bluetooth !== 'undefined';
 }
@@ -42,6 +48,8 @@ export async function isBluetoothAvailable(): Promise<boolean> {
 export type BluetoothSupportCode =
   | 'bt.noBrowser'
   | 'bt.iosSafari'
+  | 'bt.androidWebView'
+  | 'bt.androidHint'
   | 'bt.needsHttps'
   | 'bt.unsupported'
   | 'bt.available';
@@ -150,7 +158,13 @@ export function getBluetoothSupportCode(): BluetoothSupportCode {
   }
 
   if (!isSecureContextAvailable()) return 'bt.needsHttps';
-  if (!navigator.bluetooth) return isAppleTouchDevice() ? 'bt.iosSafari' : 'bt.unsupported';
+  if (!navigator.bluetooth) {
+    // Capacitor Android WebView has no Web Bluetooth — use Chrome Android or a native BLE plugin.
+    if (isAndroidCapacitorApp()) return 'bt.androidWebView';
+    if (isAppleTouchDevice()) return 'bt.iosSafari';
+    if (isAndroidDevice()) return 'bt.androidHint';
+    return 'bt.unsupported';
+  }
   return 'bt.available';
 }
 

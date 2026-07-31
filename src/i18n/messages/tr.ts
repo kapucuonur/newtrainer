@@ -15,6 +15,10 @@ export const tr: Messages = {
   'bt.noBrowser': 'Bluetooth yalnızca tarayıcıda kullanılabilir.',
   'bt.iosSafari':
     'Web Bluetooth iOS Safari’de desteklenmez. Android, Windows veya macOS’ta Chrome/Edge kullanın — ya da iOS’ta Bluefy benzeri bir tarayıcı.',
+  'bt.androidWebView':
+    'Bu Android uygulama kabuğu WebView kullanır ve Web Bluetooth sunmaz. FTMS/HR için Chrome Android’de ROADLAB açın veya native BLE eklentili sürümü bekleyin.',
+  'bt.androidHint':
+    'Android’de Web Bluetooth için Chrome veya Edge (HTTPS) gerekir. İstendiğinde Bluetooth (eski Android’de Konum) iznini verin.',
   'bt.needsHttps': 'Web Bluetooth için HTTPS veya localhost gerekir.',
   'bt.unsupported': 'Bu tarayıcı Web Bluetooth desteklemiyor. Chrome veya Edge kullanın.',
   'bt.available':
