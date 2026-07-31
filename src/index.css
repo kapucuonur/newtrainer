@@ -670,18 +670,21 @@ select {
 
 .erg-controls-toggle {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  min-height: 44px;
   margin: 0;
-  padding: 0;
+  padding: 4px 0;
   border: none;
   background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
   font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .erg-controls-toggle:hover .device-name,
@@ -702,7 +705,6 @@ select {
 
 .erg-controls-chevron {
   flex-shrink: 0;
-  margin-top: 2px;
   color: var(--muted);
   transition: transform 0.2s ease;
 }
@@ -711,13 +713,19 @@ select {
   transform: rotate(180deg);
 }
 
+/* display:flex must not sit on the base rule — it overrides [hidden] and
+   keeps the body always visible. Gate visibility on .is-open only. */
 .erg-controls-body {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+
+.erg-controls.is-open .erg-controls-body {
+  display: flex;
 }
 
 .erg-ftp-line {

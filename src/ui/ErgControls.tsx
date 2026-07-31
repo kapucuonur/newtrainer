@@ -77,7 +77,8 @@ export function ErgControls({
         <ChevronDown className="icon-sm erg-controls-chevron" aria-hidden="true" />
       </button>
 
-      <div className="erg-controls-body" id={panelId} hidden={!expanded}>
+      {expanded ? (
+        <div className="erg-controls-body" id={panelId}>
           <p className="device-name erg-ftp-line">
             {t('erg.ftpLabel')}: {ftpWatts} W
           </p>
@@ -174,6 +175,7 @@ export function ErgControls({
             </div>
           </div>
         </div>
+      ) : null}
     </article>
   );
 }
