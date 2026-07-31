@@ -8,7 +8,6 @@ import {
   setWorkerUrl,
   type StyleSpecification,
 } from 'maplibre-gl';
-import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
@@ -26,9 +25,10 @@ import {
 import { sanitizeMapStyle } from './sanitizeMapStyle';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
-// resolves a sibling maplibre-gl-worker.mjs that never exists in production.
-setWorkerUrl(maplibreWorkerUrl);
+// Served from /maplibre-worker/ (see vite.config.ts) alongside its sibling
+// maplibre-gl-shared.mjs chunk, which the worker module statically imports —
+// a plain `?url` asset import copies only the worker and leaves that import 404ing.
+setWorkerUrl(new URL('/maplibre-worker/maplibre-gl-worker.mjs', window.location.origin).href);
 
 async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
   const url = resolveStyleUrl(styleId);
