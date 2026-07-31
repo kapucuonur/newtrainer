@@ -4,6 +4,7 @@ import {
   describeBluetoothError,
   getBluetoothSupportCode,
   isWebBluetoothSupported,
+  requestBluetoothDevice,
 } from '../bluetooth/webBluetooth';
 import { useT } from '../i18n';
 import type { MessageKey } from '../i18n';
@@ -92,7 +93,11 @@ export function ConnectionPanel({
     setDebugBusy(true);
     setDebugResult(null);
     try {
-      const device = await navigator.bluetooth!.requestDevice({ acceptAllDevices: true });
+      // Spec requires optionalServices with acceptAllDevices; Bluefy rejects without them.
+      const device = await requestBluetoothDevice({
+        acceptAllDevices: true,
+        optionalServices: [0x1826, 0x180d, 0x180f, 0x180a],
+      });
       setDebugResult(`OK: picker opened, chose "${device.name ?? device.id}"`);
     } catch (error) {
       setDebugResult(`FAIL: ${describeBluetoothError(error)}`);

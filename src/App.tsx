@@ -454,12 +454,15 @@ export default function App() {
     if (!canUseDevices) return;
     try {
       setRouteError(null);
-      if (usingMock && mockRef.current.getState() === 'connected') {
-        await mockRef.current.disconnect();
-      }
+      // Do not await anything before requestDevice — Bluefy needs the tap gesture.
+      const mockWasConnected =
+        usingMock && mockRef.current.getState() === 'connected';
       const ftms = new FtmsTrainer();
       attachTrainer(ftms, false);
       await ftms.connect();
+      if (mockWasConnected) {
+        await mockRef.current.disconnect();
+      }
     } catch (error) {
       setRouteError(error instanceof Error ? error.message : t('trainer.connectFailed'));
     }

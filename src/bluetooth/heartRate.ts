@@ -4,7 +4,11 @@ import type {
   HeartRateListener,
   HeartRateSample,
 } from './types';
-import { describeBluetoothError, isWebBluetoothSupported } from './webBluetooth';
+import {
+  describeBluetoothError,
+  isWebBluetoothSupported,
+  requestBluetoothDevice,
+} from './webBluetooth';
 
 /** Bluetooth SIG Heart Rate Service */
 export const HEART_RATE_SERVICE = 0x180d;
@@ -79,10 +83,10 @@ export class HeartRateMonitor {
 
     this.setState('connecting');
     try {
-      this.device = await navigator.bluetooth.requestDevice({
+      // requestDevice must stay the first await (Bluefy requires a fresh user gesture).
+      this.device = await requestBluetoothDevice({
         filters: [
           { services: [HEART_RATE_SERVICE] },
-          { services: ['0000180d-0000-1000-8000-00805f9b34fb'] },
           { namePrefix: 'Garmin' },
           { namePrefix: 'Polar' },
           { namePrefix: 'Wahoo' },
@@ -97,11 +101,7 @@ export class HeartRateMonitor {
           { namePrefix: 'Magene' },
           { namePrefix: 'WHOOP' },
         ],
-        optionalServices: [
-          HEART_RATE_SERVICE,
-          '0000180f-0000-1000-8000-00805f9b34fb',
-          '0000180a-0000-1000-8000-00805f9b34fb',
-        ],
+        optionalServices: [HEART_RATE_SERVICE, 0x180f, 0x180a],
       });
       this.name = this.device.name ?? 'Heart Rate';
       this.device.addEventListener('gattserverdisconnected', this.boundOnDisconnected);

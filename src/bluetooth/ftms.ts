@@ -6,7 +6,11 @@ import type {
   TrainerCapabilities,
   TrainerDataListener,
 } from './types';
-import { describeBluetoothError, isWebBluetoothSupported } from './webBluetooth';
+import {
+  describeBluetoothError,
+  isWebBluetoothSupported,
+  requestBluetoothDevice,
+} from './webBluetooth';
 
 /** Bluetooth SIG Fitness Machine Service */
 export const FTMS_SERVICE = 0x1826;
@@ -156,12 +160,12 @@ export class FtmsTrainer implements BikeTrainer {
 
     this.setState('connecting');
     try {
-      this.device = await navigator.bluetooth.requestDevice({
+      // requestDevice must stay the first await (Bluefy requires a fresh user gesture).
+      this.device = await requestBluetoothDevice({
         filters: [
           { services: [FTMS_SERVICE] },
-          { services: ['00001826-0000-1000-8000-00805f9b34fb'] },
-          { services: ['00001818-0000-1000-8000-00805f9b34fb'] },
-          { services: ['00001816-0000-1000-8000-00805f9b34fb'] },
+          { services: [0x1818] },
+          { services: [0x1816] },
           { namePrefix: 'Wahoo' },
           { namePrefix: 'KICKR' },
           { namePrefix: 'Tacx' },
@@ -181,10 +185,9 @@ export class FtmsTrainer implements BikeTrainer {
           FTMS_SERVICE,
           0x1818,
           0x1816,
-          '00002ad2-0000-1000-8000-00805f9b34fb',
-          '0000180d-0000-1000-8000-00805f9b34fb',
-          '0000180f-0000-1000-8000-00805f9b34fb',
-          '0000180a-0000-1000-8000-00805f9b34fb',
+          0x180d,
+          0x180f,
+          0x180a,
         ],
       });
       this.name = this.device.name ?? 'FTMS Trainer';
