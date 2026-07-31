@@ -117,25 +117,27 @@ export function ConnectionPanel({
             <span className="brand-mark">ROADLAB</span>
             <span className="brand-tag">PRO</span>
           </div>
-          {onClosePanel ? (
-            <button
-              type="button"
-              className="btn btn-ghost panel-close-btn"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onClosePanel();
-              }}
-              aria-label={t('shell.closeControls')}
-            >
-              <X className="icon-xs" />
-              {t('shell.close')}
-            </button>
-          ) : null}
+          <div className="panel-header-actions">
+            <LanguageSwitcher />
+            {onClosePanel ? (
+              <button
+                type="button"
+                className="btn btn-ghost panel-close-btn"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClosePanel();
+                }}
+                aria-label={t('shell.closeControls')}
+              >
+                <X className="icon-xs" />
+                {t('shell.close')}
+              </button>
+            ) : null}
+          </div>
         </div>
         <h1>{t('app.title')}</h1>
         <p className="panel-sub">{t('app.subtitle')}</p>
-        <LanguageSwitcher />
       </header>
 
       <div className="support-card">
