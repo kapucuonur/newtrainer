@@ -8,8 +8,10 @@ import type {
 } from './types';
 import {
   describeBluetoothError,
+  gattSettle,
   isWebBluetoothSupported,
   requestBluetoothDevice,
+  toBluetoothUuid,
 } from './webBluetooth';
 
 /** Bluetooth SIG Fitness Machine Service */
@@ -27,10 +29,6 @@ const OP = {
   stopOrPause: 0x08,
   setIndoorBikeSimulation: 0x11,
 } as const;
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export function parseIndoorBikeData(view: DataView): IndoorBikeData {
   const flags = view.getUint16(0, true);
@@ -194,23 +192,49 @@ export class FtmsTrainer implements BikeTrainer {
       this.device.addEventListener('gattserverdisconnected', this.boundOnDisconnected);
 
       this.server = await this.device.gatt!.connect();
-      const service = await this.server.getPrimaryService(FTMS_SERVICE);
+      await gattSettle();
+
+      const service = await this.server.getPrimaryService(toBluetoothUuid(FTMS_SERVICE));
+      await gattSettle();
 
       try {
-        const featureChar = await service.getCharacteristic(FITNESS_MACHINE_FEATURE);
+        const featureChar = await service.getCharacteristic(
+          toBluetoothUuid(FITNESS_MACHINE_FEATURE),
+        );
+        await gattSettle();
         const featureValue = await featureChar.readValue();
         this.capabilities = parseFeatureBits(featureValue);
       } catch {
         // Some trainers omit feature characteristic; keep optimistic defaults.
       }
+      await gattSettle();
 
-      this.controlPoint = await service.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT);
-      this.bikeDataChar = await service.getCharacteristic(INDOOR_BIKE_DATA);
+      this.controlPoint = await service.getCharacteristic(
+        toBluetoothUuid(FITNESS_MACHINE_CONTROL_POINT),
+      );
+      await gattSettle();
+      this.bikeDataChar = await service.getCharacteristic(toBluetoothUuid(INDOOR_BIKE_DATA));
+      await gattSettle();
+
+      // FTMS: enable Control Point indications before any opcode writes.
+      try {
+        await this.controlPoint.startNotifications();
+      } catch {
+        // Indicate may still work via startNotifications on some stacks; continue.
+      }
+      await gattSettle();
+
       this.bikeDataChar.addEventListener('characteristicvaluechanged', this.boundOnBikeData);
-      await this.bikeDataChar.startNotifications();
+      await this.startNotificationsWithRetry(this.bikeDataChar);
+      await gattSettle();
 
-      await this.writeControl([OP.requestControl]);
-      await delay(80);
+      // Request control is best-effort — keep telemetry link even if opcode fails.
+      try {
+        await this.writeControl([OP.requestControl]);
+        await gattSettle();
+      } catch {
+        // Trainer may still stream Indoor Bike Data without granted control.
+      }
 
       this.setState('connected');
     } catch (error) {
@@ -219,6 +243,24 @@ export class FtmsTrainer implements BikeTrainer {
       this.setState('error', message);
       throw error;
     }
+  }
+
+  private async startNotificationsWithRetry(
+    characteristic: BluetoothRemoteGATTCharacteristic,
+  ): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await characteristic.startNotifications();
+        return;
+      } catch (error) {
+        lastError = error;
+        await gattSettle();
+      }
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(describeBluetoothError(lastError));
   }
 
   async disconnect(): Promise<void> {
@@ -274,15 +316,20 @@ export class FtmsTrainer implements BikeTrainer {
 
   private async writeControlBytes(value: Uint8Array): Promise<void> {
     if (!this.controlPoint) throw new Error('Trainer control point not ready');
+    await gattSettle();
     const payload = value.buffer.slice(
       value.byteOffset,
       value.byteOffset + value.byteLength,
     ) as ArrayBuffer;
+    const props = this.controlPoint.properties;
+    // FTMS Control Point is Write + Indicate — prefer with-response over without.
     try {
-      if (this.controlPoint.properties.writeWithoutResponse) {
+      if (props.write) {
+        await this.controlPoint.writeValueWithResponse(payload);
+      } else if (props.writeWithoutResponse) {
         await this.controlPoint.writeValueWithoutResponse(payload);
       } else {
-        await this.controlPoint.writeValueWithResponse(payload);
+        await this.controlPoint.writeValue(payload);
       }
     } catch {
       await this.controlPoint.writeValue(payload);

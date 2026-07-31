@@ -154,3 +154,16 @@ export function getBluetoothSupportCode(): BluetoothSupportCode {
   return 'bt.available';
 }
 
+/** Bluefy/CoreBluetooth needs breathing room between GATT ops or the link drops. */
+export function gattSettleMs(): number {
+  return isBluefyBrowser() ? 450 : 40;
+}
+
+export function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function gattSettle(): Promise<void> {
+  await delay(gattSettleMs());
+}
+

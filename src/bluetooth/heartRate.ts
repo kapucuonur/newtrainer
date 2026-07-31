@@ -6,8 +6,10 @@ import type {
 } from './types';
 import {
   describeBluetoothError,
+  gattSettle,
   isWebBluetoothSupported,
   requestBluetoothDevice,
+  toBluetoothUuid,
 } from './webBluetooth';
 
 /** Bluetooth SIG Heart Rate Service */
@@ -107,8 +109,13 @@ export class HeartRateMonitor {
       this.device.addEventListener('gattserverdisconnected', this.boundOnDisconnected);
 
       const server = await this.device.gatt!.connect();
-      const service = await server.getPrimaryService(HEART_RATE_SERVICE);
-      this.characteristic = await service.getCharacteristic(HEART_RATE_MEASUREMENT);
+      await gattSettle();
+      const service = await server.getPrimaryService(toBluetoothUuid(HEART_RATE_SERVICE));
+      await gattSettle();
+      this.characteristic = await service.getCharacteristic(
+        toBluetoothUuid(HEART_RATE_MEASUREMENT),
+      );
+      await gattSettle();
       this.characteristic.addEventListener('characteristicvaluechanged', this.boundOnValue);
       await this.characteristic.startNotifications();
       this.setState('connected');
