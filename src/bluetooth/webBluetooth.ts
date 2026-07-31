@@ -26,6 +26,29 @@ export type BluetoothSupportCode =
   | 'bt.unsupported'
   | 'bt.available';
 
+/**
+ * Some in-app browsers (e.g. Bluefy on iOS) implement navigator.bluetooth via
+ * their own bridge and reject requestDevice()/connect() with plain objects or
+ * strings instead of a real Error, so `error instanceof Error` misses the
+ * actual reason and callers fall back to a generic message.
+ */
+export function describeBluetoothError(error: unknown): string {
+  if (error instanceof Error) return error.message || error.name || String(error);
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const withMessage = error as { message?: unknown; name?: unknown; code?: unknown };
+    if (typeof withMessage.message === 'string' && withMessage.message) return withMessage.message;
+    if (typeof withMessage.name === 'string' && withMessage.name) return withMessage.name;
+    try {
+      const json = JSON.stringify(error);
+      if (json && json !== '{}') return json;
+    } catch {
+      // Circular or non-serializable — fall through to String().
+    }
+  }
+  return String(error);
+}
+
 export function getBluetoothSupportCode(): BluetoothSupportCode {
   if (typeof navigator === 'undefined') {
     return 'bt.noBrowser';

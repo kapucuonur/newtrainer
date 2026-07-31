@@ -4,7 +4,7 @@ import type {
   HeartRateListener,
   HeartRateSample,
 } from './types';
-import { isWebBluetoothSupported } from './webBluetooth';
+import { describeBluetoothError, isWebBluetoothSupported } from './webBluetooth';
 
 /** Bluetooth SIG Heart Rate Service */
 export const HEART_RATE_SERVICE = 0x180d;
@@ -113,7 +113,7 @@ export class HeartRateMonitor {
       await this.characteristic.startNotifications();
       this.setState('connected');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to connect HR';
+      const message = describeBluetoothError(error);
       await this.cleanup();
       this.setState('error', message);
       throw error;

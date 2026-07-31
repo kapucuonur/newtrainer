@@ -6,7 +6,7 @@ import type {
   TrainerCapabilities,
   TrainerDataListener,
 } from './types';
-import { isWebBluetoothSupported } from './webBluetooth';
+import { describeBluetoothError, isWebBluetoothSupported } from './webBluetooth';
 
 /** Bluetooth SIG Fitness Machine Service */
 export const FTMS_SERVICE = 0x1826;
@@ -211,7 +211,7 @@ export class FtmsTrainer implements BikeTrainer {
 
       this.setState('connected');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to connect';
+      const message = describeBluetoothError(error);
       await this.cleanup();
       this.setState('error', message);
       throw error;
