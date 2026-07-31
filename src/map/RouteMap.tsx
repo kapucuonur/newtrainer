@@ -28,7 +28,16 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Vite bundles the worker (+ shared deps) into /assets/*; without this, MapLibre
 // resolves a sibling maplibre-gl-worker.mjs that never exists in production.
-setWorkerUrl(maplibreWorkerUrl);
+// For Safari WebKit compatibility: create a Blob worker wrapper with dynamic import()
+// so ES module syntax inside maplibre-gl-worker.mjs doesn't cause a SyntaxError in classic worker threads.
+try {
+  const fullWorkerUrl = new URL(maplibreWorkerUrl, window.location.href).href;
+  const blobCode = `import("${fullWorkerUrl}").catch(function() { importScripts("${fullWorkerUrl}"); });`;
+  const blob = new Blob([blobCode], { type: 'application/javascript' });
+  setWorkerUrl(URL.createObjectURL(blob));
+} catch {
+  setWorkerUrl(maplibreWorkerUrl);
+}
 
 async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
   const url = resolveStyleUrl(styleId);
@@ -321,6 +330,16 @@ export function RouteMap({
 
       activeMap.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
       activeMap.addControl(new ScaleControl({ unit: 'metric' }));
+
+      activeMap.on('error', (e: { error?: Error }) => {
+        const errObj = e?.error;
+        if (errObj && typeof errObj.message === 'string') {
+          // Ignore harmless missing font/sprite warnings
+          if (!errObj.message.includes('sprite') && !errObj.message.includes('glyph')) {
+            console.warn('[RouteMap] MapLibre warning/error:', errObj.message);
+          }
+        }
+      });
 
       activeMap.on('click', (e: { lngLat: { lat: number; lng: number } }) => {
         if (!pickingEnabledRef.current || !pickModeRef.current) return;
