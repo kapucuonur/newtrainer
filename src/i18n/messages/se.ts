@@ -37,8 +37,10 @@ export const se: Messages = {
   'trainer.connectFailed': 'Traineranslutning misslyckades',
   'trainer.mockFailed': 'Demo-trainer misslyckades',
 
-  'erg.aria': 'Trainer-effektläge',
-  'erg.title': 'Effektläge',
+  'erg.aria': 'Tränings- och FTP-testkontroller',
+  'erg.title': 'Träning / Test',
+  'erg.subtitle':
+    'Välj fri kart-SIM eller ERG-effektmål för träning och FTP-tester.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Pass-effektläge',
   'erg.modeFree': 'Fritt (karta-SIM)',
@@ -190,7 +192,12 @@ export const se: Messages = {
   'group.title': 'Gruppridning',
   'group.subtitle': 'Dela en rutt. Upp till 20 cyklister på den färgrika kartan.',
   'group.needLogin': 'Logga in för att skapa eller gå med i en grupp.',
-  'group.needRoute': 'Bygg först en rutt, skapa sedan ett rum.',
+  'group.needCloud':
+    'Gruppridning kräver moln-API. Ange VITE_API_URL, registrera dig eller logga in.',
+  'group.needRoute': 'För att skapa ett rum, bygg först en rutt på kartan (A → B).',
+  'group.routePending': 'Vänta tills rutten är klar, skapa sedan ett rum.',
+  'group.joinHint': 'Att gå med kräver ingen egen rutt — värdens rutt används.',
+  'group.needCode': 'Ange en rumskod för att gå med.',
   'group.create': 'Skapa rum',
   'group.join': 'Gå med',
   'group.working': 'Arbetar…',

@@ -37,8 +37,10 @@ export const no: Messages = {
   'trainer.connectFailed': 'Trainer-tilkobling mislyktes',
   'trainer.mockFailed': 'Demo-trainer mislyktes',
 
-  'erg.aria': 'Trainer-effektmodus',
-  'erg.title': 'Effektmodus',
+  'erg.aria': 'Trenings- og FTP-testkontroller',
+  'erg.title': 'Trening / Test',
+  'erg.subtitle':
+    'Velg fri kart-SIM eller ERG-effektmål for trening og FTP-tester.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Tur-effektmodus',
   'erg.modeFree': 'Fri (kart-SIM)',
@@ -190,7 +192,12 @@ export const no: Messages = {
   'group.title': 'Gruppetur',
   'group.subtitle': 'Del en rute. Opptil 20 ryttere på det fargerike kartet.',
   'group.needLogin': 'Logg inn for å opprette eller bli med i en gruppe.',
-  'group.needRoute': 'Bygg først en rute, deretter et rom.',
+  'group.needCloud':
+    'Gruppeturer krever sky-API. Sett VITE_API_URL, deretter registrer deg eller logg inn.',
+  'group.needRoute': 'For å opprette et rom, bygg først en rute på kartet (A → B).',
+  'group.routePending': 'Vent til ruten er ferdig, og opprett deretter et rom.',
+  'group.joinHint': 'Å bli med krever ikke din egen rute — vertens rute brukes.',
+  'group.needCode': 'Skriv inn en romkode for å bli med.',
   'group.create': 'Opprett rom',
   'group.join': 'Bli med',
   'group.working': 'Jobber…',

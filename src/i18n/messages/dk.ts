@@ -37,8 +37,10 @@ export const dk: Messages = {
   'trainer.connectFailed': 'Trainerforbindelse mislykkedes',
   'trainer.mockFailed': 'Demo-trainer mislykkedes',
 
-  'erg.aria': 'Trainer-effektmodus',
-  'erg.title': 'Effektmodus',
+  'erg.aria': 'Trænings- og FTP-testkontroller',
+  'erg.title': 'Træning / Test',
+  'erg.subtitle':
+    'Vælg fri kort-SIM eller ERG-effektmål til træning og FTP-tests.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Køre-effektmodus',
   'erg.modeFree': 'Fri (kort-SIM)',
@@ -190,7 +192,12 @@ export const dk: Messages = {
   'group.title': 'Gruppetur',
   'group.subtitle': 'Del en rute. Op til 20 ryttere på det farverige kort.',
   'group.needLogin': 'Log ind for at oprette eller deltage i en gruppe.',
-  'group.needRoute': 'Byg først en rute, opret derefter et rum.',
+  'group.needCloud':
+    'Gruppeture kræver cloud-API. Sæt VITE_API_URL, og registrer dig eller log ind.',
+  'group.needRoute': 'For at oprette et rum skal du først bygge en rute på kortet (A → B).',
+  'group.routePending': 'Vent til ruten er færdig, og opret derefter et rum.',
+  'group.joinHint': 'Deltagelse kræver ikke din egen rute — værtens rute bruges.',
+  'group.needCode': 'Indtast en rumkode for at deltage.',
   'group.create': 'Opret rum',
   'group.join': 'Deltag',
   'group.working': 'Arbejder…',

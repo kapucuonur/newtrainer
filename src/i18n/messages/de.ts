@@ -37,8 +37,10 @@ export const de: Messages = {
   'trainer.connectFailed': 'Trainer-Verbindung fehlgeschlagen',
   'trainer.mockFailed': 'Demo-Trainer fehlgeschlagen',
 
-  'erg.aria': 'Trainer-Leistungsmodus',
-  'erg.title': 'Leistungsmodus',
+  'erg.aria': 'Training- und FTP-Teststeuerung',
+  'erg.title': 'Training / Test',
+  'erg.subtitle':
+    'Freies Karten-SIM oder ERG-Leistungsziel für Training und FTP-Tests.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Fahr-Leistungsmodus',
   'erg.modeFree': 'Frei (Karten-SIM)',
@@ -189,7 +191,12 @@ export const de: Messages = {
   'group.title': 'Gruppenfahrt',
   'group.subtitle': 'Route teilen. Bis zu 20 Fahrer auf der farbigen Karte.',
   'group.needLogin': 'Zum Erstellen oder Beitreten anmelden.',
-  'group.needRoute': 'Zuerst eine Route bauen, dann Raum erstellen.',
+  'group.needCloud':
+    'Für Gruppenfahrten ist die Cloud-API nötig. VITE_API_URL setzen, dann registrieren oder anmelden.',
+  'group.needRoute': 'Zum Raumerstellen zuerst eine Route auf der Karte bauen (A → B).',
+  'group.routePending': 'Warte, bis die Route fertig ist, dann Raum erstellen.',
+  'group.joinHint': 'Zum Beitreten brauchst du keine eigene Route — die Host-Route gilt.',
+  'group.needCode': 'Raumcode eingeben zum Beitreten.',
   'group.create': 'Raum erstellen',
   'group.join': 'Beitreten',
   'group.working': 'Bitte warten…',

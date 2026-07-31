@@ -3,13 +3,14 @@ import { useT } from '../i18n';
 import { Users, Plus, LogIn, LogOut, Radio, Play, ShieldAlert } from 'lucide-react';
 
 type Props = {
-  enabled: boolean;
+  cloudEnabled: boolean;
   userId: number | null;
   room: Room | null;
   joinCode: string;
   busy: boolean;
   message: string | null;
   canCreate: boolean;
+  routePending: boolean;
   onJoinCodeChange: (code: string) => void;
   onCreate: () => void;
   onJoin: () => void;
@@ -19,13 +20,14 @@ type Props = {
 };
 
 export function GroupRidePanel({
-  enabled,
+  cloudEnabled,
   userId,
   room,
   joinCode,
   busy,
   message,
   canCreate,
+  routePending,
   onJoinCodeChange,
   onCreate,
   onJoin,
@@ -34,7 +36,15 @@ export function GroupRidePanel({
   onEnd,
 }: Props) {
   const t = useT();
-  const isHost = Boolean(room && userId != null && room.hostUserId === userId);
+  const loggedIn = userId != null;
+  const enabled = cloudEnabled && loggedIn;
+  const isHost = Boolean(room && loggedIn && room.hostUserId === userId);
+  const createBlockedReason = !canCreate
+    ? routePending
+      ? t('group.routePending')
+      : t('group.needRoute')
+    : undefined;
+  const canJoin = joinCode.trim().length >= 4;
 
   return (
     <section className="group-ride-panel" aria-label={t('group.title')}>
@@ -46,49 +56,55 @@ export function GroupRidePanel({
         <p>{t('group.subtitle')}</p>
       </div>
 
-      {!enabled && <p className="muted-text">{t('group.needLogin')}</p>}
+      {!cloudEnabled && <p className="muted-text">{t('group.needCloud')}</p>}
+      {cloudEnabled && !loggedIn && <p className="muted-text">{t('group.needLogin')}</p>}
 
       {enabled && !room && (
         <div className="group-ride-actions">
-          <button
-            type="button"
-            className="btn btn-accent btn-sm"
-            disabled={busy}
-            aria-disabled={!canCreate || busy}
-            title={!canCreate ? t('group.needRoute') : undefined}
-            onClick={onCreate}
-          >
-            <Plus className="icon-xs" />
-            {busy ? t('group.working') : t('group.create')}
-          </button>
-          {!canCreate && (
-            <p className="group-need-route" role="status">
-              {t('group.needRoute')}
-            </p>
-          )}
-
-          <div className="group-join-row">
-            <input
-              type="text"
-              className="group-code-input"
-              value={joinCode}
-              maxLength={8}
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder={t('group.codePlaceholder')}
-              onChange={(e) => onJoinCodeChange(e.target.value.toUpperCase())}
-              aria-label={t('group.codePlaceholder')}
-            />
+          <div className="group-create-block">
             <button
               type="button"
-              className="btn btn-primary btn-sm"
-              disabled={busy || joinCode.trim().length < 4}
-              onClick={onJoin}
+              className="btn btn-accent btn-sm"
+              disabled={busy || !canCreate}
+              title={createBlockedReason}
+              onClick={onCreate}
             >
-              <LogIn className="icon-xs" />
-              {t('group.join')}
+              <Plus className="icon-xs" />
+              {busy ? t('group.working') : t('group.create')}
             </button>
+            {createBlockedReason && (
+              <p className="group-need-route" role="status">
+                {createBlockedReason}
+              </p>
+            )}
+          </div>
+
+          <div className="group-join-block">
+            <p className="group-join-hint">{t('group.joinHint')}</p>
+            <div className="group-join-row">
+              <input
+                type="text"
+                className="group-code-input"
+                value={joinCode}
+                maxLength={8}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder={t('group.codePlaceholder')}
+                onChange={(e) => onJoinCodeChange(e.target.value.toUpperCase())}
+                aria-label={t('group.codePlaceholder')}
+              />
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={busy || !canJoin}
+                title={!canJoin ? t('group.needCode') : undefined}
+                onClick={onJoin}
+              >
+                <LogIn className="icon-xs" />
+                {t('group.join')}
+              </button>
+            </div>
           </div>
         </div>
       )}

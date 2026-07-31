@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { RidePowerMode } from '../simulation/rideEngine';
 import { useT } from '../i18n';
-import { Target } from 'lucide-react';
+import { ChevronDown, Target } from 'lucide-react';
 
 const FTP_PRESETS = [55, 75, 90, 100, 105, 120] as const;
 
@@ -27,6 +27,8 @@ export function ErgControls({
   onTargetPowerChange,
 }: Props) {
   const t = useT();
+  const panelId = useId();
+  const [expanded, setExpanded] = useState(false);
   const [wattsInput, setWattsInput] = useState(
     targetPowerWatts != null ? String(targetPowerWatts) : '',
   );
@@ -54,110 +56,124 @@ export function ErgControls({
   };
 
   return (
-    <article className="device-card erg-controls" aria-label={t('erg.aria')}>
-      <div className="device-card-head">
+    <article
+      className={`device-card erg-controls${expanded ? ' is-open' : ''}`}
+      aria-label={t('erg.aria')}
+    >
+      <button
+        type="button"
+        className="erg-controls-toggle"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={() => setExpanded((prev) => !prev)}
+      >
         <div className="device-title">
-          <Target className="icon-sm icon-accent" />
+          <Target className="icon-sm icon-accent" aria-hidden="true" />
           <div>
             <h3>{t('erg.title')}</h3>
-            <p className="device-name">
-              {t('erg.ftpLabel')}: {ftpWatts} W
-            </p>
+            <p className="device-name erg-controls-subtitle">{t('erg.subtitle')}</p>
           </div>
         </div>
-      </div>
+        <ChevronDown className="icon-sm erg-controls-chevron" aria-hidden="true" />
+      </button>
 
-      <div className="btn-row erg-mode-row" role="group" aria-label={t('erg.mode')}>
-        <button
-          type="button"
-          className={`btn btn-sm ${powerMode === 'free' ? 'btn-accent' : 'btn-ghost'}`}
-          onClick={() => onPowerModeChange('free')}
-        >
-          {t('erg.modeFree')}
-        </button>
-        <button
-          type="button"
-          className={`btn btn-sm ${powerMode === 'erg' ? 'btn-accent' : 'btn-ghost'}`}
-          onClick={() => onPowerModeChange('erg')}
-          title={
-            trainerConnected && !hardwareOk ? t('erg.unsupportedHint') : undefined
-          }
-        >
-          {t('erg.modeErg')}
-        </button>
-      </div>
+      <div className="erg-controls-body" id={panelId} hidden={!expanded}>
+          <p className="device-name erg-ftp-line">
+            {t('erg.ftpLabel')}: {ftpWatts} W
+          </p>
 
-      {degraded ? (
-        <p className="device-info-text erg-degraded" role="status">
-          {t('erg.unsupported')}
-        </p>
-      ) : null}
-
-      {powerMode === 'erg' && ergHardwareActive ? (
-        <p className="device-info-text" role="status">
-          {t('erg.hardwareActive')}
-        </p>
-      ) : null}
-
-      {powerMode === 'erg' && !trainerConnected ? (
-        <p className="device-info-text" role="status">
-          {t('erg.noTrainer')}
-        </p>
-      ) : null}
-
-      <div className="erg-presets" role="group" aria-label={t('erg.presets')}>
-        {FTP_PRESETS.map((pct) => {
-          const watts = Math.round((ftpWatts * pct) / 100);
-          const active =
-            powerMode === 'erg' &&
-            targetPowerWatts != null &&
-            Math.abs(targetPowerWatts - watts) <= 1;
-          return (
+          <div className="btn-row erg-mode-row" role="group" aria-label={t('erg.mode')}>
             <button
-              key={pct}
               type="button"
-              className={`btn btn-sm ${active ? 'btn-accent' : 'btn-ghost'}`}
-              onClick={() => applyPreset(pct)}
+              className={`btn btn-sm ${powerMode === 'free' ? 'btn-accent' : 'btn-ghost'}`}
+              onClick={() => onPowerModeChange('free')}
             >
-              {pct}%
-              <span className="erg-preset-w">{watts}W</span>
+              {t('erg.modeFree')}
             </button>
-          );
-        })}
-      </div>
-
-      <div className="erg-watts-row">
-        <label htmlFor="erg-target-watts">{t('erg.targetWatts')}</label>
-        <div className="erg-watts-input">
-          <input
-            id="erg-target-watts"
-            type="number"
-            min={0}
-            max={4000}
-            step={5}
-            inputMode="numeric"
-            value={wattsInput}
-            onChange={(e) => setWattsInput(e.target.value)}
-            onBlur={commitWattsInput}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.currentTarget.blur();
+            <button
+              type="button"
+              className={`btn btn-sm ${powerMode === 'erg' ? 'btn-accent' : 'btn-ghost'}`}
+              onClick={() => onPowerModeChange('erg')}
+              title={
+                trainerConnected && !hardwareOk ? t('erg.unsupportedHint') : undefined
               }
-            }}
-          />
-          <span>W</span>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => {
-              commitWattsInput();
-              if (powerMode !== 'erg') onPowerModeChange('erg');
-            }}
-          >
-            {t('erg.apply')}
-          </button>
+            >
+              {t('erg.modeErg')}
+            </button>
+          </div>
+
+          {degraded ? (
+            <p className="device-info-text erg-degraded" role="status">
+              {t('erg.unsupported')}
+            </p>
+          ) : null}
+
+          {powerMode === 'erg' && ergHardwareActive ? (
+            <p className="device-info-text" role="status">
+              {t('erg.hardwareActive')}
+            </p>
+          ) : null}
+
+          {powerMode === 'erg' && !trainerConnected ? (
+            <p className="device-info-text" role="status">
+              {t('erg.noTrainer')}
+            </p>
+          ) : null}
+
+          <div className="erg-presets" role="group" aria-label={t('erg.presets')}>
+            {FTP_PRESETS.map((pct) => {
+              const watts = Math.round((ftpWatts * pct) / 100);
+              const active =
+                powerMode === 'erg' &&
+                targetPowerWatts != null &&
+                Math.abs(targetPowerWatts - watts) <= 1;
+              return (
+                <button
+                  key={pct}
+                  type="button"
+                  className={`btn btn-sm ${active ? 'btn-accent' : 'btn-ghost'}`}
+                  onClick={() => applyPreset(pct)}
+                >
+                  {pct}%
+                  <span className="erg-preset-w">{watts}W</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="erg-watts-row">
+            <label htmlFor="erg-target-watts">{t('erg.targetWatts')}</label>
+            <div className="erg-watts-input">
+              <input
+                id="erg-target-watts"
+                type="number"
+                min={0}
+                max={4000}
+                step={5}
+                inputMode="numeric"
+                value={wattsInput}
+                onChange={(e) => setWattsInput(e.target.value)}
+                onBlur={commitWattsInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
+              />
+              <span>W</span>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  commitWattsInput();
+                  if (powerMode !== 'erg') onPowerModeChange('erg');
+                }}
+              >
+                {t('erg.apply')}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
     </article>
   );
 }

@@ -35,8 +35,10 @@ export const en = {
   'trainer.connectFailed': 'Trainer connection failed',
   'trainer.mockFailed': 'Mock trainer failed',
 
-  'erg.aria': 'Trainer power mode',
-  'erg.title': 'Power mode',
+  'erg.aria': 'Training and FTP test controls',
+  'erg.title': 'Training / Test',
+  'erg.subtitle':
+    'Choose free map SIM or an ERG power target for workouts and FTP tests.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Ride power mode',
   'erg.modeFree': 'Free (map SIM)',
@@ -185,7 +187,12 @@ export const en = {
   'group.title': 'Group ride',
   'group.subtitle': 'Share a route. Up to 20 riders on the colored map.',
   'group.needLogin': 'Log in to create or join a group ride.',
-  'group.needRoute': 'Build a route first, then create a room.',
+  'group.needCloud':
+    'Cloud API is required for group rides. Set VITE_API_URL, then register or log in.',
+  'group.needRoute': 'To create a room, build a route on the map first (A → B).',
+  'group.routePending': 'Wait for the route to finish building, then create a room.',
+  'group.joinHint': 'Joining does not need your own route — you use the host’s.',
+  'group.needCode': 'Enter a room code to join.',
   'group.create': 'Create room',
   'group.join': 'Join',
   'group.working': 'Working…',

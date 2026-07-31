@@ -37,8 +37,10 @@ export const es: Messages = {
   'trainer.connectFailed': 'Falló la conexión del rodillo',
   'trainer.mockFailed': 'Falló el rodillo demo',
 
-  'erg.aria': 'Modo de potencia del rodillo',
-  'erg.title': 'Modo de potencia',
+  'erg.aria': 'Controles de entrenamiento y test FTP',
+  'erg.title': 'Entrenamiento / Test',
+  'erg.subtitle':
+    'Elige SIM de mapa libre u objetivo ERG para entrenamientos y tests FTP.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Modo de potencia',
   'erg.modeFree': 'Libre (SIM mapa)',
@@ -190,7 +192,12 @@ export const es: Messages = {
   'group.title': 'Salida en grupo',
   'group.subtitle': 'Comparte una ruta. Hasta 20 ciclistas en el mapa a color.',
   'group.needLogin': 'Inicia sesión para crear o unirte a un grupo.',
-  'group.needRoute': 'Primero crea una ruta, luego una sala.',
+  'group.needCloud':
+    'Las salidas en grupo requieren la API en la nube. Configura VITE_API_URL y regístrate o inicia sesión.',
+  'group.needRoute': 'Para crear una sala, primero construye una ruta en el mapa (A → B).',
+  'group.routePending': 'Espera a que termine la ruta y luego crea la sala.',
+  'group.joinHint': 'Unirse no requiere tu propia ruta — se usa la del anfitrión.',
+  'group.needCode': 'Introduce un código de sala para unirte.',
   'group.create': 'Crear sala',
   'group.join': 'Unirse',
   'group.working': 'Trabajando…',

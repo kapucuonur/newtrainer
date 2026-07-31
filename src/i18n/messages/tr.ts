@@ -37,8 +37,10 @@ export const tr: Messages = {
   'trainer.connectFailed': 'Trainer bağlantısı başarısız',
   'trainer.mockFailed': 'Demo trainer başarısız',
 
-  'erg.aria': 'Trainer güç modu',
-  'erg.title': 'Güç modu',
+  'erg.aria': 'Antrenman ve FTP test kontrolleri',
+  'erg.title': 'Antrenman / Test',
+  'erg.subtitle':
+    'Serbest harita SIM veya ERG güç hedefi seç — antrenman ve FTP testi için.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Sürüş güç modu',
   'erg.modeFree': 'Serbest (harita SIM)',
@@ -188,7 +190,12 @@ export const tr: Messages = {
   'group.title': 'Grup sürüşü',
   'group.subtitle': 'Rotayı paylaşın. Renkli haritada en fazla 20 sürücü.',
   'group.needLogin': 'Grup sürüşü oluşturmak veya katılmak için giriş yapın.',
-  'group.needRoute': 'Önce bir rota oluşturun, sonra oda açın.',
+  'group.needCloud':
+    'Grup sürüşü için bulut API gerekir. VITE_API_URL ayarlayın, sonra kayıt olun veya giriş yapın.',
+  'group.needRoute': 'Oda oluşturmak için önce haritada bir rota oluşturun (A → B).',
+  'group.routePending': 'Rota hazır olana kadar bekleyin, sonra oda açın.',
+  'group.joinHint': 'Katılmak için kendi rotanız gerekmez — ev sahibinin rotası kullanılır.',
+  'group.needCode': 'Katılmak için bir oda kodu girin.',
   'group.create': 'Oda oluştur',
   'group.join': 'Katıl',
   'group.working': 'İşleniyor…',

@@ -37,8 +37,10 @@ export const it: Messages = {
   'trainer.connectFailed': 'Connessione trainer non riuscita',
   'trainer.mockFailed': 'Trainer demo non riuscito',
 
-  'erg.aria': 'Modalità potenza trainer',
-  'erg.title': 'Modalità potenza',
+  'erg.aria': 'Controlli allenamento e test FTP',
+  'erg.title': 'Allenamento / Test',
+  'erg.subtitle':
+    'Scegli SIM mappa libera o target ERG per allenamenti e test FTP.',
   'erg.ftpLabel': 'FTP',
   'erg.mode': 'Modalità potenza',
   'erg.modeFree': 'Libero (SIM mappa)',
@@ -190,7 +192,12 @@ export const it: Messages = {
   'group.title': 'Uscita di gruppo',
   'group.subtitle': 'Condividi un percorso. Fino a 20 rider sulla mappa colorata.',
   'group.needLogin': 'Accedi per creare o unirti a un’uscita di gruppo.',
-  'group.needRoute': 'Prima crea un percorso, poi una stanza.',
+  'group.needCloud':
+    'Le uscite di gruppo richiedono l’API cloud. Imposta VITE_API_URL, poi registrati o accedi.',
+  'group.needRoute': 'Per creare una stanza, prima costruisci un percorso sulla mappa (A → B).',
+  'group.routePending': 'Attendi che il percorso sia pronto, poi crea la stanza.',
+  'group.joinHint': 'Per unirti non serve un tuo percorso — si usa quello dell’host.',
+  'group.needCode': 'Inserisci un codice stanza per unirti.',
   'group.create': 'Crea stanza',
   'group.join': 'Unisciti',
   'group.working': 'Attendere…',

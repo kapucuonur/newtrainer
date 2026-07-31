@@ -803,7 +803,14 @@ export default function App() {
   };
 
   const onJoinRoom = async () => {
-    if (!user) return;
+    if (!user) {
+      setGroupMessage(t('group.needLogin'));
+      return;
+    }
+    if (joinCode.trim().length < 4) {
+      setGroupMessage(t('group.needCode'));
+      return;
+    }
     setGroupBusy(true);
     setGroupMessage(null);
     try {
@@ -1187,13 +1194,14 @@ export default function App() {
           onSaveProfile={onSaveProfile}
         />
         <GroupRidePanel
-          enabled={Boolean(cloudEnabled && user)}
+          cloudEnabled={cloudEnabled}
           userId={user?.id ?? null}
           room={room}
           joinCode={joinCode}
           busy={groupBusy}
           message={groupMessage}
           canCreate={Boolean(route && user)}
+          routePending={Boolean(!route && (loadingRoute || elevatingAlt))}
           onJoinCodeChange={setJoinCode}
           onCreate={() => void onCreateRoom()}
           onJoin={() => void onJoinRoom()}
