@@ -11,26 +11,30 @@ import {
   Clock,
   Ruler,
   Mountain,
+  Crosshair,
 } from 'lucide-react';
 
 type Props = {
   telemetry: RideTelemetry;
   riderWeightKg?: number;
+  ftpWatts?: number;
 };
 
-// Power Zone Calculator (based on typical FTP ~250W or relative ratios)
-function getPowerZone(watts: number, ftp = 250): { zone: string; colorClass: string; label: string } {
-  const ratio = watts / ftp;
+function getPowerZone(
+  watts: number,
+  ftp: number,
+): { zone: string; colorClass: string; label: string } {
+  const safeFtp = Math.max(1, ftp);
+  const ratio = watts / safeFtp;
   if (watts <= 0) return { zone: 'Z0', colorClass: 'pz-0', label: 'IDLE' };
   if (ratio < 0.55) return { zone: 'Z1', colorClass: 'pz-1', label: 'RECOVERY' };
   if (ratio < 0.75) return { zone: 'Z2', colorClass: 'pz-2', label: 'ENDURANCE' };
-  if (ratio < 0.90) return { zone: 'Z3', colorClass: 'pz-3', label: 'TEMPO' };
+  if (ratio < 0.9) return { zone: 'Z3', colorClass: 'pz-3', label: 'TEMPO' };
   if (ratio < 1.05) return { zone: 'Z4', colorClass: 'pz-4', label: 'THRESHOLD' };
-  if (ratio < 1.20) return { zone: 'Z5', colorClass: 'pz-5', label: 'VO2 MAX' };
+  if (ratio < 1.2) return { zone: 'Z5', colorClass: 'pz-5', label: 'VO2 MAX' };
   return { zone: 'Z6', colorClass: 'pz-6', label: 'ANAEROBIC' };
 }
 
-// Heart Rate Zone Calculator (based on Max HR ~185)
 function getHrZone(bpm: number, maxHr = 185): { zone: string; colorClass: string } {
   const ratio = bpm / maxHr;
   if (ratio < 0.6) return { zone: 'Z1', colorClass: 'hrz-1' };
@@ -74,12 +78,12 @@ function Stat({
   );
 }
 
-export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
+export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props) {
   const t = useT();
 
   const watts = Math.max(0, Math.round(telemetry.powerWatts || 0));
   const wKg = (watts / riderWeightKg).toFixed(1);
-  const pZone = getPowerZone(watts);
+  const pZone = getPowerZone(watts, ftpWatts);
 
   const bpm = telemetry.heartRateBpm;
   const hrZone = bpm ? getHrZone(bpm) : null;
@@ -92,6 +96,28 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
         ? 'grade-down'
         : 'grade-flat';
 
+  const targetW =
+    telemetry.targetPowerWatts != null
+      ? Math.round(telemetry.targetPowerWatts)
+      : null;
+  const showTarget = targetW != null && telemetry.powerMode === 'erg';
+
+  const controlLabel =
+    telemetry.trainerControlMode === 'erg'
+      ? t('hud.trainerErg')
+      : telemetry.trainerControlMode === 'resistance'
+        ? t('hud.trainerRes')
+        : t('hud.trainerSim');
+
+  const controlValue =
+    telemetry.trainerControlMode === 'erg'
+      ? targetW != null
+        ? `${targetW} W`
+        : '—'
+      : telemetry.trainerControlMode === 'resistance'
+        ? telemetry.trainerResistanceHint.toFixed(0)
+        : formatGrade(telemetry.trainerGradeSent ?? gradePercent);
+
   return (
     <section className="ride-hud" aria-label={t('hud.aria')}>
       <div className="hud-progress-track">
@@ -102,7 +128,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
       </div>
 
       <div className="hud-grid">
-        {/* Speed */}
         <Stat
           icon={<Compass className="icon-sm" />}
           label={t('hud.speed')}
@@ -111,7 +136,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           accent
         />
 
-        {/* Power (Watts + W/kg + Zone) */}
         <Stat
           icon={<Zap className="icon-sm icon-zap" />}
           label={t('hud.power')}
@@ -122,7 +146,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           badgeClass={pZone.colorClass}
         />
 
-        {/* Cadence (RPM) */}
         <Stat
           icon={<Activity className="icon-sm" />}
           label={t('hud.cadence')}
@@ -130,7 +153,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           unit="rpm"
         />
 
-        {/* Heart Rate */}
         <Stat
           icon={<Heart className="icon-sm icon-heart" />}
           label={t('hud.heartRate')}
@@ -140,7 +162,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           badgeClass={hrZone?.colorClass}
         />
 
-        {/* Grade % */}
         <Stat
           icon={<TrendingUp className="icon-sm" />}
           label={t('hud.grade')}
@@ -148,7 +169,6 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           accent
         />
 
-        {/* Elevation */}
         <Stat
           icon={<Mountain className="icon-sm" />}
           label={t('hud.elevation')}
@@ -156,14 +176,12 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           unit="m"
         />
 
-        {/* Distance */}
         <Stat
           icon={<Ruler className="icon-sm" />}
           label={t('hud.distance')}
           value={formatDistance(telemetry.distanceMeters)}
         />
 
-        {/* Time */}
         <Stat
           icon={<Clock className="icon-sm" />}
           label={t('hud.time')}
@@ -178,17 +196,22 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
             <span className="hud-grade-chip-v">{formatGrade(gradePercent)}</span>
           </div>
           <div className="hud-grade-chip-metric">
-            <span className="hud-grade-chip-k">
-              {telemetry.trainerControlMode === 'resistance'
-                ? t('hud.trainerRes')
-                : t('hud.trainerSim')}
-            </span>
-            <span className="hud-grade-chip-v">
-              {telemetry.trainerControlMode === 'resistance'
-                ? telemetry.trainerResistanceHint.toFixed(0)
-                : formatGrade(telemetry.trainerGradeSent ?? gradePercent)}
-            </span>
+            <span className="hud-grade-chip-k">{controlLabel}</span>
+            <span className="hud-grade-chip-v">{controlValue}</span>
           </div>
+          {showTarget ? (
+            <div className="hud-grade-chip-metric">
+              <span className="hud-grade-chip-k">
+                {telemetry.ergHardwareActive
+                  ? t('hud.targetPower')
+                  : t('hud.effortTarget')}
+              </span>
+              <span className="hud-grade-chip-v">
+                <Crosshair className="icon-xs" aria-hidden="true" />
+                {targetW} W
+              </span>
+            </div>
+          ) : null}
           {telemetry.trainerControlMode === 'sim' ? (
             <div className="hud-grade-chip-metric hud-grade-chip-metric-secondary">
               <span className="hud-grade-chip-k">{t('hud.trainerRes')}</span>
@@ -199,7 +222,13 @@ export function RideHUD({ telemetry, riderWeightKg = 75 }: Props) {
           ) : null}
         </div>
         <span className="hud-grade-chip-load">
-          {gradePercent >= 0 ? t('hud.climb') : t('hud.descent')}
+          {telemetry.trainerControlMode === 'erg'
+            ? telemetry.ergHardwareActive
+              ? t('hud.ergActive')
+              : t('hud.effortPace')
+            : gradePercent >= 0
+              ? t('hud.climb')
+              : t('hud.descent')}
         </span>
       </div>
     </section>

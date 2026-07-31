@@ -25,6 +25,7 @@ const OP = {
   requestControl: 0x00,
   reset: 0x01,
   setTargetResistance: 0x04,
+  setTargetPower: 0x05,
   startOrResume: 0x07,
   stopOrPause: 0x08,
   setIndoorBikeSimulation: 0x11,
@@ -86,14 +87,20 @@ export function parseIndoorBikeData(view: DataView): IndoorBikeData {
   };
 }
 
-function parseFeatureBits(view: DataView): TrainerCapabilities {
+/** Exported for unit checks — Target Setting Features per FTMS 1.0 §4.3.1.2 */
+export function parseFeatureBits(view: DataView): TrainerCapabilities {
   // Fitness Machine Features (first 4 bytes) + Target Setting Features (next 4)
   const features = view.byteLength >= 4 ? view.getUint32(0, true) : 0;
   const target = view.byteLength >= 8 ? view.getUint32(4, true) : 0;
 
   return {
+    // Bit 14 = Power Measurement; keep optimistic true when characteristic is sparse.
     supportsPowerMeasurement: (features & (1 << 14)) !== 0 || true,
-    supportsTargetResistance: (target & (1 << 3)) !== 0,
+    // Bit 2 = Resistance Target Setting Supported
+    supportsTargetResistance: (target & (1 << 2)) !== 0,
+    // Bit 3 = Power Target Setting Supported (Set Target Power 0x05)
+    supportsTargetPower: (target & (1 << 3)) !== 0,
+    // Bit 13 = Indoor Bike Simulation Parameters Supported
     supportsIndoorBikeSimulation: (target & (1 << 13)) !== 0,
   };
 }
@@ -113,6 +120,8 @@ export class FtmsTrainer implements BikeTrainer {
     supportsTargetResistance: true,
     supportsIndoorBikeSimulation: true,
     supportsPowerMeasurement: true,
+    // Optimistic when feature char is missing; overwritten when features are read.
+    supportsTargetPower: true,
   };
   private dataListeners = new Set<TrainerDataListener>();
   private connectionListeners = new Set<ConnectionListener>();
@@ -280,6 +289,17 @@ export class FtmsTrainer implements BikeTrainer {
     const clamped = Math.max(0, Math.min(100, level));
     const raw = Math.round(clamped * 10);
     await this.writeControl([OP.setTargetResistance, raw & 0xff]);
+  }
+
+  async setTargetPower(watts: number | null): Promise<void> {
+    // Clearing ERG is done by restoring SIM/resistance — do not write 0 W.
+    if (watts == null) return;
+    const clamped = Math.max(0, Math.min(4000, Math.round(watts)));
+    const buffer = new ArrayBuffer(3);
+    const view = new DataView(buffer);
+    view.setUint8(0, OP.setTargetPower);
+    view.setInt16(1, clamped, true);
+    await this.writeControlBytes(new Uint8Array(buffer));
   }
 
   async setSimulation(params: {

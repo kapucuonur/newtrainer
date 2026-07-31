@@ -9,6 +9,8 @@ import {
 import { useT } from '../i18n';
 import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ErgControls } from './ErgControls';
+import type { RidePowerMode } from '../simulation/rideEngine';
 import {
   Bluetooth,
   Wifi,
@@ -33,6 +35,11 @@ type Props = {
   usingMock: boolean;
   wifiMessage: string;
   mockEffort: number;
+  ftpWatts: number;
+  powerMode: RidePowerMode;
+  targetPowerWatts: number | null;
+  supportsTargetPower: boolean | null;
+  ergHardwareActive: boolean;
   onConnectTrainer: () => void;
   onDisconnectTrainer: () => void;
   onUseMock: () => void;
@@ -40,6 +47,8 @@ type Props = {
   onDisconnectHr: () => void;
   onProbeWifi: () => void;
   onMockEffort: (value: number) => void;
+  onPowerModeChange: (mode: RidePowerMode) => void;
+  onTargetPowerChange: (watts: number | null) => void;
   onOpenAccount: () => void;
   onClosePanel?: () => void;
   children?: ReactNode;
@@ -70,6 +79,11 @@ export function ConnectionPanel({
   usingMock,
   wifiMessage,
   mockEffort,
+  ftpWatts,
+  powerMode,
+  targetPowerWatts,
+  supportsTargetPower,
+  ergHardwareActive,
   onConnectTrainer,
   onDisconnectTrainer,
   onUseMock,
@@ -77,6 +91,8 @@ export function ConnectionPanel({
   onDisconnectHr,
   onProbeWifi,
   onMockEffort,
+  onPowerModeChange,
+  onTargetPowerChange,
   onOpenAccount,
   onClosePanel,
   children,
@@ -252,6 +268,17 @@ export function ConnectionPanel({
             </div>
           )}
         </article>
+
+        <ErgControls
+          ftpWatts={ftpWatts}
+          powerMode={powerMode}
+          targetPowerWatts={targetPowerWatts}
+          supportsTargetPower={supportsTargetPower}
+          ergHardwareActive={ergHardwareActive}
+          trainerConnected={trainerState === 'connected' || usingMock}
+          onPowerModeChange={onPowerModeChange}
+          onTargetPowerChange={onTargetPowerChange}
+        />
 
         {/* Heart Rate Monitor Card */}
         <article className="device-card">

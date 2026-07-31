@@ -664,6 +664,61 @@ select {
   cursor: pointer;
 }
 
+.erg-controls .erg-mode-row {
+  margin-top: 2px;
+}
+
+.erg-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.erg-presets .btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 3.25rem;
+  line-height: 1.1;
+}
+
+.erg-preset-w {
+  font-size: 0.65rem;
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+.erg-watts-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.erg-watts-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.erg-watts-input input {
+  width: 5.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.erg-degraded {
+  color: var(--warn, #e8b84a);
+}
+
 /* Main Stage Overlay Layout */
 .main-stage {
   position: relative;

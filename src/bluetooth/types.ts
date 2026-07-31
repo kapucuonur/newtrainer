@@ -25,6 +25,8 @@ export interface TrainerCapabilities {
   supportsTargetResistance: boolean;
   supportsIndoorBikeSimulation: boolean;
   supportsPowerMeasurement: boolean;
+  /** FTMS Target Setting Features bit 3 — Set Target Power (0x05). */
+  supportsTargetPower: boolean;
 }
 
 export type TrainerDataListener = (data: IndoorBikeData) => void;
@@ -47,6 +49,11 @@ export interface BikeTrainer {
     crr?: number;
     cw?: number;
   }): Promise<void>;
+  /**
+   * FTMS Set Target Power (0x05). Pass `null` to leave ERG (no 0 W write);
+   * caller should restore SIM/resistance afterward.
+   */
+  setTargetPower(watts: number | null): Promise<void>;
   onData(listener: TrainerDataListener): () => void;
   onConnection(listener: ConnectionListener): () => void;
 }

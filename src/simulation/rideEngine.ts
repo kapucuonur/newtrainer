@@ -5,8 +5,11 @@ import type { EnrichedRoute } from '../routing/types';
 
 export type RidePhase = 'idle' | 'ready' | 'riding' | 'paused' | 'finished';
 
-/** How grade is pushed to the trainer (FTMS SIM 0x11 vs resistance 0x04). */
-export type TrainerControlMode = 'sim' | 'resistance';
+/** How grade/power is pushed to the trainer. */
+export type TrainerControlMode = 'sim' | 'resistance' | 'erg';
+
+/** Rider-selected control: map SIM vs target-power (hardware ERG or HUD effort). */
+export type RidePowerMode = 'free' | 'erg';
 
 export interface RideTelemetry {
   phase: RidePhase;
@@ -25,8 +28,16 @@ export interface RideTelemetry {
   trainerResistanceHint: number;
   /** Last grade % written via setSimulation (null before first send). */
   trainerGradeSent: number | null;
-  /** Active FTMS control path for grade; null when no trainer is attached. */
+  /** Active FTMS control path; null when no trainer is attached. */
   trainerControlMode: TrainerControlMode | null;
+  /** Free (map SIM) vs ERG / effort-target mode. */
+  powerMode: RidePowerMode;
+  /** HUD / ERG target watts (null when free and no effort overlay). */
+  targetPowerWatts: number | null;
+  /** True when watts were written to the trainer (real ERG lock). */
+  ergHardwareActive: boolean;
+  /** Trainer advertises FTMS target power; null when disconnected. */
+  supportsTargetPower: boolean | null;
   /** True when a completed (or mid-finish) track is available for FIT/GPX download. */
   hasExport: boolean;
 }
@@ -37,7 +48,7 @@ const SAMPLE_INTERVAL_MS = 1000;
 
 /**
  * Advances a virtual bike along a polyline using trainer speed/power,
- * and pushes elevation grade to the trainer (SIM / resistance).
+ * and pushes elevation grade to the trainer (SIM / resistance) — unless ERG is active.
  */
 export class RideEngine {
   private route: EnrichedRoute | null = null;
@@ -53,6 +64,11 @@ export class RideEngine {
   private lastBike: IndoorBikeData | null = null;
   private listeners = new Set<RideTelemetryListener>();
   private unsubTrainer: (() => void) | null = null;
+
+  private powerMode: RidePowerMode = 'free';
+  private targetPowerWatts: number | null = null;
+  private ergHardwareActive = false;
+  private powerSendAt = 0;
 
   private track: TrackPoint[] = [];
   private rideStartedAtMs = 0;
@@ -75,15 +91,49 @@ export class RideEngine {
     this.unsubTrainer?.();
     this.unsubTrainer = null;
     this.trainer = trainer;
+    this.ergHardwareActive = false;
     if (trainer) {
       this.unsubTrainer = trainer.onData((data) => {
         this.lastBike = data;
       });
+      // Re-apply mode against new trainer capabilities.
+      void this.syncTrainerPowerControl(true);
+    } else if (this.powerMode === 'erg') {
+      // Keep HUD target; hardware lock is gone.
+      this.ergHardwareActive = false;
     }
+    this.emit();
   }
 
   setHeartRate(bpm: number | null): void {
     this.heartRateBpm = bpm;
+  }
+
+  getPowerMode(): RidePowerMode {
+    return this.powerMode;
+  }
+
+  getTargetPowerWatts(): number | null {
+    return this.targetPowerWatts;
+  }
+
+  /**
+   * Switch Free (map SIM) ↔ ERG. When trainer lacks target power, ERG degrades to
+   * HUD effort-target only and SIM grade continues.
+   */
+  async setPowerMode(mode: RidePowerMode): Promise<void> {
+    if (this.powerMode === mode) return;
+    this.powerMode = mode;
+    await this.syncTrainerPowerControl(true);
+    this.emit();
+  }
+
+  /** Set absolute target watts (shown on HUD; written to trainer in hardware ERG). */
+  async setTargetPowerWatts(watts: number | null): Promise<void> {
+    this.targetPowerWatts =
+      watts == null ? null : Math.max(0, Math.min(4000, Math.round(watts)));
+    await this.syncTrainerPowerControl(true);
+    this.emit();
   }
 
   getPhase(): RidePhase {
@@ -124,7 +174,10 @@ export class RideEngine {
     this.lastTick = performance.now();
     this.recordSample(true);
     await this.trainer?.start();
-    await this.applyGrade(true);
+    await this.syncTrainerPowerControl(true);
+    if (!this.ergHardwareActive) {
+      await this.applyGrade(true);
+    }
     this.loop();
     this.emit();
   }
@@ -143,6 +196,7 @@ export class RideEngine {
     this.phase = 'riding';
     this.lastTick = performance.now();
     await this.trainer?.start();
+    await this.syncTrainerPowerControl(true);
     this.loop();
     this.emit();
   }
@@ -158,6 +212,7 @@ export class RideEngine {
       this.phase = 'finished';
       this.rideFinishedAtMs = Date.now();
       await this.trainer?.stop();
+      await this.exitHardwareErg();
       await this.trainer?.setSimulation({ gradePercent: 0 });
       this.emit();
       return;
@@ -168,6 +223,7 @@ export class RideEngine {
     this.distanceMeters = 0;
     this.elapsedSeconds = 0;
     await this.trainer?.stop();
+    await this.exitHardwareErg();
     await this.trainer?.setSimulation({ gradePercent: 0 });
     this.emit();
   }
@@ -191,13 +247,19 @@ export class RideEngine {
       this.rideFinishedAtMs = Date.now();
       cancelAnimationFrame(this.raf);
       void this.trainer?.stop();
-      void this.trainer?.setSimulation({ gradePercent: 0 });
+      void this.exitHardwareErg().then(() =>
+        this.trainer?.setSimulation({ gradePercent: 0 }),
+      );
       this.emit();
       return;
     }
 
     this.recordSample(false);
-    void this.applyGrade(false);
+    if (this.ergHardwareActive) {
+      void this.pushTargetPower(false);
+    } else {
+      void this.applyGrade(false);
+    }
     this.emit();
     this.raf = requestAnimationFrame(this.loop);
   };
@@ -263,6 +325,7 @@ export class RideEngine {
 
   private async applyGrade(force: boolean): Promise<void> {
     if (!this.route || !this.trainer) return;
+    if (this.ergHardwareActive) return;
     const now = performance.now();
     if (!force && now - this.gradeSendAt < 800) return;
 
@@ -283,6 +346,47 @@ export class RideEngine {
     }
   }
 
+  private canUseHardwareErg(): boolean {
+    return Boolean(this.trainer?.getCapabilities().supportsTargetPower);
+  }
+
+  private async exitHardwareErg(): Promise<void> {
+    if (!this.ergHardwareActive) return;
+    this.ergHardwareActive = false;
+    try {
+      await this.trainer?.setTargetPower(null);
+    } catch {
+      // ignore
+    }
+  }
+
+  private async pushTargetPower(force: boolean): Promise<void> {
+    if (!this.trainer || this.targetPowerWatts == null) return;
+    if (!this.canUseHardwareErg()) return;
+    const now = performance.now();
+    if (!force && now - this.powerSendAt < 1000) return;
+    this.powerSendAt = now;
+    try {
+      await this.trainer.setTargetPower(this.targetPowerWatts);
+      this.ergHardwareActive = true;
+    } catch {
+      this.ergHardwareActive = false;
+    }
+  }
+
+  private async syncTrainerPowerControl(force: boolean): Promise<void> {
+    if (this.powerMode === 'erg' && this.targetPowerWatts != null && this.canUseHardwareErg()) {
+      await this.pushTargetPower(force);
+      return;
+    }
+
+    const wasErg = this.ergHardwareActive;
+    await this.exitHardwareErg();
+    if (wasErg || force) {
+      await this.applyGrade(true);
+    }
+  }
+
   private snapshot(): RideTelemetry {
     const routeDistanceMeters = this.route?.distanceMeters ?? 0;
     const at = this.route
@@ -294,11 +398,16 @@ export class RideEngine {
       ? this.lastGradeSent
       : gradePercent;
     const caps = this.trainer?.getCapabilities();
-    const trainerControlMode: TrainerControlMode | null = this.trainer
-      ? caps?.supportsIndoorBikeSimulation
-        ? 'sim'
-        : 'resistance'
-      : null;
+    let trainerControlMode: TrainerControlMode | null = null;
+    if (this.trainer) {
+      if (this.ergHardwareActive) {
+        trainerControlMode = 'erg';
+      } else if (caps?.supportsIndoorBikeSimulation) {
+        trainerControlMode = 'sim';
+      } else {
+        trainerControlMode = 'resistance';
+      }
+    }
 
     return {
       phase: this.phase,
@@ -319,6 +428,10 @@ export class RideEngine {
       trainerResistanceHint: Math.max(0, Math.min(100, 20 + gradeForTrainer * 4)),
       trainerGradeSent: Number.isFinite(this.lastGradeSent) ? this.lastGradeSent : null,
       trainerControlMode,
+      powerMode: this.powerMode,
+      targetPowerWatts: this.targetPowerWatts,
+      ergHardwareActive: this.ergHardwareActive,
+      supportsTargetPower: this.trainer ? Boolean(caps?.supportsTargetPower) : null,
       hasExport: this.track.length > 0,
     };
   }

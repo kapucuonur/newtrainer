@@ -1,4 +1,4 @@
-import { parseIndoorBikeData } from './ftms';
+import { parseFeatureBits, parseIndoorBikeData } from './ftms';
 import { parseHeartRateMeasurement } from './heartRate';
 
 /** Lightweight self-check runnable via `npx tsx src/bluetooth/ftms.parse.test.ts` */
@@ -29,6 +29,30 @@ function assert(condition: boolean, message: string): void {
   view.setUint8(1, 142);
   const hr = parseHeartRateMeasurement(view);
   assert(hr.bpm === 142, `hr expected 142 got ${hr.bpm}`);
+}
+
+// Fitness Machine Feature: Target Setting Features
+// bit2 resistance, bit3 power, bit13 indoor bike simulation
+{
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setUint32(0, 1 << 14, true); // power measurement
+  view.setUint32(4, (1 << 2) | (1 << 3) | (1 << 13), true);
+  const caps = parseFeatureBits(view);
+  assert(caps.supportsTargetResistance, 'expected resistance target bit2');
+  assert(caps.supportsTargetPower, 'expected power target bit3');
+  assert(caps.supportsIndoorBikeSimulation, 'expected SIM bit13');
+}
+
+{
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setUint32(0, 0, true);
+  view.setUint32(4, 1 << 13, true); // SIM only — no power target
+  const caps = parseFeatureBits(view);
+  assert(!caps.supportsTargetPower, 'power target should be false');
+  assert(!caps.supportsTargetResistance, 'resistance target should be false');
+  assert(caps.supportsIndoorBikeSimulation, 'SIM should be true');
 }
 
 console.log('FTMS / HR parse checks passed');

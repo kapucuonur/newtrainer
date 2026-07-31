@@ -9,7 +9,7 @@ import type {
 
 /**
  * Software trainer for UI development and browsers without hardware.
- * Simulates cadence/power/speed and responds to grade/resistance changes.
+ * Simulates cadence/power/speed and responds to grade/resistance/ERG changes.
  */
 export class MockTrainer implements BikeTrainer {
   readonly kind = 'mock' as const;
@@ -21,6 +21,7 @@ export class MockTrainer implements BikeTrainer {
   private timer: number | null = null;
   private gradePercent = 0;
   private resistanceLevel = 20;
+  private targetPowerWatts: number | null = null;
   private riding = false;
   private distanceMeters = 0;
   private effort = 0.72; // 0–1 user effort knob
@@ -34,6 +35,7 @@ export class MockTrainer implements BikeTrainer {
       supportsTargetResistance: true,
       supportsIndoorBikeSimulation: true,
       supportsPowerMeasurement: true,
+      supportsTargetPower: true,
     };
   }
 
@@ -62,6 +64,7 @@ export class MockTrainer implements BikeTrainer {
   async disconnect(): Promise<void> {
     this.stopLoop();
     this.riding = false;
+    this.targetPowerWatts = null;
     this.setState('disconnected');
   }
 
@@ -74,8 +77,14 @@ export class MockTrainer implements BikeTrainer {
   }
 
   async setTargetResistance(level: number): Promise<void> {
+    this.targetPowerWatts = null;
     this.resistanceLevel = Math.max(0, Math.min(100, level));
     this.gradePercent = (this.resistanceLevel - 20) / 4;
+  }
+
+  async setTargetPower(watts: number | null): Promise<void> {
+    this.targetPowerWatts =
+      watts == null ? null : Math.max(0, Math.min(4000, Math.round(watts)));
   }
 
   async setSimulation(params: {
@@ -84,6 +93,7 @@ export class MockTrainer implements BikeTrainer {
     crr?: number;
     cw?: number;
   }): Promise<void> {
+    this.targetPowerWatts = null;
     this.gradePercent = params.gradePercent;
     this.resistanceLevel = Math.max(0, Math.min(100, 20 + params.gradePercent * 4));
   }
@@ -101,19 +111,32 @@ export class MockTrainer implements BikeTrainer {
       const dt = Math.min(0.25, (now - last) / 1000);
       last = now;
 
-      const gradeFactor = 1 - Math.max(-0.35, Math.min(0.55, this.gradePercent / 12));
-      const basePower = 90 + this.effort * 220;
-      const powerWatts = Math.round(
-        Math.max(40, basePower * gradeFactor + Math.sin(now / 900) * 8),
-      );
-      const cadenceRpm = Math.round(70 + this.effort * 25 + Math.sin(now / 700) * 3);
-      // Rough virtual speed from power and grade
-      const flatSpeed = 8 + Math.sqrt(Math.max(powerWatts, 1)) * 1.15;
-      const speedMs = Math.max(1.5, flatSpeed * gradeFactor);
-      const speedKmh = speedMs * 3.6;
+      let powerWatts: number;
+      let cadenceRpm: number;
+      let speedKmh: number;
+
+      if (this.targetPowerWatts != null) {
+        // ERG: hold near target regardless of grade.
+        powerWatts = Math.round(
+          this.targetPowerWatts + Math.sin(now / 900) * 4,
+        );
+        cadenceRpm = Math.round(85 + Math.sin(now / 700) * 2);
+        const speedMs = Math.max(1.8, 2.4 + Math.sqrt(Math.max(powerWatts, 1)) * 0.32);
+        speedKmh = speedMs * 3.6;
+      } else {
+        const gradeFactor = 1 - Math.max(-0.35, Math.min(0.55, this.gradePercent / 12));
+        const basePower = 90 + this.effort * 220;
+        powerWatts = Math.round(
+          Math.max(40, basePower * gradeFactor + Math.sin(now / 900) * 8),
+        );
+        cadenceRpm = Math.round(70 + this.effort * 25 + Math.sin(now / 700) * 3);
+        const flatSpeed = 8 + Math.sqrt(Math.max(powerWatts, 1)) * 1.15;
+        const speedMs = Math.max(1.5, flatSpeed * gradeFactor);
+        speedKmh = speedMs * 3.6;
+      }
 
       if (this.riding) {
-        this.distanceMeters += speedMs * dt;
+        this.distanceMeters += (speedKmh / 3.6) * dt;
       }
 
       const data: IndoorBikeData = {

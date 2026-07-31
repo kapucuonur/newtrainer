@@ -44,7 +44,7 @@ import {
   canBuildRoute,
   nextWaypointLabel,
 } from './routing/waypoints';
-import { RideEngine, type RideTelemetry } from './simulation/rideEngine';
+import { RideEngine, type RidePowerMode, type RideTelemetry } from './simulation/rideEngine';
 import { AuthPanel } from './ui/AuthPanel';
 import { ConnectionPanel } from './ui/ConnectionPanel';
 import { ElevationProfile } from './ui/ElevationProfile';
@@ -71,6 +71,10 @@ const idleTelemetry: RideTelemetry = {
   trainerResistanceHint: 20,
   trainerGradeSent: null,
   trainerControlMode: null,
+  powerMode: 'free',
+  targetPowerWatts: null,
+  ergHardwareActive: false,
+  supportsTargetPower: null,
   hasExport: false,
 };
 
@@ -515,6 +519,14 @@ export default function App() {
     setHrName(t('hr.defaultName'));
     setHrErrorMessage(null);
   };
+
+  const onPowerModeChange = useCallback((mode: RidePowerMode) => {
+    void engineRef.current.setPowerMode(mode);
+  }, []);
+
+  const onTargetPowerChange = useCallback((watts: number | null) => {
+    void engineRef.current.setTargetPowerWatts(watts);
+  }, []);
 
   const addWaypoint = useCallback(
     (point: LatLng) => {
@@ -1012,6 +1024,7 @@ export default function App() {
   };
 
   const canSaveToProfile = Boolean(user && isCloudApiEnabled() && savedRideId == null);
+  const ftpWatts = user?.profile?.ftp && user.profile.ftp > 0 ? user.profile.ftp : 250;
 
   const mapPeers: MapPeer[] = useMemo(() => {
     if (!user || !groupMode) return [];
@@ -1146,6 +1159,11 @@ export default function App() {
         usingMock={usingMock}
         wifiMessage={t(wifiCode)}
         mockEffort={mockEffort}
+        ftpWatts={ftpWatts}
+        powerMode={telemetry.powerMode}
+        targetPowerWatts={telemetry.targetPowerWatts}
+        supportsTargetPower={telemetry.supportsTargetPower}
+        ergHardwareActive={telemetry.ergHardwareActive}
         onConnectTrainer={() => void connectFtms()}
         onDisconnectTrainer={() => void disconnectTrainer()}
         onUseMock={() => void enableMockTrainer()}
@@ -1153,6 +1171,8 @@ export default function App() {
         onDisconnectHr={() => void disconnectHr()}
         onProbeWifi={() => void onProbeWifi()}
         onMockEffort={setMockEffort}
+        onPowerModeChange={onPowerModeChange}
+        onTargetPowerChange={onTargetPowerChange}
         onOpenAccount={onOpenAccount}
         onClosePanel={closePanel}
       >
@@ -1291,6 +1311,7 @@ export default function App() {
               <RideHUD
                 telemetry={telemetry}
                 riderWeightKg={user?.profile?.weightKg ?? 75}
+                ftpWatts={ftpWatts}
               />
             </div>
           </div>
