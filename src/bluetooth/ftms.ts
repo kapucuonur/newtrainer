@@ -9,6 +9,7 @@ import type {
 import {
   describeBluetoothError,
   gattSettle,
+  isBluefyBrowser,
   isWebBluetoothSupported,
   requestBluetoothDevice,
   toBluetoothUuid,
@@ -31,10 +32,24 @@ const OP = {
   setIndoorBikeSimulation: 0x11,
 } as const;
 
-export function parseIndoorBikeData(view: DataView): IndoorBikeData {
-  const flags = view.getUint16(0, true);
-  let offset = 2;
+const BIKE_VALUE_POLL_MS = 400;
+const BIKE_NOTIFY_REARM_MS = 2500;
 
+function hasBytes(view: DataView, offset: number, size: number): boolean {
+  return offset + size <= view.byteLength;
+}
+
+function rawKey(view: DataView): string {
+  const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  return String.fromCharCode(...bytes);
+}
+
+/**
+ * FTMS Indoor Bike Data (0x2AD2).
+ * Bit 0 "More Data" is inverted: 0 → Instantaneous Speed present; 1 → absent.
+ * Reads are bounds-checked so short/partial Bluefy packets never throw.
+ */
+export function parseIndoorBikeData(view: DataView): IndoorBikeData {
   let speedKmh: number | null = null;
   let cadenceRpm: number | null = null;
   let distanceMeters: number | null = null;
@@ -42,39 +57,68 @@ export function parseIndoorBikeData(view: DataView): IndoorBikeData {
   let powerWatts: number | null = null;
   let heartRateBpm: number | null = null;
 
+  if (!hasBytes(view, 0, 2)) {
+    return {
+      speedKmh,
+      cadenceRpm,
+      powerWatts,
+      distanceMeters,
+      resistanceLevel,
+      heartRateBpm,
+      timestamp: Date.now(),
+    };
+  }
+
+  const flags = view.getUint16(0, true);
+  let offset = 2;
+
+  // Bit 0 = More Data: when CLEAR, Instantaneous Speed (uint16, 0.01 km/h) is present.
   const moreData = (flags & 0x0001) !== 0;
   if (!moreData) {
-    speedKmh = view.getUint16(offset, true) / 100;
+    if (hasBytes(view, offset, 2)) {
+      speedKmh = view.getUint16(offset, true) / 100;
+    }
     offset += 2;
   }
 
   if (flags & 0x0002) offset += 2; // average speed
   if (flags & 0x0004) {
-    cadenceRpm = view.getUint16(offset, true) / 2;
+    if (hasBytes(view, offset, 2)) {
+      cadenceRpm = view.getUint16(offset, true) / 2;
+    }
     offset += 2;
   }
   if (flags & 0x0008) offset += 2; // average cadence
   if (flags & 0x0010) {
-    distanceMeters =
-      view.getUint8(offset) |
-      (view.getUint8(offset + 1) << 8) |
-      (view.getUint8(offset + 2) << 16);
+    if (hasBytes(view, offset, 3)) {
+      distanceMeters =
+        view.getUint8(offset) |
+        (view.getUint8(offset + 1) << 8) |
+        (view.getUint8(offset + 2) << 16);
+    }
     offset += 3;
   }
   if (flags & 0x0020) {
-    resistanceLevel = view.getInt16(offset, true);
+    if (hasBytes(view, offset, 2)) {
+      resistanceLevel = view.getInt16(offset, true);
+    }
     offset += 2;
   }
   if (flags & 0x0040) {
-    powerWatts = view.getInt16(offset, true);
+    if (hasBytes(view, offset, 2)) {
+      powerWatts = view.getInt16(offset, true);
+    }
     offset += 2;
   }
   if (flags & 0x0080) offset += 2; // average power
   if (flags & 0x0100) offset += 5; // expended energy
   if (flags & 0x0200) {
-    heartRateBpm = view.getUint8(offset);
+    if (hasBytes(view, offset, 1)) {
+      heartRateBpm = view.getUint8(offset);
+    }
     offset += 1;
   }
+  // Remaining optional fields (MET, elapsed, remaining) ignored — after HR.
 
   return {
     speedKmh,
@@ -125,14 +169,24 @@ export class FtmsTrainer implements BikeTrainer {
   };
   private dataListeners = new Set<TrainerDataListener>();
   private connectionListeners = new Set<ConnectionListener>();
+  private lastDataAt = 0;
+  private lastRawKey = '';
+  private lastRearmAt = 0;
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private rearmInFlight = false;
+
   private boundOnDisconnected = () => {
     this.handleDisconnect('Trainer disconnected');
   };
   private boundOnBikeData = (event: Event) => {
-    const char = event.target as BluetoothRemoteGATTCharacteristic;
-    if (!char.value) return;
-    const data = parseIndoorBikeData(char.value);
-    for (const listener of this.dataListeners) listener(data);
+    try {
+      const char = (event.target as BluetoothRemoteGATTCharacteristic | null) ?? this.bikeDataChar;
+      const value = char?.value;
+      if (!value || value.byteLength < 2) return;
+      this.dispatchBikeData(value);
+    } catch {
+      // Never let a bad packet kill the notification path.
+    }
   };
 
   getState(): ConnectionState {
@@ -218,23 +272,24 @@ export class FtmsTrainer implements BikeTrainer {
       }
       await gattSettle();
 
+      this.bikeDataChar = await service.getCharacteristic(toBluetoothUuid(INDOOR_BIKE_DATA));
+      await gattSettle();
+
       this.controlPoint = await service.getCharacteristic(
         toBluetoothUuid(FITNESS_MACHINE_CONTROL_POINT),
       );
       await gattSettle();
-      this.bikeDataChar = await service.getCharacteristic(toBluetoothUuid(INDOOR_BIKE_DATA));
+
+      // Telemetry first: bike data notify is more important than control indications.
+      await this.attachBikeDataNotifications();
       await gattSettle();
 
-      // FTMS: enable Control Point indications before any opcode writes.
+      // FTMS: enable Control Point indications before opcode writes.
       try {
         await this.controlPoint.startNotifications();
       } catch {
         // Indicate may still work via startNotifications on some stacks; continue.
       }
-      await gattSettle();
-
-      this.bikeDataChar.addEventListener('characteristicvaluechanged', this.boundOnBikeData);
-      await this.startNotificationsWithRetry(this.bikeDataChar);
       await gattSettle();
 
       // Request control is best-effort — keep telemetry link even if opcode fails.
@@ -245,12 +300,105 @@ export class FtmsTrainer implements BikeTrainer {
         // Trainer may still stream Indoor Bike Data without granted control.
       }
 
+      this.lastRearmAt = Date.now();
+      this.startBikeDataWatchdog();
       this.setState('connected');
     } catch (error) {
       const message = describeBluetoothError(error);
       await this.cleanup();
       this.setState('error', message);
       throw error;
+    }
+  }
+
+  private async attachBikeDataNotifications(): Promise<void> {
+    if (!this.bikeDataChar) return;
+    this.bikeDataChar.removeEventListener(
+      'characteristicvaluechanged',
+      this.boundOnBikeData,
+    );
+    this.bikeDataChar.addEventListener(
+      'characteristicvaluechanged',
+      this.boundOnBikeData,
+    );
+    // Some WebBLE bridges only wire the on* property, not addEventListener.
+    try {
+      (
+        this.bikeDataChar as BluetoothRemoteGATTCharacteristic & {
+          oncharacteristicvaluechanged?: ((ev: Event) => void) | null;
+        }
+      ).oncharacteristicvaluechanged = this.boundOnBikeData;
+    } catch {
+      // ignore
+    }
+    await this.startNotificationsWithRetry(this.bikeDataChar);
+  }
+
+  private dispatchBikeData(view: DataView): void {
+    if (view.byteLength < 2) return;
+    const key = rawKey(view);
+    const now = Date.now();
+    // Drop exact duplicates within a short window (poll + notify both fire).
+    if (key === this.lastRawKey && now - this.lastDataAt < 80) return;
+    this.lastRawKey = key;
+    this.lastDataAt = now;
+    const data = parseIndoorBikeData(view);
+    for (const listener of this.dataListeners) listener(data);
+  }
+
+  /**
+   * Bluefy sometimes updates characteristic.value without dispatching
+   * characteristicvaluechanged. Poll the cache; re-arm CCCD if stale.
+   */
+  private startBikeDataWatchdog(): void {
+    this.stopBikeDataWatchdog();
+    this.pollTimer = setInterval(() => {
+      void this.pollBikeData();
+    }, BIKE_VALUE_POLL_MS);
+  }
+
+  private stopBikeDataWatchdog(): void {
+    if (this.pollTimer != null) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  private async pollBikeData(): Promise<void> {
+    if (!this.bikeDataChar || this.state !== 'connected') return;
+
+    const cached = this.bikeDataChar.value;
+    if (cached && cached.byteLength >= 2) {
+      try {
+        this.dispatchBikeData(cached);
+      } catch {
+        // ignore
+      }
+    }
+
+    const now = Date.now();
+    const silentMs = this.lastDataAt > 0 ? now - this.lastDataAt : now - this.lastRearmAt;
+    if (silentMs < BIKE_NOTIFY_REARM_MS) return;
+    if (this.rearmInFlight) return;
+    this.rearmInFlight = true;
+    try {
+      if (this.bikeDataChar.properties.read) {
+        try {
+          const view = await this.bikeDataChar.readValue();
+          this.dispatchBikeData(view);
+        } catch {
+          // Notify-only characteristics reject read — expected.
+        }
+      }
+      // Bluefy may drop CCCD; Chrome rarely needs this.
+      if (isBluefyBrowser() || this.lastDataAt === 0) {
+        this.lastRearmAt = Date.now();
+        await this.attachBikeDataNotifications();
+      }
+    } catch {
+      // keep trying on next tick
+    } finally {
+      this.rearmInFlight = false;
     }
   }
 
@@ -278,11 +426,26 @@ export class FtmsTrainer implements BikeTrainer {
   }
 
   async start(): Promise<void> {
-    await this.writeControl([OP.startOrResume]);
+    // Re-arm notifications — some trainers only stream after StartOrResume,
+    // and Bluefy may have dropped the CCCD during SIM/ERG writes.
+    try {
+      await this.attachBikeDataNotifications();
+    } catch {
+      // Continue; StartOrResume may still unlock streaming.
+    }
+    try {
+      await this.writeControl([OP.startOrResume]);
+    } catch {
+      // Some trainers stream Indoor Bike Data without StartOrResume.
+    }
   }
 
   async stop(): Promise<void> {
-    await this.writeControl([OP.stopOrPause, 0x01]);
+    try {
+      await this.writeControl([OP.stopOrPause, 0x01]);
+    } catch {
+      // ignore
+    }
   }
 
   async setTargetResistance(level: number): Promise<void> {
@@ -362,12 +525,27 @@ export class FtmsTrainer implements BikeTrainer {
   }
 
   private async cleanup(): Promise<void> {
+    this.stopBikeDataWatchdog();
+    this.lastDataAt = 0;
+    this.lastRawKey = '';
+    this.lastRearmAt = 0;
+    this.rearmInFlight = false;
+
     try {
       if (this.bikeDataChar) {
         this.bikeDataChar.removeEventListener(
           'characteristicvaluechanged',
           this.boundOnBikeData,
         );
+        try {
+          (
+            this.bikeDataChar as BluetoothRemoteGATTCharacteristic & {
+              oncharacteristicvaluechanged?: ((ev: Event) => void) | null;
+            }
+          ).oncharacteristicvaluechanged = null;
+        } catch {
+          // ignore
+        }
         try {
           await this.bikeDataChar.stopNotifications();
         } catch {

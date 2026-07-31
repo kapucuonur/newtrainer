@@ -46,6 +46,22 @@ export type RideTelemetryListener = (telemetry: RideTelemetry) => void;
 
 const SAMPLE_INTERVAL_MS = 1000;
 
+/** Keep last-known fields — trainers often alternate speed-only / power-only packets. */
+function mergeBikeData(
+  prev: IndoorBikeData | null,
+  next: IndoorBikeData,
+): IndoorBikeData {
+  return {
+    speedKmh: next.speedKmh ?? prev?.speedKmh ?? null,
+    cadenceRpm: next.cadenceRpm ?? prev?.cadenceRpm ?? null,
+    powerWatts: next.powerWatts ?? prev?.powerWatts ?? null,
+    distanceMeters: next.distanceMeters ?? prev?.distanceMeters ?? null,
+    resistanceLevel: next.resistanceLevel ?? prev?.resistanceLevel ?? null,
+    heartRateBpm: next.heartRateBpm ?? prev?.heartRateBpm ?? null,
+    timestamp: next.timestamp,
+  };
+}
+
 /**
  * Advances a virtual bike along a polyline using trainer speed/power,
  * and pushes elevation grade to the trainer (SIM / resistance) — unless ERG is active.
@@ -91,10 +107,13 @@ export class RideEngine {
     this.unsubTrainer?.();
     this.unsubTrainer = null;
     this.trainer = trainer;
+    this.lastBike = null;
     this.ergHardwareActive = false;
     if (trainer) {
       this.unsubTrainer = trainer.onData((data) => {
-        this.lastBike = data;
+        this.lastBike = mergeBikeData(this.lastBike, data);
+        // Emit immediately so HUD updates even before the RAF loop starts.
+        this.emit();
       });
       // Re-apply mode against new trainer capabilities.
       void this.syncTrainerPowerControl(true);
@@ -107,6 +126,7 @@ export class RideEngine {
 
   setHeartRate(bpm: number | null): void {
     this.heartRateBpm = bpm;
+    this.emit();
   }
 
   getPowerMode(): RidePowerMode {
@@ -173,10 +193,19 @@ export class RideEngine {
     this.phase = 'riding';
     this.lastTick = performance.now();
     this.recordSample(true);
-    await this.trainer?.start();
-    await this.syncTrainerPowerControl(true);
-    if (!this.ergHardwareActive) {
-      await this.applyGrade(true);
+    // Always start the RAF loop — trainer opcodes must not block map/HUD progress.
+    try {
+      await this.trainer?.start();
+    } catch {
+      // StartOrResume may fail; Indoor Bike Data can still stream.
+    }
+    try {
+      await this.syncTrainerPowerControl(true);
+      if (!this.ergHardwareActive) {
+        await this.applyGrade(true);
+      }
+    } catch {
+      // SIM/ERG writes are best-effort.
     }
     this.loop();
     this.emit();
@@ -187,7 +216,11 @@ export class RideEngine {
     this.recordSample(true);
     this.phase = 'paused';
     cancelAnimationFrame(this.raf);
-    await this.trainer?.stop();
+    try {
+      await this.trainer?.stop();
+    } catch {
+      // ignore
+    }
     this.emit();
   }
 
@@ -195,8 +228,16 @@ export class RideEngine {
     if (this.phase !== 'paused') return;
     this.phase = 'riding';
     this.lastTick = performance.now();
-    await this.trainer?.start();
-    await this.syncTrainerPowerControl(true);
+    try {
+      await this.trainer?.start();
+    } catch {
+      // ignore
+    }
+    try {
+      await this.syncTrainerPowerControl(true);
+    } catch {
+      // ignore
+    }
     this.loop();
     this.emit();
   }
@@ -277,7 +318,7 @@ export class RideEngine {
 
     const bike = this.lastBike;
     const speedKmh =
-      bike?.speedKmh && bike.speedKmh > 0.5
+      bike?.speedKmh != null && bike.speedKmh > 0.5
         ? bike.speedKmh
         : this.phase === 'riding'
           ? this.resolveSpeedKmh()
@@ -307,9 +348,9 @@ export class RideEngine {
 
   private resolveSpeedKmh(): number {
     const bike = this.lastBike;
-    if (bike?.speedKmh && bike.speedKmh > 0.5) return bike.speedKmh;
+    if (bike?.speedKmh != null && bike.speedKmh > 0.5) return bike.speedKmh;
 
-    // Power → speed estimate when trainer omits speed
+    // Power → speed estimate when trainer omits Instantaneous Speed (moreData flag).
     const power = bike?.powerWatts ?? 0;
     if (power > 0) {
       const at = this.route
@@ -318,6 +359,12 @@ export class RideEngine {
       const gradeFactor = 1 - Math.max(-0.3, Math.min(0.5, at.gradePercent / 14));
       const speedMs = Math.max(1.2, (2.2 + Math.sqrt(power) * 0.35) * gradeFactor);
       return speedMs * 3.6;
+    }
+
+    // Cadence-only trainers: rough flat-road estimate so the map still advances.
+    const cadence = bike?.cadenceRpm ?? 0;
+    if (cadence > 40) {
+      return Math.max(8, (cadence / 70) * 25);
     }
 
     return 0;
@@ -417,7 +464,10 @@ export class RideEngine {
         routeDistanceMeters > 0
           ? Math.min(1, this.distanceMeters / routeDistanceMeters)
           : 0,
-      speedKmh: bike?.speedKmh ?? (this.phase === 'riding' ? this.resolveSpeedKmh() : 0),
+      speedKmh:
+        this.phase === 'riding' || this.phase === 'paused'
+          ? this.resolveSpeedKmh()
+          : (bike?.speedKmh ?? 0),
       powerWatts: bike?.powerWatts ?? 0,
       cadenceRpm: bike?.cadenceRpm ?? 0,
       heartRateBpm: this.heartRateBpm ?? bike?.heartRateBpm ?? null,

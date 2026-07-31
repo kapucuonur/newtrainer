@@ -22,6 +22,30 @@ function assert(condition: boolean, message: string): void {
   assert(parsed.powerWatts === 220, `power expected 220 got ${parsed.powerWatts}`);
 }
 
+// moreData=1 → Instantaneous Speed omitted; cadence + power only
+{
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setUint16(0, 0x0045, true); // moreData + cadence + power
+  view.setUint16(2, 180, true); // 90 rpm
+  view.setInt16(4, 210, true); // 210 W
+  const parsed = parseIndoorBikeData(view);
+  assert(parsed.speedKmh === null, `speed expected null got ${parsed.speedKmh}`);
+  assert(parsed.cadenceRpm === 90, `cadence expected 90 got ${parsed.cadenceRpm}`);
+  assert(parsed.powerWatts === 210, `power expected 210 got ${parsed.powerWatts}`);
+}
+
+// Truncated packet must not throw
+{
+  const buffer = new ArrayBuffer(2);
+  const view = new DataView(buffer);
+  view.setUint16(0, 0x0044, true); // claims cadence+power but no payload
+  const parsed = parseIndoorBikeData(view);
+  assert(parsed.speedKmh === null, 'truncated: speed null');
+  assert(parsed.cadenceRpm === null, 'truncated: cadence null');
+  assert(parsed.powerWatts === null, 'truncated: power null');
+}
+
 {
   const buffer = new ArrayBuffer(2);
   const view = new DataView(buffer);

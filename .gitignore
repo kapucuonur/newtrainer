@@ -35,3 +35,9 @@ backend/data/
 backend/node_modules/
 *.sqlite
 *.sqlite-*
+
+# Android signing (never commit)
+android/keystore/
+android/keystore.properties
+*.jks
+*.keystore
