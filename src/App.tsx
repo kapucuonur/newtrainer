@@ -105,8 +105,10 @@ export default function App() {
   const [usingMock, setUsingMock] = useState(false);
   const [trainerState, setTrainerState] = useState<ConnectionState>('disconnected');
   const [trainerName, setTrainerName] = useState('FTMS Trainer');
+  const [trainerErrorMessage, setTrainerErrorMessage] = useState<string | null>(null);
   const [hrState, setHrState] = useState<ConnectionState>('disconnected');
   const [hrName, setHrName] = useState('Heart Rate');
+  const [hrErrorMessage, setHrErrorMessage] = useState<string | null>(null);
   const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [mockEffort, setMockEffort] = useState(0.72);
   const [wifiCode, setWifiCode] = useState<MessageKey>('wifi.default');
@@ -172,9 +174,10 @@ export default function App() {
 
   useEffect(() => {
     const hr = hrRef.current;
-    const offConn = hr.onConnection((state) => {
+    const offConn = hr.onConnection((state, message) => {
       setHrState(state);
       setHrName(hr.name);
+      setHrErrorMessage(state === 'error' ? (message ?? null) : null);
     });
     const offSample = hr.onSample((sample) => {
       setHrBpm(sample.bpm);
@@ -440,9 +443,10 @@ export default function App() {
     setUsingMock(mock);
     setTrainerName(next.name);
     engineRef.current.attachTrainer(next);
-    trainerUnsubRef.current = next.onConnection((state) => {
+    trainerUnsubRef.current = next.onConnection((state, message) => {
       setTrainerState(state);
       setTrainerName(next.name);
+      setTrainerErrorMessage(state === 'error' ? (message ?? null) : null);
     });
   }, []);
 
@@ -488,6 +492,7 @@ export default function App() {
     setUsingMock(false);
     setTrainerState('disconnected');
     setTrainerName(t('trainer.defaultName'));
+    setTrainerErrorMessage(null);
   };
 
   const connectHr = async () => {
@@ -505,6 +510,7 @@ export default function App() {
     setHrBpm(null);
     engineRef.current.setHeartRate(null);
     setHrName(t('hr.defaultName'));
+    setHrErrorMessage(null);
   };
 
   const addWaypoint = useCallback(
@@ -1129,8 +1135,10 @@ export default function App() {
         deviceGateMessage={deviceGateMessage}
         trainerState={trainerState}
         trainerName={trainerName}
+        trainerErrorMessage={trainerErrorMessage}
         hrState={hrState}
         hrName={hrName}
+        hrErrorMessage={hrErrorMessage}
         hrBpm={hrBpm}
         usingMock={usingMock}
         wifiMessage={t(wifiCode)}

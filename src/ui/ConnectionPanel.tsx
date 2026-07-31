@@ -20,8 +20,10 @@ type Props = {
   deviceGateMessage: string | null;
   trainerState: ConnectionState;
   trainerName: string;
+  trainerErrorMessage: string | null;
   hrState: ConnectionState;
   hrName: string;
+  hrErrorMessage: string | null;
   hrBpm: number | null;
   usingMock: boolean;
   wifiMessage: string;
@@ -55,8 +57,10 @@ export function ConnectionPanel({
   deviceGateMessage,
   trainerState,
   trainerName,
+  trainerErrorMessage,
   hrState,
   hrName,
+  hrErrorMessage,
   hrBpm,
   usingMock,
   wifiMessage,
@@ -151,6 +155,10 @@ export function ConnectionPanel({
             <span className="status-label">{trainerStatus}</span>
           </div>
 
+          {trainerState === 'error' && trainerErrorMessage && (
+            <p className="device-error-text">{trainerErrorMessage}</p>
+          )}
+
           <div className="btn-row">
             {trainerState === 'connected' && !usingMock ? (
               <button
@@ -218,6 +226,10 @@ export function ConnectionPanel({
               {hrStatus} {hrBpm != null ? `(${hrBpm} bpm)` : ''}
             </span>
           </div>
+
+          {hrState === 'error' && hrErrorMessage && (
+            <p className="device-error-text">{hrErrorMessage}</p>
+          )}
 
           <div className="btn-row">
             {hrState === 'connected' ? (

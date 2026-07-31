@@ -484,6 +484,14 @@ select {
   line-height: 1.35;
 }
 
+.device-error-text {
+  font-size: 0.75rem;
+  color: var(--danger);
+  margin: 0;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 /* Status Indicator Dots */
 .status-dot {
   width: 8px;
