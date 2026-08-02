@@ -2051,6 +2051,14 @@ select {
   border-radius: var(--radius-sm);
   padding: 8px;
   font-size: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ride-history-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .ride-history-date {

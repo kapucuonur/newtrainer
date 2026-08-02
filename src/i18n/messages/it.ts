@@ -117,6 +117,10 @@ export const it: Messages = {
     'Solo riepiloghi — mappe, traccia GPS e FIT/GPX restano sul dispositivo.',
   'auth.rideHistoryEmpty': 'Nessun riepilogo salvato.',
   'auth.rideUntitled': 'Corsa',
+  'auth.downloadSummaryFit': 'Scarica FIT (riepilogo)',
+  'auth.summaryFitHint': 'FIT riepilogo — senza traccia GPS o curva di potenza.',
+  'auth.summaryFitReady': 'FIT riepilogo scaricato',
+  'auth.summaryFitFailed': 'Impossibile creare il FIT riepilogo',
 
   'phase.idle': 'INATTIVO',
   'phase.ready': 'PRONTO',
@@ -155,6 +159,10 @@ export const it: Messages = {
   'route.elevationUnavailable':
     'Dati altimetrici non disponibili — pendenza trainer piatta. Ricrea il percorso.',
   'route.noExport': 'Nessuna traccia da esportare',
+  'route.exportStarted': 'Download avviato',
+  'route.exportShared': 'Foglio Condividi aperto — salva o invia il file',
+  'route.exportOpened': 'File aperto — usa Condividi / Salva nel browser',
+  'route.exportFailed': 'Esportazione non riuscita: {{detail}}',
   'route.noSave': 'Nessun riepilogo da salvare',
   'route.loginToSave': 'Accedi per salvare il riepilogo',
   'route.alreadySaved': 'Questo riepilogo è già salvato',

@@ -66,6 +66,7 @@ type Props = {
   canSaveToProfile?: boolean;
   saveBusy?: boolean;
   saveMessage?: string | null;
+  exportMessage?: string | null;
   onSaveToProfile?: () => void;
   hideStart?: boolean;
   /** Direct preset route selector callback */
@@ -226,6 +227,7 @@ export function RouteControls({
   canSaveToProfile = false,
   saveBusy = false,
   saveMessage = null,
+  exportMessage = null,
   onSaveToProfile,
   hideStart = false,
   onSelectPresetRoute,
@@ -492,6 +494,7 @@ export function RouteControls({
               </button>
             )}
           </div>
+          {exportMessage && <p className="auth-message">{exportMessage}</p>}
           {saveMessage && <p className="auth-message">{saveMessage}</p>}
         </div>
       )}

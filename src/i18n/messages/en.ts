@@ -113,6 +113,10 @@ export const en = {
     'Summaries only — maps, GPS tracks, and FIT/GPX stay on your device.',
   'auth.rideHistoryEmpty': 'No saved summaries yet.',
   'auth.rideUntitled': 'Ride',
+  'auth.downloadSummaryFit': 'Download FIT (summary)',
+  'auth.summaryFitHint': 'Summary FIT — no GPS track or power curve.',
+  'auth.summaryFitReady': 'Summary FIT downloaded',
+  'auth.summaryFitFailed': 'Could not build summary FIT',
 
   'phase.idle': 'IDLE',
   'phase.ready': 'READY',
@@ -151,6 +155,10 @@ export const en = {
   'route.elevationUnavailable':
     'Elevation data unavailable — trainer grade set to flat. Retry route build.',
   'route.noExport': 'No ride track to export yet',
+  'route.exportStarted': 'Download started',
+  'route.exportShared': 'Share sheet opened — save or AirDrop the file',
+  'route.exportOpened': 'File opened — use Share / Save in the browser menu',
+  'route.exportFailed': 'Could not export file: {{detail}}',
   'route.noSave': 'No ride summary to save',
   'route.loginToSave': 'Log in to save ride summary',
   'route.alreadySaved': 'Already saved this summary',

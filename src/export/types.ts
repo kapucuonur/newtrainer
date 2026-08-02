@@ -18,3 +18,22 @@ export type RideExport = {
   distanceMeters: number;
   points: TrackPoint[];
 };
+
+/**
+ * Summary-only FIT input (no GPS track). Used when regenerating from
+ * server-stored RideSummary after the client track is gone.
+ */
+export type RideSummaryFitInput = {
+  startedAtMs: number;
+  finishedAtMs: number;
+  elapsedSeconds: number;
+  distanceMeters: number;
+  avgPowerWatts?: number | null;
+  maxPowerWatts?: number | null;
+  avgHeartRateBpm?: number | null;
+  maxHeartRateBpm?: number | null;
+  avgSpeedKmh?: number | null;
+  maxSpeedKmh?: number | null;
+  elevationGainMeters?: number | null;
+  routeName?: string | null;
+};

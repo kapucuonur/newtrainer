@@ -117,6 +117,10 @@ export const dk: Messages = {
     'Kun opsummeringer — kort, GPS-spor og FIT/GPX bliver på din enhed.',
   'auth.rideHistoryEmpty': 'Ingen gemte opsummeringer endnu.',
   'auth.rideUntitled': 'Tur',
+  'auth.downloadSummaryFit': 'Download FIT (opsummering)',
+  'auth.summaryFitHint': 'Opsummerings-FIT — intet GPS-spor eller effektkurve.',
+  'auth.summaryFitReady': 'Opsummerings-FIT downloadet',
+  'auth.summaryFitFailed': 'Kunne ikke oprette opsummerings-FIT',
 
   'phase.idle': 'INAKTIV',
   'phase.ready': 'KLAR',
@@ -155,6 +159,10 @@ export const dk: Messages = {
   'route.elevationUnavailable':
     'Højde data utilgængelig — trænerhældning sat til flad. Prøv ruten igen.',
   'route.noExport': 'Intet spor at eksportere endnu',
+  'route.exportStarted': 'Download startet',
+  'route.exportShared': 'Delingsark åbnet — gem eller send filen',
+  'route.exportOpened': 'Fil åbnet — brug Del / Gem i browseren',
+  'route.exportFailed': 'Kunne ikke eksportere: {{detail}}',
   'route.noSave': 'Ingen opsummering at gemme',
   'route.loginToSave': 'Log ind for at gemme opsummering',
   'route.alreadySaved': 'Denne opsummering er allerede gemt',

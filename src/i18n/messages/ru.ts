@@ -117,6 +117,10 @@ export const ru: Messages = {
     'Только сводки — карта, GPS-трек и FIT/GPX остаются на устройстве.',
   'auth.rideHistoryEmpty': 'Сохранённых сводок пока нет.',
   'auth.rideUntitled': 'Заезд',
+  'auth.downloadSummaryFit': 'Скачать FIT (сводка)',
+  'auth.summaryFitHint': 'Сводный FIT — без GPS-трека и кривой мощности.',
+  'auth.summaryFitReady': 'Сводный FIT скачан',
+  'auth.summaryFitFailed': 'Не удалось создать сводный FIT',
 
   'phase.idle': 'ОЖИДАНИЕ',
   'phase.ready': 'ГОТОВ',
@@ -155,6 +159,10 @@ export const ru: Messages = {
   'route.elevationUnavailable':
     'Данные высоты недоступны — уклон тренажёра плоский. Постройте маршрут снова.',
   'route.noExport': 'Нет трека для экспорта',
+  'route.exportStarted': 'Загрузка началась',
+  'route.exportShared': 'Открыто меню «Поделиться» — сохраните или отправьте файл',
+  'route.exportOpened': 'Файл открыт — используйте «Поделиться» / «Сохранить» в браузере',
+  'route.exportFailed': 'Не удалось экспортировать: {{detail}}',
   'route.noSave': 'Нет сводки для сохранения',
   'route.loginToSave': 'Войдите, чтобы сохранить сводку',
   'route.alreadySaved': 'Эта сводка уже сохранена',

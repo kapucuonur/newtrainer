@@ -137,6 +137,7 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [savedRideId, setSavedRideId] = useState<number | null>(null);
   const [rideHistoryRevision, setRideHistoryRevision] = useState(0);
 
@@ -265,6 +266,7 @@ export default function App() {
     if (telemetry.phase === 'finished') {
       setSavedRideId(null);
       setSaveMessage(null);
+      setExportMessage(null);
     }
   }, [telemetry.phase, telemetry.hasExport]);
 
@@ -752,24 +754,56 @@ export default function App() {
       ? t('devices.gateLogin')
       : null;
 
-  const onDownloadFit = () => {
+  const onDownloadFit = async () => {
     const ride = engineRef.current.getExport();
     if (!ride || ride.points.length === 0) {
-      setRouteError(t('route.noExport'));
+      const msg = t('route.noExport');
+      setRouteError(msg);
+      setExportMessage(msg);
       return;
     }
-    setRouteError(null);
-    downloadRideFit(ride);
+    try {
+      const result = await downloadRideFit(ride);
+      setRouteError(null);
+      setExportMessage(
+        result.method === 'share'
+          ? t('route.exportShared')
+          : result.method === 'open'
+            ? t('route.exportOpened')
+            : t('route.exportStarted'),
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      const msg = t('route.exportFailed', { detail });
+      setRouteError(msg);
+      setExportMessage(msg);
+    }
   };
 
-  const onDownloadGpx = () => {
+  const onDownloadGpx = async () => {
     const ride = engineRef.current.getExport();
     if (!ride || ride.points.length === 0) {
-      setRouteError(t('route.noExport'));
+      const msg = t('route.noExport');
+      setRouteError(msg);
+      setExportMessage(msg);
       return;
     }
-    setRouteError(null);
-    downloadRideGpx(ride);
+    try {
+      const result = await downloadRideGpx(ride);
+      setRouteError(null);
+      setExportMessage(
+        result.method === 'share'
+          ? t('route.exportShared')
+          : result.method === 'open'
+            ? t('route.exportOpened')
+            : t('route.exportStarted'),
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      const msg = t('route.exportFailed', { detail });
+      setRouteError(msg);
+      setExportMessage(msg);
+    }
   };
 
   const withAuthError = (error: unknown): string => {
@@ -1264,11 +1298,12 @@ export default function App() {
               onPause={() => void engineRef.current.pause()}
               onResume={() => void engineRef.current.resume()}
               onStop={() => void engineRef.current.stop()}
-              onDownloadFit={onDownloadFit}
-              onDownloadGpx={onDownloadGpx}
+              onDownloadFit={() => void onDownloadFit()}
+              onDownloadGpx={() => void onDownloadGpx()}
               canSaveToProfile={canSaveToProfile}
               saveBusy={saveBusy}
               saveMessage={saveMessage}
+              exportMessage={exportMessage}
               onSaveToProfile={() => void onSaveToProfile()}
               hideStart={hideSoloStart}
               onSelectPresetRoute={(pts) => void handleSelectPreset(pts)}

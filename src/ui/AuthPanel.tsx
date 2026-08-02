@@ -2,9 +2,22 @@ import { useEffect, useState } from 'react';
 import { listRides } from '../api/client';
 import { isCloudApiEnabled } from '../api/config';
 import type { RideSummary, User } from '../api/types';
+import { downloadRideSummaryFit } from '../export';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
-import { User as UserIcon, Lock, Mail, History, Save, LogOut, Award, Shield, UserPlus, LogIn } from 'lucide-react';
+import {
+  User as UserIcon,
+  Lock,
+  Mail,
+  History,
+  Save,
+  LogOut,
+  Award,
+  Shield,
+  UserPlus,
+  LogIn,
+  Download,
+} from 'lucide-react';
 
 type Props = {
   user: User | null;
@@ -68,6 +81,21 @@ export function AuthPanel({
   const [bikeWeightKg, setBikeWeightKg] = useState('');
   const [rides, setRides] = useState<RideSummary[]>([]);
   const [ridesLoading, setRidesLoading] = useState(false);
+  const [exportBusyId, setExportBusyId] = useState<number | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+
+  const onDownloadSummaryFit = async (ride: RideSummary) => {
+    setExportBusyId(ride.id);
+    setExportMessage(null);
+    try {
+      await downloadRideSummaryFit(ride);
+      setExportMessage(t('auth.summaryFitReady'));
+    } catch {
+      setExportMessage(t('auth.summaryFitFailed'));
+    } finally {
+      setExportBusyId(null);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -194,6 +222,7 @@ export function AuthPanel({
             <History className="icon-xs" />
             {t('auth.rideHistory')}
           </h3>
+          <p className="device-info-text">{t('auth.summaryFitHint')}</p>
           {ridesLoading && <p className="device-info-text">Loading history...</p>}
           {!ridesLoading && rides.length === 0 && (
             <p className="device-info-text">{t('auth.rideHistoryEmpty')}</p>
@@ -202,12 +231,27 @@ export function AuthPanel({
             <ul className="ride-history-list">
               {rides.map((r) => (
                 <li key={r.id} className="ride-history-item">
-                  <div className="ride-history-date">{formatRideDate(r.createdAt)}</div>
-                  <div className="ride-history-stats">{rideStatsLine(r)}</div>
+                  <div className="ride-history-main">
+                    <div className="ride-history-date">
+                      {formatRideDate(r.startedAt || r.createdAt)}
+                    </div>
+                    <div className="ride-history-stats">{rideStatsLine(r)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={exportBusyId === r.id}
+                    title={t('auth.downloadSummaryFit')}
+                    onClick={() => void onDownloadSummaryFit(r)}
+                  >
+                    <Download className="icon-xs" />
+                    {exportBusyId === r.id ? '…' : 'FIT'}
+                  </button>
                 </li>
               ))}
             </ul>
           )}
+          {exportMessage && <p className="auth-message">{exportMessage}</p>}
         </div>
 
         {message && <p className="auth-message">{message}</p>}

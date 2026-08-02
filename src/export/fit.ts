@@ -1,5 +1,5 @@
 import { FitWriter } from '@markw65/fit-file-writer';
-import type { RideExport } from './types';
+import type { RideExport, RideSummaryFitInput } from './types';
 
 /** FitWriter.latlng expects radians, not degrees. */
 function toSemicircles(writer: FitWriter, degrees: number): number {
@@ -9,6 +9,101 @@ function toSemicircles(writer: FitWriter, degrees: number): number {
 function avg(values: number[]): number {
   if (values.length === 0) return 0;
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function clampHr(bpm: number | null | undefined): number | undefined {
+  if (bpm == null || bpm <= 0) return undefined;
+  return Math.max(0, Math.min(254, Math.round(bpm)));
+}
+
+type SessionSummary = {
+  avg_speed: number;
+  max_speed: number;
+  avg_power: number;
+  max_power: number;
+  avg_cadence: number;
+  max_cadence: number;
+  avg_heart_rate: number;
+  max_heart_rate: number;
+  total_ascent: number;
+  total_descent: number;
+};
+
+function writeLapSessionActivity(
+  writer: FitWriter,
+  start: number,
+  end: number,
+  startDate: Date,
+  timerSeconds: number,
+  totalDistance: number,
+  summary: SessionSummary,
+): void {
+  writer.writeMessage(
+    'event',
+    {
+      timestamp: end,
+      event: 'timer',
+      event_type: 'stop_all',
+    },
+    null,
+    true,
+  );
+
+  writer.writeMessage(
+    'lap',
+    {
+      message_index: { value: 0 },
+      timestamp: end,
+      start_time: start,
+      total_elapsed_time: timerSeconds,
+      total_timer_time: timerSeconds,
+      total_distance: totalDistance,
+      sport: 'cycling',
+      sub_sport: 'indoor_cycling',
+      ...summary,
+      event: 'lap',
+      event_type: 'stop',
+    },
+    null,
+    true,
+  );
+
+  writer.writeMessage(
+    'session',
+    {
+      message_index: { value: 0 },
+      timestamp: end,
+      start_time: start,
+      total_elapsed_time: timerSeconds,
+      total_timer_time: timerSeconds,
+      total_distance: totalDistance,
+      sport: 'cycling',
+      sub_sport: 'indoor_cycling',
+      first_lap_index: 0,
+      num_laps: 1,
+      ...summary,
+      event: 'session',
+      event_type: 'stop',
+    },
+    null,
+    true,
+  );
+
+  const localTimestamp = end - startDate.getTimezoneOffset() * 60;
+  writer.writeMessage(
+    'activity',
+    {
+      timestamp: end,
+      total_timer_time: timerSeconds,
+      num_sessions: 1,
+      type: 'manual',
+      event: 'activity',
+      event_type: 'stop',
+      local_timestamp: localTimestamp,
+    },
+    null,
+    true,
+  );
 }
 
 /**
@@ -69,10 +164,7 @@ export function buildFit(ride: RideExport): Uint8Array {
   for (let i = 0; i < points.length; i++) {
     const p = points[i]!;
     const isLast = i === points.length - 1;
-    const hr =
-      p.heartRateBpm != null && p.heartRateBpm > 0
-        ? Math.max(0, Math.min(254, Math.round(p.heartRateBpm)))
-        : undefined;
+    const hr = clampHr(p.heartRateBpm);
 
     if (hr != null) {
       writer.writeMessage(
@@ -110,17 +202,6 @@ export function buildFit(ride: RideExport): Uint8Array {
     }
   }
 
-  writer.writeMessage(
-    'event',
-    {
-      timestamp: end,
-      event: 'timer',
-      event_type: 'stop_all',
-    },
-    null,
-    true,
-  );
-
   const speeds = points.map((p) => p.speedKmh / 3.6).filter((s) => s > 0);
   const powers = points.map((p) => p.powerWatts).filter((w) => w > 0);
   const cadences = points.map((p) => p.cadenceRpm).filter((c) => c > 0);
@@ -136,7 +217,7 @@ export function buildFit(ride: RideExport): Uint8Array {
     else descent += -delta;
   }
 
-  const summary = {
+  const summary: SessionSummary = {
     avg_speed: avg(speeds),
     max_speed: speeds.length ? Math.max(...speeds) : 0,
     avg_power: Math.round(avg(powers)),
@@ -149,60 +230,157 @@ export function buildFit(ride: RideExport): Uint8Array {
     total_descent: Math.round(descent),
   };
 
+  writeLapSessionActivity(
+    writer,
+    start,
+    end,
+    startDate,
+    timerSeconds,
+    totalDistance,
+    summary,
+  );
+
+  const view = writer.finish();
+  return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+}
+
+/**
+ * Session/activity FIT from saved summary averages — no GPS polyline.
+ * Emits start+end records (flat averages) so importers accept the file.
+ */
+export function buildFitFromSummary(input: RideSummaryFitInput): Uint8Array {
+  const writer = new FitWriter();
+  const startDate = new Date(input.startedAtMs);
+  const endDate = new Date(input.finishedAtMs);
+  const start = writer.time(startDate);
+  const end = writer.time(endDate);
+  const timerSeconds = Math.max(1, Math.round(input.elapsedSeconds));
+  const totalDistance = Math.max(0, input.distanceMeters);
+
+  const avgPower = Math.max(0, Math.round(input.avgPowerWatts ?? 0));
+  const maxPower = Math.max(avgPower, Math.round(input.maxPowerWatts ?? 0));
+  const avgHr = Math.max(0, Math.round(input.avgHeartRateBpm ?? 0));
+  const maxHr = Math.max(avgHr, Math.round(input.maxHeartRateBpm ?? 0));
+  const avgSpeedMs = Math.max(0, (input.avgSpeedKmh ?? 0) / 3.6);
+  const maxSpeedMs = Math.max(avgSpeedMs, (input.maxSpeedKmh ?? 0) / 3.6);
+  const ascent = Math.max(0, Math.round(input.elevationGainMeters ?? 0));
+
   writer.writeMessage(
-    'lap',
+    'file_id',
     {
-      message_index: { value: 0 },
-      timestamp: end,
-      start_time: start,
-      total_elapsed_time: timerSeconds,
-      total_timer_time: timerSeconds,
-      total_distance: totalDistance,
-      sport: 'cycling',
-      sub_sport: 'indoor_cycling',
-      ...summary,
-      event: 'lap',
-      event_type: 'stop',
+      type: 'activity',
+      manufacturer: 'development',
+      product: 0,
+      serial_number: 1,
+      time_created: start,
+      product_name: 'ROADLAB',
     },
     null,
     true,
   );
 
   writer.writeMessage(
-    'session',
+    'device_info',
     {
-      message_index: { value: 0 },
-      timestamp: end,
-      start_time: start,
-      total_elapsed_time: timerSeconds,
-      total_timer_time: timerSeconds,
-      total_distance: totalDistance,
-      sport: 'cycling',
-      sub_sport: 'indoor_cycling',
-      first_lap_index: 0,
-      num_laps: 1,
-      ...summary,
-      event: 'session',
-      event_type: 'stop',
+      timestamp: start,
+      device_index: 0,
+      manufacturer: 'development',
+      product: 0,
+      product_name: 'ROADLAB',
+      software_version: 1,
     },
     null,
     true,
   );
 
-  const localTimestamp = end - startDate.getTimezoneOffset() * 60;
   writer.writeMessage(
-    'activity',
+    'event',
     {
-      timestamp: end,
-      total_timer_time: timerSeconds,
-      num_sessions: 1,
-      type: 'manual',
-      event: 'activity',
-      event_type: 'stop',
-      local_timestamp: localTimestamp,
+      timestamp: start,
+      event: 'timer',
+      event_type: 'start',
     },
     null,
     true,
+  );
+
+  const hrStart = clampHr(avgHr);
+  if (hrStart != null) {
+    writer.writeMessage(
+      'record',
+      {
+        timestamp: start,
+        distance: 0,
+        enhanced_speed: avgSpeedMs,
+        power: avgPower,
+        heart_rate: hrStart,
+      },
+      null,
+      false,
+    );
+  } else {
+    writer.writeMessage(
+      'record',
+      {
+        timestamp: start,
+        distance: 0,
+        enhanced_speed: avgSpeedMs,
+        power: avgPower,
+      },
+      null,
+      false,
+    );
+  }
+
+  const hrEnd = clampHr(maxHr > 0 ? maxHr : avgHr);
+  if (hrEnd != null) {
+    writer.writeMessage(
+      'record',
+      {
+        timestamp: end,
+        distance: totalDistance,
+        enhanced_speed: avgSpeedMs,
+        power: avgPower,
+        heart_rate: hrEnd,
+      },
+      null,
+      true,
+    );
+  } else {
+    writer.writeMessage(
+      'record',
+      {
+        timestamp: end,
+        distance: totalDistance,
+        enhanced_speed: avgSpeedMs,
+        power: avgPower,
+      },
+      null,
+      true,
+    );
+  }
+
+  const summary: SessionSummary = {
+    avg_speed: avgSpeedMs,
+    max_speed: maxSpeedMs,
+    avg_power: avgPower,
+    max_power: maxPower,
+    avg_cadence: 0,
+    max_cadence: 0,
+    avg_heart_rate: avgHr,
+    max_heart_rate: maxHr,
+    total_ascent: ascent,
+    total_descent: 0,
+  };
+
+  writeLapSessionActivity(
+    writer,
+    start,
+    end,
+    startDate,
+    timerSeconds,
+    totalDistance,
+    summary,
   );
 
   const view = writer.finish();

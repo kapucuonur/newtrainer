@@ -115,6 +115,10 @@ export const tr: Messages = {
     'Yalnızca özet — harita, GPS izi ve FIT/GPX cihazınızda kalır.',
   'auth.rideHistoryEmpty': 'Henüz kayıtlı özet yok.',
   'auth.rideUntitled': 'Sürüş',
+  'auth.downloadSummaryFit': 'FIT indir (özet)',
+  'auth.summaryFitHint': 'Özet FIT — GPS izi veya güç eğrisi yok.',
+  'auth.summaryFitReady': 'Özet FIT indirildi',
+  'auth.summaryFitFailed': 'Özet FIT oluşturulamadı',
 
   'phase.idle': 'BOŞTA',
   'phase.ready': 'HAZIR',
@@ -153,6 +157,10 @@ export const tr: Messages = {
   'route.elevationUnavailable':
     'İrtifa verisi alınamadı — trainer eğimi düz. Rotayı yeniden oluşturun.',
   'route.noExport': 'Dışa aktarılacak sürüş izi yok',
+  'route.exportStarted': 'İndirme başladı',
+  'route.exportShared': 'Paylaşım menüsü açıldı — dosyayı kaydedin veya AirDrop edin',
+  'route.exportOpened': 'Dosya açıldı — tarayıcı menüsünden Paylaş / Kaydet kullanın',
+  'route.exportFailed': 'Dosya dışa aktarılamadı: {{detail}}',
   'route.noSave': 'Kaydedilecek sürüş özeti yok',
   'route.loginToSave': 'Sürüş özeti kaydetmek için giriş yapın',
   'route.alreadySaved': 'Bu özet zaten kaydedildi',

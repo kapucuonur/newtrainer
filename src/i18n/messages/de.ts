@@ -116,6 +116,10 @@ export const de: Messages = {
     'Nur Zusammenfassungen — Karte, GPS-Track und FIT/GPX bleiben auf Ihrem Gerät.',
   'auth.rideHistoryEmpty': 'Noch keine gespeicherten Zusammenfassungen.',
   'auth.rideUntitled': 'Fahrt',
+  'auth.downloadSummaryFit': 'FIT laden (Zusammenfassung)',
+  'auth.summaryFitHint': 'Zusammenfassungs-FIT — kein GPS-Track oder Leistungskurve.',
+  'auth.summaryFitReady': 'Zusammenfassungs-FIT heruntergeladen',
+  'auth.summaryFitFailed': 'Zusammenfassungs-FIT konnte nicht erstellt werden',
 
   'phase.idle': 'BEREIT',
   'phase.ready': 'STARTKLAR',
@@ -154,6 +158,10 @@ export const de: Messages = {
   'route.elevationUnavailable':
     'Höhendaten nicht verfügbar — Trainer-Steigung flach. Route erneut erstellen.',
   'route.noExport': 'Noch kein Fahrtrack zum Export',
+  'route.exportStarted': 'Download gestartet',
+  'route.exportShared': 'Freigabe geöffnet — Datei speichern oder teilen',
+  'route.exportOpened': 'Datei geöffnet — im Browser-Menü Teilen / Sichern',
+  'route.exportFailed': 'Export fehlgeschlagen: {{detail}}',
   'route.noSave': 'Keine Zusammenfassung zum Speichern',
   'route.loginToSave': 'Zum Speichern der Zusammenfassung anmelden',
   'route.alreadySaved': 'Diese Zusammenfassung ist bereits gespeichert',

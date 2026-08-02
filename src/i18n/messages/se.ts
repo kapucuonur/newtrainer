@@ -117,6 +117,10 @@ export const se: Messages = {
     'Endast sammanfattningar — karta, GPS-spår och FIT/GPX stannar på din enhet.',
   'auth.rideHistoryEmpty': 'Inga sparade sammanfattningar ännu.',
   'auth.rideUntitled': 'Pass',
+  'auth.downloadSummaryFit': 'Ladda ner FIT (sammanfattning)',
+  'auth.summaryFitHint': 'Sammanfattnings-FIT — ingen GPS-spår eller effektkurva.',
+  'auth.summaryFitReady': 'Sammanfattnings-FIT nedladdad',
+  'auth.summaryFitFailed': 'Kunde inte skapa sammanfattnings-FIT',
 
   'phase.idle': 'INAKTIV',
   'phase.ready': 'REDO',
@@ -155,6 +159,10 @@ export const se: Messages = {
   'route.elevationUnavailable':
     'Höjddata otillgänglig — tränarlutaning satt till flat. Bygg om rutten.',
   'route.noExport': 'Ingen spårning att exportera ännu',
+  'route.exportStarted': 'Nedladdning startad',
+  'route.exportShared': 'Delningsblad öppnat — spara eller skicka filen',
+  'route.exportOpened': 'Fil öppnad — använd Dela / Spara i webbläsaren',
+  'route.exportFailed': 'Kunde inte exportera: {{detail}}',
   'route.noSave': 'Ingen sammanfattning att spara',
   'route.loginToSave': 'Logga in för att spara sammanfattning',
   'route.alreadySaved': 'Denna sammanfattning är redan sparad',

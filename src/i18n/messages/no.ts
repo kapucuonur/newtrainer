@@ -117,6 +117,10 @@ export const no: Messages = {
     'Kun sammendrag — kart, GPS-spor og FIT/GPX blir på enheten din.',
   'auth.rideHistoryEmpty': 'Ingen lagrede sammendrag ennå.',
   'auth.rideUntitled': 'Økt',
+  'auth.downloadSummaryFit': 'Last ned FIT (sammendrag)',
+  'auth.summaryFitHint': 'Sammendrags-FIT — ingen GPS-spor eller effektkurve.',
+  'auth.summaryFitReady': 'Sammendrags-FIT lastet ned',
+  'auth.summaryFitFailed': 'Kunne ikke lage sammendrags-FIT',
 
   'phase.idle': 'INAKTIV',
   'phase.ready': 'KLAR',
@@ -155,6 +159,10 @@ export const no: Messages = {
   'route.elevationUnavailable':
     'Høydedata utilgjengelig — trainerhelning satt til flat. Bygg ruten på nytt.',
   'route.noExport': 'Ingen spor å eksportere ennå',
+  'route.exportStarted': 'Nedlasting startet',
+  'route.exportShared': 'Delingsark åpnet — lagre eller send filen',
+  'route.exportOpened': 'Fil åpnet — bruk Del / Lagre i nettleseren',
+  'route.exportFailed': 'Kunne ikke eksportere: {{detail}}',
   'route.noSave': 'Ingen sammendrag å lagre',
   'route.loginToSave': 'Logg inn for å lagre sammendrag',
   'route.alreadySaved': 'Dette sammendraget er allerede lagret',

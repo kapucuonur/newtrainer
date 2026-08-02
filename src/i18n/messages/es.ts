@@ -117,6 +117,10 @@ export const es: Messages = {
     'Solo resúmenes — mapas, GPS y FIT/GPX se quedan en tu dispositivo.',
   'auth.rideHistoryEmpty': 'Aún no hay resúmenes guardados.',
   'auth.rideUntitled': 'Ruta',
+  'auth.downloadSummaryFit': 'Descargar FIT (resumen)',
+  'auth.summaryFitHint': 'FIT resumen — sin pista GPS ni curva de potencia.',
+  'auth.summaryFitReady': 'FIT resumen descargado',
+  'auth.summaryFitFailed': 'No se pudo crear el FIT resumen',
 
   'phase.idle': 'INACTIVO',
   'phase.ready': 'LISTO',
@@ -155,6 +159,10 @@ export const es: Messages = {
   'route.elevationUnavailable':
     'Datos de elevación no disponibles — pendiente del trainer en plano. Vuelve a crear la ruta.',
   'route.noExport': 'Aún no hay pista para exportar',
+  'route.exportStarted': 'Descarga iniciada',
+  'route.exportShared': 'Menú de compartir abierto — guarda o envía el archivo',
+  'route.exportOpened': 'Archivo abierto — usa Compartir / Guardar en el navegador',
+  'route.exportFailed': 'No se pudo exportar: {{detail}}',
   'route.noSave': 'No hay resumen para guardar',
   'route.loginToSave': 'Inicia sesión para guardar el resumen',
   'route.alreadySaved': 'Este resumen ya está guardado',
