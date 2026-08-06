@@ -1113,6 +1113,11 @@ export default function App() {
     storeMapStyleId(id);
     setMapStyleId(id);
   };
+  // The ride view should always show real satellite imagery — that's the
+  // whole point of dropping the cartoon 3D scene — regardless of whatever
+  // vector style the user had picked for route planning (the style picker
+  // is hidden during a ride anyway, so they'd have no way to switch back).
+  const rideMapStyleId: MapStyleId = followRoad ? 'satellite' : mapStyleId;
 
   const shellClass = [
     'app-shell',
@@ -1347,7 +1352,7 @@ export default function App() {
               pickingEnabled={canPlanRoute && !inGroup}
               peers={mapPeers}
               groupMode={groupMode}
-              styleId={mapStyleId}
+              styleId={rideMapStyleId}
               onStyleIdChange={onMapStyleChange}
               showStylePicker={panelOpen && showMapStylePicker}
             />
