@@ -27,12 +27,16 @@ const WHEEL_RADIUS = 0.34;
 const AVATAR_VISUAL_SCALE = 15;
 const WHEEL_TUBE = 0.045;
 
-const FRAME_COLOR = 0x00e5ff;
-const TIRE_COLOR = 0x14181f;
-const RIM_COLOR = 0xdfe6ee;
-const JERSEY_COLOR = 0xf2f5f8;
-const HELMET_COLOR = 0x00c2e0;
-const LIMB_COLOR = 0x3a4048;
+// Matte carbon-black frame, dark aero kit, white helmet, bare-skin limbs —
+// matched to a real cyclist reference photo/video instead of the earlier
+// neon-cyan "sim" look.
+const FRAME_COLOR = 0x1b1e23;
+const TIRE_COLOR = 0x0e1013;
+const RIM_COLOR = 0x2a2d32;
+const JERSEY_COLOR = 0x24272d;
+const HELMET_COLOR = 0xf1f1ee;
+const CRANK_COLOR = 0x14171b;
+const SKIN_COLOR = 0xc98f66;
 const VISOR_COLOR = 0x0a0d12;
 const PEDAL_COLOR = 0x161a20;
 
@@ -76,17 +80,20 @@ function buildRiderMesh(): { group: THREE.Group; frontWheel: THREE.Group; rearWh
   const group = new THREE.Group();
 
   const tireMat = new THREE.MeshStandardMaterial({ color: TIRE_COLOR, roughness: 0.9 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: RIM_COLOR, roughness: 0.4, metalness: 0.3 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: RIM_COLOR, roughness: 0.35, metalness: 0.5 });
   const frameMat = new THREE.MeshStandardMaterial({
     color: FRAME_COLOR,
-    roughness: 0.35,
-    metalness: 0.15,
-    emissive: 0x00343d,
-    emissiveIntensity: 0.4,
+    roughness: 0.3,
+    metalness: 0.4,
   });
-  const jerseyMat = new THREE.MeshStandardMaterial({ color: JERSEY_COLOR, roughness: 0.7 });
-  const helmetMat = new THREE.MeshStandardMaterial({ color: HELMET_COLOR, roughness: 0.3 });
-  const limbMat = new THREE.MeshStandardMaterial({ color: LIMB_COLOR, roughness: 0.6 });
+  const jerseyMat = new THREE.MeshStandardMaterial({ color: JERSEY_COLOR, roughness: 0.75 });
+  const helmetMat = new THREE.MeshStandardMaterial({ color: HELMET_COLOR, roughness: 0.35 });
+  // Crank arms/pedal-arms are mechanical (dark metal, same family as the
+  // pedal itself) — kept separate from skinMat below, which was previously
+  // one shared "limb" material covering both the bike's crank arms and the
+  // rider's actual bare arms/legs, so tuning either one always affected both.
+  const crankMat = new THREE.MeshStandardMaterial({ color: CRANK_COLOR, roughness: 0.5, metalness: 0.3 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: SKIN_COLOR, roughness: 0.65 });
   const visorMat = new THREE.MeshStandardMaterial({ color: VISOR_COLOR, roughness: 0.2 });
   const pedalMat = new THREE.MeshStandardMaterial({ color: PEDAL_COLOR, roughness: 0.5 });
 
@@ -125,7 +132,7 @@ function buildRiderMesh(): { group: THREE.Group; frontWheel: THREE.Group; rearWh
   const armDirs = [new THREE.Vector3(0, -1, 0.05).normalize(), new THREE.Vector3(0, 1, -0.05).normalize()];
   for (const dir of armDirs) {
     const tip = dir.clone().multiplyScalar(0.17);
-    crank.add(strut(new THREE.Vector3(0, 0, 0), tip, 0.016, limbMat));
+    crank.add(strut(new THREE.Vector3(0, 0, 0), tip, 0.016, crankMat));
     const pedal = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.06), pedalMat);
     pedal.position.copy(tip);
     crank.add(pedal);
@@ -137,30 +144,34 @@ function buildRiderMesh(): { group: THREE.Group; frontWheel: THREE.Group; rearWh
   const shoulder = new THREE.Vector3(0, 1.34, 0.28);
   const torsoDir = new THREE.Vector3().subVectors(shoulder, hip);
   const torso = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.115, Math.max(0.05, torsoDir.length() - 0.23), 4, 8),
+    // Low cap-segment counts (previously 4/8) left the capsule's rounded
+    // ends visibly faceted/undersized at its true radius — at the shoulder
+    // end that showed as a small gap before the head sphere, more obvious
+    // now the helmet (light) contrasts against the jersey (dark).
+    new THREE.CapsuleGeometry(0.115, Math.max(0.05, torsoDir.length() - 0.23), 8, 12),
     jerseyMat,
   );
   torso.position.copy(hip).addScaledVector(torsoDir, 0.5);
   torso.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
   group.add(torso);
 
-  const headPos = shoulder.clone().addScaledVector(torsoDir.clone().normalize(), 0.22);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 8), helmetMat);
+  const headPos = shoulder.clone().addScaledVector(torsoDir.clone().normalize(), 0.18);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 16, 12), helmetMat);
   head.position.copy(headPos);
   group.add(head);
   const visor = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.02), visorMat);
   visor.position.copy(headPos).add(new THREE.Vector3(0, -0.01, 0.09));
   group.add(visor);
 
-  group.add(strut(shoulder.clone().add(new THREE.Vector3(-0.14, -0.02, 0)), bar.clone().add(new THREE.Vector3(-0.18, 0, 0)), 0.028, limbMat));
-  group.add(strut(shoulder.clone().add(new THREE.Vector3(0.14, -0.02, 0)), bar.clone().add(new THREE.Vector3(0.18, 0, 0)), 0.028, limbMat));
+  group.add(strut(shoulder.clone().add(new THREE.Vector3(-0.14, -0.02, 0)), bar.clone().add(new THREE.Vector3(-0.18, 0, 0)), 0.028, skinMat));
+  group.add(strut(shoulder.clone().add(new THREE.Vector3(0.14, -0.02, 0)), bar.clone().add(new THREE.Vector3(0.18, 0, 0)), 0.028, skinMat));
 
   const kneeL = new THREE.Vector3(-0.1, bb.y + 0.12, bb.z + 0.02);
   const kneeR = new THREE.Vector3(0.1, bb.y + 0.12, bb.z + 0.02);
-  group.add(strut(hip.clone().add(new THREE.Vector3(-0.09, 0, 0)), kneeL, 0.032, limbMat));
-  group.add(strut(hip.clone().add(new THREE.Vector3(0.09, 0, 0)), kneeR, 0.032, limbMat));
-  group.add(strut(kneeL, bb.clone().add(new THREE.Vector3(-0.09, 0, 0)), 0.026, limbMat));
-  group.add(strut(kneeR, bb.clone().add(new THREE.Vector3(0.09, 0, 0)), 0.026, limbMat));
+  group.add(strut(hip.clone().add(new THREE.Vector3(-0.09, 0, 0)), kneeL, 0.032, skinMat));
+  group.add(strut(hip.clone().add(new THREE.Vector3(0.09, 0, 0)), kneeR, 0.032, skinMat));
+  group.add(strut(kneeL, bb.clone().add(new THREE.Vector3(-0.09, 0, 0)), 0.026, skinMat));
+  group.add(strut(kneeR, bb.clone().add(new THREE.Vector3(0.09, 0, 0)), 0.026, skinMat));
 
   return { group, frontWheel, rearWheel, crank };
 }
