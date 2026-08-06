@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import {
   ApiError,
@@ -29,6 +29,9 @@ import { downloadRideFit, downloadRideGpx } from './export';
 import type { TrackPoint } from './export/types';
 import { useT, type MessageKey } from './i18n';
 import { RouteMap, type MapPeer } from './map/RouteMap';
+const CartoonRideScene = lazy(() =>
+  import('./ride3d/CartoonRideScene').then((m) => ({ default: m.CartoonRideScene })),
+);
 import {
   loadStoredMapStyleId,
   storeMapStyleId,
@@ -167,6 +170,22 @@ export default function App() {
   const groupMode = inGroup;
   const immersiveRide =
     telemetry.phase === 'riding' || telemetry.phase === 'paused';
+
+  // The 3D cartoon ride view and the MapLibre planning map each own a WebGL
+  // context on the same page. Mounting one right as the other unmounts can
+  // race the old context's GPU-side teardown (real risk on WebView, which
+  // often allows very few live contexts) — so leave a brief gap with
+  // neither mounted rather than swap in the same commit.
+  const [cartoonSceneReady, setCartoonSceneReady] = useState(false);
+  const wantCartoonScene = immersiveRide && !groupMode && Boolean(route);
+  useEffect(() => {
+    if (!wantCartoonScene) {
+      setCartoonSceneReady(false);
+      return;
+    }
+    const timer = setTimeout(() => setCartoonSceneReady(true), 300);
+    return () => clearTimeout(timer);
+  }, [wantCartoonScene]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -1320,32 +1339,44 @@ export default function App() {
             .join(' ')}
         >
           <div className="viewer-map-pane">
-            <RouteMap
-              waypoints={waypoints}
-              nextWaypointLabel={
-                canAddWaypoint(waypoints.length)
-                  ? nextWaypointLabel(waypoints.length)
-                  : null
-              }
-              route={route}
-              routeAlternatives={routeAlternatives}
-              selectedAlternativeIndex={selectedAltIndex}
-              onSelectAlternative={
-                canPlanRoute && !inGroup ? onSelectAlternative : undefined
-              }
-              rider={telemetry.position}
-              ridePhase={telemetry.phase}
-              distanceMeters={telemetry.distanceMeters}
-              speedKmh={telemetry.speedKmh}
-              onPick={onPick}
-              pickMode={pickMode}
-              pickingEnabled={canPlanRoute && !inGroup}
-              peers={mapPeers}
-              groupMode={groupMode}
-              styleId={mapStyleId}
-              onStyleIdChange={onMapStyleChange}
-              showStylePicker={panelOpen && showMapStylePicker}
-            />
+            {wantCartoonScene ? (
+              cartoonSceneReady && route && (
+                <Suspense fallback={null}>
+                  <CartoonRideScene
+                    route={route}
+                    distanceMeters={telemetry.distanceMeters}
+                    speedKmh={telemetry.speedKmh}
+                  />
+                </Suspense>
+              )
+            ) : (
+              <RouteMap
+                waypoints={waypoints}
+                nextWaypointLabel={
+                  canAddWaypoint(waypoints.length)
+                    ? nextWaypointLabel(waypoints.length)
+                    : null
+                }
+                route={route}
+                routeAlternatives={routeAlternatives}
+                selectedAlternativeIndex={selectedAltIndex}
+                onSelectAlternative={
+                  canPlanRoute && !inGroup ? onSelectAlternative : undefined
+                }
+                rider={telemetry.position}
+                ridePhase={telemetry.phase}
+                distanceMeters={telemetry.distanceMeters}
+                speedKmh={telemetry.speedKmh}
+                onPick={onPick}
+                pickMode={pickMode}
+                pickingEnabled={canPlanRoute && !inGroup}
+                peers={mapPeers}
+                groupMode={groupMode}
+                styleId={mapStyleId}
+                onStyleIdChange={onMapStyleChange}
+                showStylePicker={panelOpen && showMapStylePicker}
+              />
+            )}
             {immersiveRide && (
               <div className="bottom-dashboard-deck">
                 <ElevationProfile
