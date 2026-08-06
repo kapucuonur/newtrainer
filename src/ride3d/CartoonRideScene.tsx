@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { EnrichedRoute } from '../routing/types';
 import { buildRoadRibbon } from './RoadRibbon';
-import { buildScenery } from './scenery';
+import { buildScenery, buildSatellitePatch } from './scenery';
 import { createToonGradientTexture, buildToonRiderModel, type ToonRiderModel } from './riderModel';
 import { localPointAtDistance, projectRouteToLocal, type LocalRoutePoint } from './routeProjection';
 
@@ -54,6 +54,42 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
     void buildScenery(localPoints).then((sceneryGroup) => {
       if (!cancelled) scene.add(sceneryGroup);
     });
+
+    // Real satellite imagery only reads as detail at a small scale — draping
+    // one texture over the whole route made it too low-res to resolve even
+    // the road. Instead keep a ~320m high-res patch centered on wherever the
+    // rider currently is, refetched as they move past its edge.
+    const originLat = route.samples[0].lat;
+    const originLng = route.samples[0].lng;
+    let satellitePatch: THREE.Mesh | null = null;
+    let patchCenterDistance = -Infinity;
+    let patchRebuildInFlight = false;
+    const disposePatch = (mesh: THREE.Mesh) => {
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+    };
+    const requestPatchRebuild = (centerDistance: number, cx: number, cy: number, cz: number) => {
+      patchRebuildInFlight = true;
+      patchCenterDistance = centerDistance;
+      void buildSatellitePatch(originLat, originLng, cx, cy, cz)
+        .then((mesh) => {
+          if (cancelled) {
+            if (mesh) disposePatch(mesh);
+            return;
+          }
+          if (mesh) {
+            if (satellitePatch) {
+              scene.remove(satellitePatch);
+              disposePatch(satellitePatch);
+            }
+            satellitePatch = mesh;
+            scene.add(mesh);
+          }
+        })
+        .finally(() => {
+          patchRebuildInFlight = false;
+        });
+    };
 
     const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 260);
 
@@ -120,6 +156,10 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
 
       const { x, y, z, forward } = localPointAtDistance(localPoints, displayDistance.current);
       headingGroup.position.set(x, y, z);
+
+      if (!patchRebuildInFlight && Math.abs(displayDistance.current - patchCenterDistance) > 100) {
+        requestPatchRebuild(displayDistance.current, x, y, z);
+      }
 
       // Chase camera: behind + above the rider, looking at a point ahead of them.
       // Real elevation samples can be noisy or spaced very close together, which

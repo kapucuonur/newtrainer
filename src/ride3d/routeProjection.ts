@@ -33,6 +33,18 @@ export function projectRouteToLocal(samples: RoutePoint[]): LocalRoutePoint[] {
   }));
 }
 
+/** Same origin/formula as {@link projectRouteToLocal} — lets other code (e.g. satellite imagery UVs) recover real lng/lat for an arbitrary local XZ point. */
+export function localXZToLngLat(originLat: number, originLng: number, x: number, z: number): { lng: number; lat: number } {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const lat0 = toRad(originLat);
+  const cosLat0 = Math.cos(lat0);
+  const lat = toDeg(lat0 - z / R);
+  const lng = toDeg(toRad(originLng) + x / (cosLat0 * R));
+  return { lng, lat };
+}
+
 /** Interpolated local point + forward tangent at `distanceMeters` along the projected route. */
 export function localPointAtDistance(
   points: LocalRoutePoint[],

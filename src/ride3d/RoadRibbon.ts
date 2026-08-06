@@ -17,15 +17,40 @@ export function buildRoadRibbon(points: LocalRoutePoint[]): THREE.Group {
   const dirs: THREE.Vector3[] = [];
 
   for (let i = 0; i < points.length; i++) {
-    const prev = points[Math.max(0, i - 1)];
-    const next = points[Math.min(points.length - 1, i + 1)];
-    const dir = new THREE.Vector3(next.x - prev.x, 0, next.z - prev.z);
+    // Real mountain routes have genuine hairpin switchbacks (Alpe d'Huez has
+    // 21). Averaging the direction from i-1 to i+1 breaks down right at a
+    // hairpin apex — prev and next sit on nearly opposite sides of the bend,
+    // so that "average" direction points roughly *across* the road instead
+    // of along it, which rotates the left/right offset 90° and folds the
+    // ribbon into a spike. Blend the incoming/outgoing unit tangents instead,
+    // and when they're close to opposite (the turn is that sharp), just use
+    // one of them rather than trust an unstable average.
+    const cur = points[i];
+    const prevPt = points[Math.max(0, i - 1)];
+    const nextPt = points[Math.min(points.length - 1, i + 1)];
+    const dirIn = new THREE.Vector3(cur.x - prevPt.x, 0, cur.z - prevPt.z);
+    const dirOut = new THREE.Vector3(nextPt.x - cur.x, 0, nextPt.z - cur.z);
+    const hasIn = dirIn.lengthSq() > 1e-8;
+    const hasOut = dirOut.lengthSq() > 1e-8;
+    if (hasIn) dirIn.normalize();
+    if (hasOut) dirOut.normalize();
+
+    let dir: THREE.Vector3;
+    if (hasIn && hasOut) {
+      dir = dirIn.dot(dirOut) < -0.15 ? dirOut.clone() : dirIn.clone().add(dirOut);
+    } else if (hasOut) {
+      dir = dirOut.clone();
+    } else if (hasIn) {
+      dir = dirIn.clone();
+    } else {
+      dir = new THREE.Vector3(0, 0, -1);
+    }
     if (dir.lengthSq() < 1e-8) dir.set(0, 0, -1);
     dir.normalize();
     const right = new THREE.Vector3().crossVectors(dir, up).normalize();
     dirs.push(dir);
 
-    const p = points[i];
+    const p = cur;
     const lx = p.x + right.x * ROAD_WIDTH * 0.5;
     const lz = p.z + right.z * ROAD_WIDTH * 0.5;
     const rx = p.x - right.x * ROAD_WIDTH * 0.5;

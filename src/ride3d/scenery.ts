@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { LocalRoutePoint } from './routeProjection';
+import { localXZToLngLat, type LocalRoutePoint } from './routeProjection';
 import { loadKenneyProps, type LoadedProp } from './assetLoader';
+import { loadSatelliteCoverage } from './satelliteTexture';
 
 /** Deterministic small PRNG so scenery is stable across re-renders of the same route. */
 function mulberry32(seed: number): () => number {
@@ -80,6 +81,11 @@ function buildTerrainSampler(points: LocalRoutePoint[]): TerrainSampler {
   };
 }
 
+/**
+ * The permanent base ground — real elevation-derived rolling hills, flat
+ * color. Covers the whole route (cheap: one mesh, no texture fetch) and is
+ * what's visible in the distance beyond the local satellite patch below.
+ */
 function buildTerrainGround(points: LocalRoutePoint[], sampler: TerrainSampler): THREE.Mesh {
   const totalDistance = points[points.length - 1].distanceMeters;
   const size = Math.max(400, totalDistance * 1.4);
@@ -99,6 +105,70 @@ function buildTerrainGround(points: LocalRoutePoint[], sampler: TerrainSampler):
   const material = new THREE.MeshStandardMaterial({ color: 0x6fbf6a, flatShading: true, roughness: 1 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(origin.x, 0, origin.z);
+  return mesh;
+}
+
+const PATCH_SIZE = 320;
+const PATCH_SEGMENTS = 24;
+
+/**
+ * A small (320m) high-resolution real satellite-photo patch centered on
+ * wherever the rider currently is — draping the *whole* route in one texture
+ * forced the resolution so low the road disappeared (proven: one patch this
+ * size at zoom ~18 clearly resolves individual buildings/roads; the same
+ * imagery stretched over a 14km route did not). Flat at the real road height
+ * for its center point rather than heightmapped: on a hairpin-heavy climb
+ * (Alpe d'Huez has 21), a 320m-wide patch's XZ footprint can span multiple
+ * switchback levels that are close in space but far apart along the route —
+ * the terrain sampler's distance-based blend doesn't know that, and warped
+ * the patch into a hill that swallowed the road. A single reference height
+ * avoids that entirely; sits a hair above the base terrain so it doesn't
+ * z-fight with it, and the base terrain still shows past the patch's edge
+ * (mountains in the distance, not a hard drop to void). Called repeatedly as
+ * the ride progresses — CartoonRideScene swaps the old patch mesh for the
+ * new one once each fetch resolves.
+ */
+export async function buildSatellitePatch(
+  originLat: number,
+  originLng: number,
+  centerX: number,
+  centerY: number,
+  centerZ: number,
+): Promise<THREE.Mesh | null> {
+  const half = PATCH_SIZE / 2;
+  const coverage = await loadSatelliteCoverage(
+    originLat,
+    originLng,
+    centerX - half,
+    centerX + half,
+    centerZ - half,
+    centerZ + half,
+  );
+  if (!coverage) return null;
+
+  const geometry = new THREE.PlaneGeometry(PATCH_SIZE, PATCH_SIZE, PATCH_SEGMENTS, PATCH_SEGMENTS);
+  geometry.rotateX(-Math.PI / 2);
+  const posAttr = geometry.attributes.position;
+  const uvAttr = new Float32Array(posAttr.count * 2);
+  const { minLng, maxLng, minLat, maxLat } = coverage.bounds;
+  const lngSpan = maxLng - minLng || 1;
+  const latSpan = maxLat - minLat || 1;
+  const flatY = centerY - 0.1;
+  for (let i = 0; i < posAttr.count; i++) {
+    const worldX = centerX + posAttr.getX(i);
+    const worldZ = centerZ + posAttr.getZ(i);
+    posAttr.setY(i, flatY);
+    const ll = localXZToLngLat(originLat, originLng, worldX, worldZ);
+    uvAttr[i * 2] = (ll.lng - minLng) / lngSpan;
+    uvAttr[i * 2 + 1] = (ll.lat - minLat) / latSpan;
+  }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvAttr, 2));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({ map: coverage.texture, roughness: 1 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(centerX, 0, centerZ);
+  mesh.renderOrder = 1;
   return mesh;
 }
 
