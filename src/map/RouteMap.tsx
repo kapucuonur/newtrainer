@@ -278,14 +278,17 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // Ride-camera tuning: these exaggerate the *visual* framing of the same real
 // grade/speed data (no synthetic elevation) so climbs read as steep and
 // speed reads as fast, the way racing/training games bias their camera.
-const RIDE_BASE_PITCH = 62;
-const RIDE_MAX_PITCH = 78;
+// Pitch this high (62-78°) foreshortens 3D building extrusions badly — real
+// low-rise buildings read as absurd skyscrapers at a near-horizontal angle.
+// Keep the base moderate; climbs still tilt further, just from a sane floor.
+const RIDE_BASE_PITCH = 48;
+const RIDE_MAX_PITCH = 64;
 const RIDE_BASE_ZOOM = 16.2;
 const RIDE_LOOK_AHEAD_METERS = 14;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
 function climbPitchBoost(gradePercent: number): number {
-  return Math.max(0, Math.min(gradePercent, 14)) * 0.85;
+  return Math.max(0, Math.min(gradePercent, 14)) * 0.9;
 }
 
 /** Nudges the camera in slightly on climbs, framing the "wall" ahead tighter. */

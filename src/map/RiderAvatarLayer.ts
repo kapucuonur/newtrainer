@@ -16,7 +16,7 @@ import type { LatLng } from '../routing/types';
 
 const WHEEL_RADIUS = 0.34;
 /** Visual-only exaggeration so the avatar reads at ride-camera zoom (real scale is sub-pixel there). */
-const AVATAR_VISUAL_SCALE = 9;
+const AVATAR_VISUAL_SCALE = 26;
 const WHEEL_TUBE = 0.045;
 
 const FRAME_COLOR = 0x00e5ff;
@@ -220,11 +220,15 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
     const mercator = MercatorCoordinate.fromLngLat([this.position.lng, this.position.lat], 0);
     const scale = mercator.meterInMercatorCoordinateUnits();
-    this.anchor.position.set(mercator.x, mercator.y, mercator.z);
+    // modelViewProjectionMatrix operates in MapLibre's "world" pixel space
+    // (mercator fraction × worldSize), not the raw 0..1 MercatorCoordinate —
+    // without this the model sits many orders of magnitude off-position.
+    const worldSize = 512 * Math.pow(2, map.getZoom());
+    this.anchor.position.set(mercator.x * worldSize, mercator.y * worldSize, mercator.z * worldSize);
     // At true 1:1 scale a ~1.7m bike is sub-pixel at typical ride-camera
     // zoom (~1.5m/px at z16.2) — invisible, not broken. Boost it well past
     // real size, same legibility trade-off Zwift/RGT avatars make.
-    this.anchor.scale.setScalar(scale * AVATAR_VISUAL_SCALE);
+    this.anchor.scale.setScalar(scale * worldSize * AVATAR_VISUAL_SCALE);
     this.heading.rotation.y = THREE.MathUtils.degToRad(this.bearingDeg);
 
     const speedMs = this.speedKmh / 3.6;
