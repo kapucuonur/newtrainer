@@ -1050,6 +1050,7 @@ export default function App() {
         .map((p) => p.heartRateBpm)
         .filter((v): v is number => v != null && v > 0);
       const speeds = ride.points.map((p) => p.speedKmh).filter((v) => v > 0);
+      const cadences = ride.points.map((p) => p.cadenceRpm).filter((v) => v > 0);
       const km = (ride.distanceMeters / 1000).toFixed(1);
       const routeLabel = `A→B · ${km} km`;
       const avgPower = avg(powers);
@@ -1058,6 +1059,8 @@ export default function App() {
       const maxHr = maxOf(hrs);
       const avgSpeed = avg(speeds);
       const maxSpeed = maxOf(speeds);
+      const avgCadence = avg(cadences);
+      const maxCadence = maxOf(cadences);
 
       const saved = await saveRide({
         routeName: routeLabel,
@@ -1072,6 +1075,8 @@ export default function App() {
         avgSpeedKmh: avgSpeed != null ? Math.round(avgSpeed * 10) / 10 : null,
         maxSpeedKmh: maxSpeed != null ? Math.round(maxSpeed * 10) / 10 : null,
         elevationGainM: elevationGainMeters(ride.points),
+        avgCadence: avgCadence != null ? Math.round(avgCadence) : null,
+        maxCadence: maxCadence != null ? Math.round(maxCadence) : null,
       });
       setSavedRideId(saved.id);
       setRideHistoryRevision((n) => n + 1);

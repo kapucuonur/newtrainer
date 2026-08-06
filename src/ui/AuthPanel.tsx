@@ -55,6 +55,7 @@ function rideStatsLine(ride: RideSummary): string {
   if (ride.avgPower != null) parts.push(`${Math.round(ride.avgPower)} W`);
   if (ride.maxPower != null) parts.push(`max ${Math.round(ride.maxPower)} W`);
   if (ride.avgHr != null) parts.push(`${Math.round(ride.avgHr)} bpm`);
+  if (ride.avgCadence != null) parts.push(`${Math.round(ride.avgCadence)} rpm`);
   if (ride.avgSpeedKmh != null) parts.push(`${ride.avgSpeedKmh.toFixed(1)} km/h`);
   if (ride.elevationGainM != null) parts.push(`↑ ${Math.round(ride.elevationGainM)} m`);
   return parts.join(' · ');

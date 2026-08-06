@@ -481,6 +481,8 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
     avgSpeedKmh: null,
     maxSpeedKmh: null,
     elevationGainM: null,
+    avgCadence: null,
+    maxCadence: null,
   };
   /** @type {[keyof typeof stats, string, string][]} */
   const optionalFields = [
@@ -491,6 +493,8 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
     ['avgSpeedKmh', 'avgSpeedKmh', 'avg_speed_kmh'],
     ['maxSpeedKmh', 'maxSpeedKmh', 'max_speed_kmh'],
     ['elevationGainM', 'elevationGainM', 'elevation_gain_m'],
+    ['avgCadence', 'avgCadence', 'avg_cadence'],
+    ['maxCadence', 'maxCadence', 'max_cadence'],
   ];
   for (const [key, camel, snake] of optionalFields) {
     const parsed = optionalNumber(body, camel, snake);
@@ -506,8 +510,9 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
          user_id, route_name, started_at, ended_at,
          distance_m, duration_s,
          avg_power, max_power, avg_hr, max_hr,
-         avg_speed_kmh, max_speed_kmh, elevation_gain_m
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         avg_speed_kmh, max_speed_kmh, elevation_gain_m,
+         avg_cadence, max_cadence
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       userId,
@@ -523,6 +528,8 @@ app.post('/api/rides', { preHandler: requireAuth }, async (request, reply) => {
       stats.avgSpeedKmh,
       stats.maxSpeedKmh,
       stats.elevationGainM,
+      stats.avgCadence,
+      stats.maxCadence,
     );
 
   const rideId = Number(insert.lastInsertRowid);

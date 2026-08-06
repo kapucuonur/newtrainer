@@ -27,6 +27,8 @@ export type RideSummary = {
   avgSpeedKmh: number | null;
   maxSpeedKmh: number | null;
   elevationGainM: number | null;
+  avgCadence: number | null;
+  maxCadence: number | null;
   createdAt: string;
 };
 

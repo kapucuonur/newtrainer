@@ -174,6 +174,8 @@ export type SaveRideInput = {
   avgSpeedKmh?: number | null;
   maxSpeedKmh?: number | null;
   elevationGainM?: number | null;
+  avgCadence?: number | null;
+  maxCadence?: number | null;
 };
 
 /** Persist a light workout summary on the Pi (no track points / FIT / GPX). */
@@ -193,6 +195,8 @@ export async function saveRide(input: SaveRideInput): Promise<RideSummary> {
       avgSpeedKmh: input.avgSpeedKmh ?? null,
       maxSpeedKmh: input.maxSpeedKmh ?? null,
       elevationGainM: input.elevationGainM ?? null,
+      avgCadence: input.avgCadence ?? null,
+      maxCadence: input.maxCadence ?? null,
     },
   });
   return data.ride;

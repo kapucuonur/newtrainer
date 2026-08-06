@@ -18,6 +18,8 @@ function migrateRidesLightStorage(db, dataDir) {
     ['avg_speed_kmh', 'REAL'],
     ['max_speed_kmh', 'REAL'],
     ['elevation_gain_m', 'REAL'],
+    ['avg_cadence', 'REAL'],
+    ['max_cadence', 'REAL'],
   ];
   for (const [name, type] of extras) {
     if (!cols.has(name)) {
@@ -101,6 +103,8 @@ export function openDb(dataDir) {
       avg_speed_kmh REAL,
       max_speed_kmh REAL,
       elevation_gain_m REAL,
+      avg_cadence REAL,
+      max_cadence REAL,
       fit_path TEXT,
       gpx_path TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -205,6 +209,8 @@ export function toPublicRide(ride) {
     avgSpeedKmh: numOrNull(ride.avg_speed_kmh),
     maxSpeedKmh: numOrNull(ride.max_speed_kmh),
     elevationGainM: numOrNull(ride.elevation_gain_m),
+    avgCadence: numOrNull(ride.avg_cadence),
+    maxCadence: numOrNull(ride.max_cadence),
     createdAt: ride.created_at,
   };
 }
