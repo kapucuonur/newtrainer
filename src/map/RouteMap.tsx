@@ -237,17 +237,18 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // speed reads as fast, the way racing/training games bias their camera.
 // The ride view is always the satellite basemap (forced in App.tsx) with no
 // vector building data, so there's no extrusion-foreshortening concern here.
-// Pushed lower/closer than the original (48/64/16.2) still reads as "flying
-// over" the road, but pitch this steep needs Esri imagery tiles across a
-// much wider ground footprint (near-horizontal sightlines see much farther)
-// at the same zoom — rural/mountain roads often only have Esri's high-zoom
-// coverage right around the road itself, not for kilometers around it, and
-// pushed all the way to 78°/17.6 that showed Esri's literal
-// "Map data not yet available" placeholder tiles across a large chunk of
-// the screen. Keep the closer feel but with real safety margin.
-const RIDE_BASE_PITCH = 54;
-const RIDE_MAX_PITCH = 66;
-const RIDE_BASE_ZOOM = 16.8;
+// Two rounds of pushing this closer (62/78/17.6, then 54/66/16.8) both still
+// showed Esri's "Map data not yet available" placeholder tiles on a real
+// ride — near-horizontal pitch makes MapLibre load real-world imagery tiles
+// across a much wider ground footprint at the same zoom (far more of the
+// ground is visible toward the horizon), and rural/mountain roads often
+// only have Esri's high-zoom coverage right at the road, not for
+// kilometers around it. Pulled back below the original (48/64/16.2) this
+// time — reliability over closeness until confirmed stable, then nudge
+// closer again incrementally with real-ride confirmation each step.
+const RIDE_BASE_PITCH = 46;
+const RIDE_MAX_PITCH = 58;
+const RIDE_BASE_ZOOM = 15.8;
 const RIDE_LOOK_AHEAD_METERS = 14;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
