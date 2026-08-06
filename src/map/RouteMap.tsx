@@ -15,7 +15,6 @@ import { routeAltColor } from '../routing/osrm';
 import type {
   EnrichedRoute,
   LatLng,
-  RouteLineString,
   RoutePoint,
   RouteResult,
 } from '../routing/types';
@@ -212,50 +211,6 @@ async function ensureRiderAvatarLayer(
   ref.current = layer;
 }
 
-/** Splits the ridden route into a dim "traveled" line and a bright "remaining" line. */
-function splitRouteAtDistance(
-  samples: RoutePoint[],
-  distanceMeters: number,
-): { traveled: RouteLineString; remaining: RouteLineString } {
-  const empty: RouteLineString = { type: 'LineString', coordinates: [] };
-  if (samples.length < 2) return { traveled: empty, remaining: empty };
-
-  const clamped = Math.max(
-    samples[0].distanceMeters,
-    Math.min(distanceMeters, samples[samples.length - 1].distanceMeters),
-  );
-
-  let lo = 0;
-  let hi = samples.length - 1;
-  while (lo < hi - 1) {
-    const mid = Math.floor((lo + hi) / 2);
-    if (samples[mid].distanceMeters <= clamped) lo = mid;
-    else hi = mid;
-  }
-
-  const a = samples[lo];
-  const b = samples[hi];
-  const span = b.distanceMeters - a.distanceMeters || 1;
-  const t = (clamped - a.distanceMeters) / span;
-  const splitPoint: LatLng = {
-    lat: a.lat + (b.lat - a.lat) * t,
-    lng: a.lng + (b.lng - a.lng) * t,
-  };
-
-  const traveledCoords = samples.slice(0, lo + 1).map((s) => [s.lng, s.lat]);
-  traveledCoords.push([splitPoint.lng, splitPoint.lat]);
-
-  const remainingCoords = [
-    [splitPoint.lng, splitPoint.lat],
-    ...samples.slice(hi).map((s) => [s.lng, s.lat]),
-  ];
-
-  return {
-    traveled: { type: 'LineString', coordinates: traveledCoords },
-    remaining: { type: 'LineString', coordinates: remainingCoords },
-  };
-}
-
 /** Interpolated grade (%) at `distanceMeters`, from the same real DEM samples used for elevation. */
 function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number {
   if (samples.length === 0) return 0;
@@ -280,12 +235,13 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // Ride-camera tuning: these exaggerate the *visual* framing of the same real
 // grade/speed data (no synthetic elevation) so climbs read as steep and
 // speed reads as fast, the way racing/training games bias their camera.
-// Pitch this high (62-78°) foreshortens 3D building extrusions badly — real
-// low-rise buildings read as absurd skyscrapers at a near-horizontal angle.
-// Keep the base moderate; climbs still tilt further, just from a sane floor.
-const RIDE_BASE_PITCH = 48;
-const RIDE_MAX_PITCH = 64;
-const RIDE_BASE_ZOOM = 16.2;
+// The ride view is always the satellite basemap (forced in App.tsx) with no
+// vector building data, so there's no extrusion-foreshortening concern here
+// — free to sit low and close instead of the higher, more distant framing a
+// vector/building style would need.
+const RIDE_BASE_PITCH = 62;
+const RIDE_MAX_PITCH = 78;
+const RIDE_BASE_ZOOM = 17.6;
 const RIDE_LOOK_AHEAD_METERS = 14;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
@@ -800,60 +756,44 @@ export function RouteMap({
         return;
       }
 
-      let features: Array<{
-        type: 'Feature';
-        properties: { index: number; selected: number; traveled: number; color: string };
-        geometry: RouteResult['geometry'];
-      }>;
-
-      if (followRoad && route && rider) {
-        const color = routeAltColor(selectedAlternativeIndex);
-        const split = splitRouteAtDistance(route.samples, distanceMeters);
-        features = [
-          {
-            type: 'Feature' as const,
-            properties: { index: 0, selected: 1, traveled: 1, color },
-            geometry: split.traveled,
-          },
-          {
-            type: 'Feature' as const,
-            properties: { index: 0, selected: 1, traveled: 0, color },
-            geometry: split.remaining,
-          },
-        ].filter((f) => f.geometry.coordinates.length >= 2);
-      } else {
-        let alts: Array<{ geometry: RouteResult['geometry'] }>;
-        if (followRoad && route) {
-          alts = [route];
-        } else if (routeAlternatives.length > 0) {
-          alts = routeAlternatives;
-        } else if (route) {
-          alts = [route];
-        } else {
-          source.setData({ type: 'FeatureCollection', features: [] });
-          return;
-        }
-
-        features = alts.map((alt, index) => {
-          const isSelected = showAlternatives
-            ? index === selectedAlternativeIndex
-            : true;
-          const colorIndex = showAlternatives ? index : index;
-          return {
-            type: 'Feature' as const,
-            properties: {
-              index,
-              selected: isSelected ? 1 : 0,
-              traveled: 0,
-              color: routeAltColor(colorIndex),
-            },
-            geometry: alt.geometry,
-          };
-        });
-
-        // Draw unselected first so selected paints on top within filter layers.
-        features.sort((a, b) => a.properties.selected - b.properties.selected);
+      // Real satellite imagery already shows the actual road — the line
+      // overlay was only useful for planning (comparing alternatives,
+      // seeing the picked route against the street grid). During a ride it
+      // just duplicated what the elevation profile/HUD already show and
+      // covered the real road surface, so skip drawing it entirely.
+      if (followRoad) {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
       }
+
+      let alts: Array<{ geometry: RouteResult['geometry'] }>;
+      if (routeAlternatives.length > 0) {
+        alts = routeAlternatives;
+      } else if (route) {
+        alts = [route];
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
+      }
+
+      const features = alts.map((alt, index) => {
+        const isSelected = showAlternatives
+          ? index === selectedAlternativeIndex
+          : true;
+        return {
+          type: 'Feature' as const,
+          properties: {
+            index,
+            selected: isSelected ? 1 : 0,
+            traveled: 0,
+            color: routeAltColor(index),
+          },
+          geometry: alt.geometry,
+        };
+      });
+
+      // Draw unselected first so selected paints on top within filter layers.
+      features.sort((a, b) => a.properties.selected - b.properties.selected);
 
       source.setData({
         type: 'FeatureCollection',
