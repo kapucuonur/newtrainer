@@ -15,8 +15,16 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-/** Visual-only exaggeration so the avatar reads at ride-camera zoom (real scale is sub-pixel there). */
-const AVATAR_VISUAL_SCALE = 26;
+/**
+ * Visual-only exaggeration so the avatar reads at ride-camera zoom (real
+ * scale is sub-pixel there). This scales the model's real-world "meters" —
+ * at 26x the ~1.7m bike became a ~44m object, which was fine at the ride
+ * camera's original distance/pitch but, once that camera moved closer and
+ * flatter (near-horizontal), the same 44m object loomed edge-on like a
+ * tower. Tuned down to roughly match the original on-screen size at the
+ * new, closer camera.
+ */
+const AVATAR_VISUAL_SCALE = 15;
 const WHEEL_TUBE = 0.045;
 
 const FRAME_COLOR = 0x00e5ff;

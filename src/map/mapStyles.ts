@@ -72,7 +72,15 @@ export function buildSatelliteStyle(): StyleSpecification {
         ],
         tileSize: 256,
         attribution: 'Esri, Maxar, Earthstar Geographics',
-        maxzoom: 19,
+        // Esri's high-zoom (17-19) imagery only covers select urban/mapped
+        // areas — real routes are often rural/mountain roads well outside
+        // that, and requesting tiles beyond a region's actual coverage gets
+        // back Esri's literal "Map data not yet available" placeholder
+        // image rather than a graceful blur. Capping here below the ride
+        // camera's zoom means MapLibre never asks past this level; it just
+        // overzooms (stretches) this tile instead — softer close-up, but
+        // real imagery everywhere instead of broken placeholder tiles.
+        maxzoom: 16,
       },
       'esri-labels': {
         type: 'raster',
@@ -81,7 +89,7 @@ export function buildSatelliteStyle(): StyleSpecification {
         ],
         tileSize: 256,
         attribution: 'Esri',
-        maxzoom: 19,
+        maxzoom: 16,
       },
     },
     layers: [

@@ -236,12 +236,18 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // grade/speed data (no synthetic elevation) so climbs read as steep and
 // speed reads as fast, the way racing/training games bias their camera.
 // The ride view is always the satellite basemap (forced in App.tsx) with no
-// vector building data, so there's no extrusion-foreshortening concern here
-// — free to sit low and close instead of the higher, more distant framing a
-// vector/building style would need.
-const RIDE_BASE_PITCH = 62;
-const RIDE_MAX_PITCH = 78;
-const RIDE_BASE_ZOOM = 17.6;
+// vector building data, so there's no extrusion-foreshortening concern here.
+// Pushed lower/closer than the original (48/64/16.2) still reads as "flying
+// over" the road, but pitch this steep needs Esri imagery tiles across a
+// much wider ground footprint (near-horizontal sightlines see much farther)
+// at the same zoom — rural/mountain roads often only have Esri's high-zoom
+// coverage right around the road itself, not for kilometers around it, and
+// pushed all the way to 78°/17.6 that showed Esri's literal
+// "Map data not yet available" placeholder tiles across a large chunk of
+// the screen. Keep the closer feel but with real safety margin.
+const RIDE_BASE_PITCH = 54;
+const RIDE_MAX_PITCH = 66;
+const RIDE_BASE_ZOOM = 16.8;
 const RIDE_LOOK_AHEAD_METERS = 14;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
