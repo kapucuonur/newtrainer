@@ -21,6 +21,7 @@ import type {
 } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, destinationPoint, lerpBearing } from './bearing';
+import type { RiderAvatarLayer } from './RiderAvatarLayer';
 import { MapStylePicker } from '../ui/MapStylePicker';
 import {
   loadStoredMapStyleId,
@@ -30,6 +31,11 @@ import {
 } from './mapStyles';
 import { sanitizeMapStyle } from './sanitizeMapStyle';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// Matches RIDER_AVATAR_LAYER_ID in RiderAvatarLayer.ts. Kept as a plain
+// string (not a value import) so that file — and its three.js weight —
+// only loads when a map actually mounts, as a separate chunk.
+const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
 // Served from /maplibre-worker/ (see vite.config.ts) alongside its sibling
 // maplibre-gl-shared.mjs chunk, which the worker module statically imports —
@@ -185,6 +191,23 @@ function setRiderTrailData(map: Map, points: LatLng[]): void {
   ensureRiderTrailOverlay(map);
   const source = map.getSource('rider-trail') as GeoJSONSource | undefined;
   source?.setData(riderTrailData(points));
+}
+
+/**
+ * (Re)adds the 3D rider avatar custom layer — a style swap tears it down
+ * like any other layer. Dynamically imported so three.js only loads once a
+ * map actually mounts, as its own chunk (not blocking the app's first paint).
+ */
+async function ensureRiderAvatarLayer(
+  map: Map,
+  ref: { current: RiderAvatarLayer | null },
+): Promise<void> {
+  if (map.getLayer(RIDER_AVATAR_LAYER_ID)) return;
+  const { RiderAvatarLayer: RiderAvatarLayerCtor } = await import('./RiderAvatarLayer');
+  if (map.getLayer(RIDER_AVATAR_LAYER_ID)) return;
+  const layer = new RiderAvatarLayerCtor();
+  map.addLayer(layer);
+  ref.current = layer;
 }
 
 /** Splits the ridden route into a dim "traveled" line and a bright "remaining" line. */
@@ -461,6 +484,7 @@ export function RouteMap({
   const markerRider = useRef<Marker | null>(null);
   const riderHeadingElRef = useRef<HTMLDivElement | null>(null);
   const riderTrailRef = useRef<LatLng[]>([]);
+  const riderAvatarLayerRef = useRef<RiderAvatarLayer | null>(null);
   const peerMarkersRef = useRef(new globalThis.Map<number, Marker>());
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
@@ -579,6 +603,7 @@ export function RouteMap({
       activeMap.on('load', () => {
         ensureRouteOverlay(activeMap);
         ensureRiderTrailOverlay(activeMap);
+        void ensureRiderAvatarLayer(activeMap, riderAvatarLayerRef);
         wireRouteClicks();
         tryEnable3dBuildings(activeMap);
       });
@@ -586,6 +611,7 @@ export function RouteMap({
       activeMap.on('style.load', () => {
         ensureRouteOverlay(activeMap);
         setRiderTrailData(activeMap, riderTrailRef.current);
+        void ensureRiderAvatarLayer(activeMap, riderAvatarLayerRef);
         tryEnable3dBuildings(activeMap);
       });
 
@@ -624,6 +650,7 @@ export function RouteMap({
       peerMarkersRef.current.clear();
       map?.remove();
       mapRef.current = null;
+      riderAvatarLayerRef.current = null;
       appliedStyleIdRef.current = null;
     };
     // Mount once; style changes use setStyle below.
@@ -690,6 +717,12 @@ export function RouteMap({
       markerRider.current.remove();
       markerRider.current = null;
       riderHeadingElRef.current = null;
+    }
+
+    // The 3D avatar layer takes over during an active ride; the flat puck
+    // stays for the top-down overview where a 3D model isn't useful.
+    if (markerRider.current) {
+      markerRider.current.getElement().style.display = followRoad ? 'none' : '';
     }
 
     if (followRoad && rider) {
@@ -868,6 +901,15 @@ export function RouteMap({
     // north-up, so the cone rotates to show true travel direction.
     if (riderHeadingElRef.current) {
       riderHeadingElRef.current.style.transform = `rotate(${followRoad ? 0 : nextBearing}deg)`;
+    }
+
+    const avatarLayer = riderAvatarLayerRef.current;
+    if (avatarLayer) {
+      avatarLayer.visible = followRoad;
+      avatarLayer.position = rider;
+      avatarLayer.bearingDeg = nextBearing;
+      avatarLayer.speedKmh = speedKmh;
+      map.triggerRepaint();
     }
 
     if (!followRoad) return;
