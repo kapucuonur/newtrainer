@@ -14,46 +14,107 @@ function mulberry32(seed: number): () => number {
 }
 
 const LEAF_COLORS = [0x2f9e44, 0x37b24d, 0x2b8a3e];
+const WALL_COLORS = [0xe8dcc8, 0xd9c9a8, 0xc9b896];
 
 type Placement = { x: number; y: number; z: number; rotY: number; scale: number };
+type TerrainSampler = (x: number, z: number) => number;
 
 /**
- * Scatters low-poly trees/bushes along both shoulders of the route using
- * InstancedMesh (a handful of draw calls total, regardless of how many
- * thousand trees a long route needs) plus a large ground plane so the road
- * doesn't float in a void. Deterministic (seeded) so the same route always
- * scatters the same way. A naive one-mesh-per-tree approach caused
- * thousands of draw calls on real multi-km routes — this replaces it.
+ * Height field for the ground away from the road: inverse-distance-weighted
+ * blend of the route's own real elevation samples (so the large-scale climb
+ * shape is genuine, not invented), plus deterministic pseudo-noise whose
+ * amplitude grows with distance from the road — rolling hills near a real
+ * mountain road instead of a flat shelf. No extra elevation API calls (we
+ * already rate-limit hit those); this only reuses data already on hand.
+ */
+function buildTerrainSampler(points: LocalRoutePoint[]): TerrainSampler {
+  const anchorStep = Math.max(1, Math.floor(points.length / 150));
+  const anchors = points.filter((_, i) => i % anchorStep === 0);
+  if (anchors.length === 0) anchors.push(points[0]);
+
+  const seed = mulberry32(Math.round((points[points.length - 1]?.distanceMeters ?? 1) * 733) || 7);
+  const noiseOffsetX = seed() * 1000;
+  const noiseOffsetZ = seed() * 1000;
+
+  return (x: number, z: number): number => {
+    let weightSum = 0;
+    let heightSum = 0;
+    let minDistSq = Infinity;
+    for (const a of anchors) {
+      const dx = x - a.x;
+      const dz = z - a.z;
+      const distSq = dx * dx + dz * dz;
+      if (distSq < minDistSq) minDistSq = distSq;
+      const w = 1 / (distSq + 4);
+      weightSum += w;
+      heightSum += w * a.y;
+    }
+    const idw = heightSum / weightSum;
+    const distFromRoad = Math.sqrt(minDistSq);
+    // Keep a flat corridor matching the road's own height out to past the
+    // shoulder (ROAD_WIDTH/shoulder in RoadRibbon.ts span ~5.4m half-width)
+    // — otherwise hilly noise right next to the road rises through the flat
+    // road mesh and swallows it from a low chase-cam angle.
+    const noiseAmp = Math.min(18, Math.max(0, distFromRoad - 9) * 0.45);
+    const nx = (x + noiseOffsetX) * 0.015;
+    const nz = (z + noiseOffsetZ) * 0.015;
+    const noise = (Math.sin(nx * 1.7 + Math.cos(nz * 1.3)) + Math.sin(nz * 2.1 - nx * 0.6)) * 0.5;
+    return idw + noise * noiseAmp;
+  };
+}
+
+function buildTerrainGround(points: LocalRoutePoint[], sampler: TerrainSampler): THREE.Mesh {
+  const totalDistance = points[points.length - 1].distanceMeters;
+  const size = Math.max(400, totalDistance * 1.4);
+  const segments = 70;
+  const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+  geometry.rotateX(-Math.PI / 2);
+
+  const origin = points[0];
+  const posAttr = geometry.attributes.position;
+  for (let i = 0; i < posAttr.count; i++) {
+    const worldX = origin.x + posAttr.getX(i);
+    const worldZ = origin.z + posAttr.getZ(i);
+    posAttr.setY(i, sampler(worldX, worldZ) - 0.15);
+  }
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({ color: 0x6fbf6a, flatShading: true, roughness: 1 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(origin.x, 0, origin.z);
+  return mesh;
+}
+
+/**
+ * Scatters low-poly trees/bushes/rocks/houses along both shoulders of the
+ * route (plus occasional signposts right at the edge) using InstancedMesh —
+ * a handful of draw calls total regardless of route length. Deterministic
+ * (seeded) so the same route always scatters the same way.
  */
 export function buildScenery(points: LocalRoutePoint[]): THREE.Group {
   const group = new THREE.Group();
   if (points.length === 0) return group;
 
   const totalDistance = points[points.length - 1].distanceMeters;
-  const groundSize = Math.max(400, totalDistance * 1.4);
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(groundSize, groundSize, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x6fbf6a, flatShading: true, roughness: 1 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(points[0].x, -0.15, points[0].z);
-  group.add(ground);
+  const sampler = buildTerrainSampler(points);
+  group.add(buildTerrainGround(points, sampler));
 
   // Cap total scenery instances regardless of route length — spacing grows
-  // for very long routes instead of placing tens of thousands of trees.
+  // for very long routes instead of placing tens of thousands of props.
   const maxItems = 450;
   const spacing = Math.max(14, (totalDistance * 2) / maxItems);
 
   const rand = mulberry32(Math.round(totalDistance * 1000) || 1);
   const trees: Placement[] = [];
   const bushes: Placement[] = [];
+  const rocks: Placement[] = [];
+  const houses: Placement[] = [];
+  const signs: Placement[] = [];
   let nextAt = 0;
+  let nextSignAt = 90;
 
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
-    if (p.distanceMeters < nextAt) continue;
-    nextAt = p.distanceMeters + spacing * (0.7 + rand() * 0.6);
-
     const prev = points[Math.max(0, i - 1)];
     const next = points[Math.min(points.length - 1, i + 1)];
     const dx = next.x - prev.x;
@@ -62,23 +123,42 @@ export function buildScenery(points: LocalRoutePoint[]): THREE.Group {
     const rightX = -dz / len;
     const rightZ = dx / len;
 
+    if (p.distanceMeters >= nextSignAt) {
+      nextSignAt = p.distanceMeters + 160 + rand() * 120;
+      const side = rand() < 0.5 ? -1 : 1;
+      const sx = p.x + rightX * 4.2 * side;
+      const sz = p.z + rightZ * 4.2 * side;
+      signs.push({ x: sx, y: sampler(sx, sz), z: sz, rotY: rand() * Math.PI * 2, scale: 1 });
+    }
+
+    if (p.distanceMeters < nextAt) continue;
+    nextAt = p.distanceMeters + spacing * (0.7 + rand() * 0.6);
+
     for (const side of [-1, 1]) {
       if (rand() < 0.35) continue;
       const offset = 6 + rand() * 14;
+      const px = p.x + rightX * offset * side;
+      const pz = p.z + rightZ * offset * side;
       const placement: Placement = {
-        x: p.x + rightX * offset * side,
-        y: p.y,
-        z: p.z + rightZ * offset * side,
+        x: px,
+        y: sampler(px, pz),
+        z: pz,
         rotY: rand() * Math.PI * 2,
         scale: 0.75 + rand() * 0.7,
       };
-      if (rand() < 0.7) trees.push(placement);
-      else bushes.push(placement);
+      const roll = rand();
+      if (roll < 0.55) trees.push(placement);
+      else if (roll < 0.75) bushes.push(placement);
+      else if (roll < 0.92) rocks.push(placement);
+      else houses.push({ ...placement, scale: 0.85 + rand() * 0.3 });
     }
   }
 
   group.add(buildTreeInstances(trees));
   if (bushes.length > 0) group.add(buildBushInstances(bushes));
+  if (rocks.length > 0) group.add(buildRockInstances(rocks));
+  if (houses.length > 0) group.add(buildHouseInstances(houses));
+  if (signs.length > 0) group.add(buildSignInstances(signs));
 
   return group;
 }
@@ -130,4 +210,73 @@ function buildBushInstances(placements: Placement[]): THREE.InstancedMesh {
   });
   mesh.instanceMatrix.needsUpdate = true;
   return mesh;
+}
+
+function buildRockInstances(placements: Placement[]): THREE.InstancedMesh {
+  const geometry = new THREE.IcosahedronGeometry(0.6, 0);
+  const material = new THREE.MeshStandardMaterial({ color: 0x9a9a94, flatShading: true, roughness: 1 });
+  const mesh = new THREE.InstancedMesh(geometry, material, placements.length);
+  const m = new THREE.Matrix4();
+  placements.forEach((p, i) => {
+    applyPlacement(m, p, 0.25);
+    mesh.setMatrixAt(i, m);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  return mesh;
+}
+
+function buildHouseInstances(placements: Placement[]): THREE.Group {
+  const group = new THREE.Group();
+  if (placements.length === 0) return group;
+
+  const bodyGeometry = new THREE.BoxGeometry(3.2, 2.4, 3.6);
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: WALL_COLORS[1],
+    flatShading: true,
+    roughness: 1,
+  });
+  const body = new THREE.InstancedMesh(bodyGeometry, bodyMaterial, placements.length);
+
+  const roofGeometry = new THREE.ConeGeometry(2.9, 1.8, 4);
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8a4a3a, flatShading: true, roughness: 0.9 });
+  const roof = new THREE.InstancedMesh(roofGeometry, roofMaterial, placements.length);
+
+  const m = new THREE.Matrix4();
+  placements.forEach((p, i) => {
+    applyPlacement(m, p, 1.2);
+    body.setMatrixAt(i, m);
+    applyPlacement(m, p, 3.3);
+    roof.setMatrixAt(i, m);
+  });
+  body.instanceMatrix.needsUpdate = true;
+  roof.instanceMatrix.needsUpdate = true;
+
+  group.add(body, roof);
+  return group;
+}
+
+function buildSignInstances(placements: Placement[]): THREE.Group {
+  const group = new THREE.Group();
+  if (placements.length === 0) return group;
+
+  const poleGeometry = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 5);
+  const poleMaterial = new THREE.MeshStandardMaterial({ color: 0xb9bec4, roughness: 0.6, metalness: 0.2 });
+  const pole = new THREE.InstancedMesh(poleGeometry, poleMaterial, placements.length);
+
+  const signGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.04);
+  const signMaterial = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.5 });
+  const sign = new THREE.InstancedMesh(signGeometry, signMaterial, placements.length);
+
+  const m = new THREE.Matrix4();
+  placements.forEach((p, i) => {
+    applyPlacement(m, p, 0.9);
+    pole.setMatrixAt(i, m);
+    applyPlacement(m, p, 1.65);
+    sign.setMatrixAt(i, m);
+  });
+  pole.instanceMatrix.needsUpdate = true;
+  sign.instanceMatrix.needsUpdate = true;
+
+  group.add(pole, sign);
+  return group;
 }
