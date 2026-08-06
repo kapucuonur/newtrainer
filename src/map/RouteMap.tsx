@@ -12,7 +12,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { RidePhase } from '../simulation/rideEngine';
 import { routeAltColor } from '../routing/osrm';
-import type { EnrichedRoute, LatLng, RouteResult } from '../routing/types';
+import type {
+  EnrichedRoute,
+  LatLng,
+  RouteLineString,
+  RoutePoint,
+  RouteResult,
+} from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
 import { bearingAlongRoute, lerpBearing } from './bearing';
 import { MapStylePicker } from '../ui/MapStylePicker';
@@ -87,6 +93,142 @@ function pinClassForIndex(index: number, total: number): string {
   return 'map-pin-via';
 }
 
+// Minimal side-view cyclist glyph (head + torso + frame + wheels) — a real
+// vector bike-and-rider instead of the wobbly 🚴 emoji, small enough to read
+// at marker scale.
+const RIDER_BIKE_SVG = `
+<svg viewBox="0 0 32 32" width="19" height="19" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="7" r="2.6" fill="currentColor"/>
+  <path d="M16 9.3 L13.5 15 L19 15 L16.6 20.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13.5 15 L9 20.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  <path d="M13.5 15 L21 22.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  <circle cx="7" cy="22.5" r="4.3" stroke="currentColor" stroke-width="1.9"/>
+  <circle cx="21" cy="22.5" r="4.3" stroke="currentColor" stroke-width="1.9"/>
+</svg>`.trim();
+
+/**
+ * Builds the rider map marker: a fixed, always-upright bike glyph (readable
+ * regardless of camera rotation) plus a heading cone that points the travel
+ * direction. `heading` is rotated separately so the glyph never flips.
+ */
+function createRiderMarkerElement(): { root: HTMLDivElement; heading: HTMLDivElement } {
+  const root = document.createElement('div');
+  root.className = 'rider-marker';
+  root.innerHTML = `<div class="rider-marker-cone"></div><div class="rider-marker-core">${RIDER_BIKE_SVG}</div>`;
+  const heading = root.querySelector('.rider-marker-cone') as HTMLDivElement;
+  return { root, heading };
+}
+
+function haversineMetersApprox(a: LatLng, b: LatLng): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function riderTrailData(points: LatLng[]) {
+  if (points.length < 2) {
+    return { type: 'FeatureCollection' as const, features: [] };
+  }
+  return {
+    type: 'FeatureCollection' as const,
+    features: [
+      {
+        type: 'Feature' as const,
+        properties: {},
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: points.map((p) => [p.lng, p.lat]),
+        },
+      },
+    ],
+  };
+}
+
+function ensureRiderTrailOverlay(map: Map): void {
+  if (map.getSource('rider-trail')) return;
+  map.addSource('rider-trail', {
+    type: 'geojson',
+    lineMetrics: true,
+    data: { type: 'FeatureCollection', features: [] },
+  });
+  map.addLayer({
+    id: 'rider-trail-line',
+    type: 'line',
+    source: 'rider-trail',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-width': 5,
+      'line-color': '#00f0ff',
+      'line-gradient': [
+        'interpolate',
+        ['linear'],
+        ['line-progress'],
+        0,
+        'rgba(0,240,255,0)',
+        1,
+        'rgba(0,240,255,0.85)',
+      ],
+    },
+  });
+}
+
+function setRiderTrailData(map: Map, points: LatLng[]): void {
+  ensureRiderTrailOverlay(map);
+  const source = map.getSource('rider-trail') as GeoJSONSource | undefined;
+  source?.setData(riderTrailData(points));
+}
+
+/** Splits the ridden route into a dim "traveled" line and a bright "remaining" line. */
+function splitRouteAtDistance(
+  samples: RoutePoint[],
+  distanceMeters: number,
+): { traveled: RouteLineString; remaining: RouteLineString } {
+  const empty: RouteLineString = { type: 'LineString', coordinates: [] };
+  if (samples.length < 2) return { traveled: empty, remaining: empty };
+
+  const clamped = Math.max(
+    samples[0].distanceMeters,
+    Math.min(distanceMeters, samples[samples.length - 1].distanceMeters),
+  );
+
+  let lo = 0;
+  let hi = samples.length - 1;
+  while (lo < hi - 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (samples[mid].distanceMeters <= clamped) lo = mid;
+    else hi = mid;
+  }
+
+  const a = samples[lo];
+  const b = samples[hi];
+  const span = b.distanceMeters - a.distanceMeters || 1;
+  const t = (clamped - a.distanceMeters) / span;
+  const splitPoint: LatLng = {
+    lat: a.lat + (b.lat - a.lat) * t,
+    lng: a.lng + (b.lng - a.lng) * t,
+  };
+
+  const traveledCoords = samples.slice(0, lo + 1).map((s) => [s.lng, s.lat]);
+  traveledCoords.push([splitPoint.lng, splitPoint.lat]);
+
+  const remainingCoords = [
+    [splitPoint.lng, splitPoint.lat],
+    ...samples.slice(hi).map((s) => [s.lng, s.lat]),
+  ];
+
+  return {
+    traveled: { type: 'LineString', coordinates: traveledCoords },
+    remaining: { type: 'LineString', coordinates: remainingCoords },
+  };
+}
+
 const BUILDING_SOURCE_LAYERS = new Set(['building', 'buildings']);
 
 function tryEnable3dBuildings(map: Map): void {
@@ -136,17 +278,28 @@ function tryEnable3dBuildings(map: Map): void {
       source: sourceId,
       'source-layer': buildingSourceLayer,
       type: 'fill-extrusion',
-      minzoom: 14,
+      minzoom: 13,
       paint: {
         'fill-extrusion-color': '#c4ccd6',
-        'fill-extrusion-opacity': 0.72,
+        'fill-extrusion-vertical-gradient': true,
+        'fill-extrusion-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          13,
+          0.35,
+          15,
+          0.6,
+          17,
+          0.85,
+        ],
         'fill-extrusion-height': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          14,
+          13,
           0,
-          14.5,
+          13.5,
           [
             'coalesce',
             ['get', 'render_height'],
@@ -198,10 +351,22 @@ function ensureRouteOverlay(map: Map): void {
     },
   });
   map.addLayer({
+    id: 'route-traveled-line',
+    type: 'line',
+    source: 'route',
+    filter: ['==', ['get', 'traveled'], 1],
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': 4,
+      'line-opacity': 0.24,
+    },
+  });
+  map.addLayer({
     id: 'route-glow',
     type: 'line',
     source: 'route',
-    filter: ['==', ['get', 'selected'], 1],
+    filter: ['all', ['==', ['get', 'selected'], 1], ['!=', ['get', 'traveled'], 1]],
     paint: {
       'line-color': ['get', 'color'],
       'line-width': 12,
@@ -213,7 +378,7 @@ function ensureRouteOverlay(map: Map): void {
     id: 'route-line',
     type: 'line',
     source: 'route',
-    filter: ['==', ['get', 'selected'], 1],
+    filter: ['all', ['==', ['get', 'selected'], 1], ['!=', ['get', 'traveled'], 1]],
     layout: { 'line-join': 'round', 'line-cap': 'round' },
     paint: {
       'line-color': ['get', 'color'],
@@ -247,6 +412,8 @@ export function RouteMap({
   const mapRef = useRef<Map | null>(null);
   const waypointMarkersRef = useRef<Marker[]>([]);
   const markerRider = useRef<Marker | null>(null);
+  const riderHeadingElRef = useRef<HTMLDivElement | null>(null);
+  const riderTrailRef = useRef<LatLng[]>([]);
   const peerMarkersRef = useRef(new globalThis.Map<number, Marker>());
   const onPickRef = useRef(onPick);
   const pickModeRef = useRef(pickMode);
@@ -364,12 +531,14 @@ export function RouteMap({
 
       activeMap.on('load', () => {
         ensureRouteOverlay(activeMap);
+        ensureRiderTrailOverlay(activeMap);
         wireRouteClicks();
         tryEnable3dBuildings(activeMap);
       });
 
       activeMap.on('style.load', () => {
         ensureRouteOverlay(activeMap);
+        setRiderTrailData(activeMap, riderTrailRef.current);
         tryEnable3dBuildings(activeMap);
       });
 
@@ -450,7 +619,7 @@ export function RouteMap({
         const el = document.createElement('div');
         el.className = `map-pin ${className}`;
         el.textContent = label;
-        marker = new Marker({ element: el })
+        marker = new Marker({ element: el, anchor: 'bottom' })
           .setLngLat([point.lng, point.lat])
           .addTo(map);
         markers[i] = marker;
@@ -463,10 +632,9 @@ export function RouteMap({
     }
 
     if (!markerRider.current && rider) {
-      const el = document.createElement('div');
-      el.className = 'map-pin map-pin-rider';
-      el.textContent = '🚴';
-      markerRider.current = new Marker({ element: el })
+      const { root, heading } = createRiderMarkerElement();
+      riderHeadingElRef.current = heading;
+      markerRider.current = new Marker({ element: root })
         .setLngLat([rider.lng, rider.lat])
         .addTo(map);
     } else if (markerRider.current && rider) {
@@ -474,6 +642,20 @@ export function RouteMap({
     } else if (markerRider.current && !rider) {
       markerRider.current.remove();
       markerRider.current = null;
+      riderHeadingElRef.current = null;
+    }
+
+    if (followRoad && rider) {
+      const trail = riderTrailRef.current;
+      const last = trail[trail.length - 1];
+      if (!last || haversineMetersApprox(last, rider) > 2.5) {
+        trail.push(rider);
+        if (trail.length > 240) trail.shift();
+        if (map.isStyleLoaded()) setRiderTrailData(map, trail);
+      }
+    } else if (!followRoad && riderTrailRef.current.length > 0) {
+      riderTrailRef.current = [];
+      if (map.isStyleLoaded()) setRiderTrailData(map, []);
     }
 
     if (!route && waypoints.length > 0) {
@@ -484,7 +666,7 @@ export function RouteMap({
         map.easeTo({ center: [last.lng, last.lat], zoom: 13, duration: 700 });
       }
     }
-  }, [waypoints, rider, route]);
+  }, [waypoints, rider, route, followRoad]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -533,40 +715,60 @@ export function RouteMap({
         return;
       }
 
-      let alts: Array<{ geometry: RouteResult['geometry'] }>;
-      if (followRoad && route) {
-        alts = [route];
-      } else if (routeAlternatives.length > 0) {
-        alts = routeAlternatives;
-      } else if (route) {
-        alts = [route];
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-        return;
-      }
+      let features: Array<{
+        type: 'Feature';
+        properties: { index: number; selected: number; traveled: number; color: string };
+        geometry: RouteResult['geometry'];
+      }>;
 
-      const features = alts.map((alt, index) => {
-        const isSelected = showAlternatives
-          ? index === selectedAlternativeIndex
-          : true;
-        const colorIndex = showAlternatives
-          ? index
-          : followRoad
-            ? selectedAlternativeIndex
-            : index;
-        return {
-          type: 'Feature' as const,
-          properties: {
-            index,
-            selected: isSelected ? 1 : 0,
-            color: routeAltColor(colorIndex),
+      if (followRoad && route && rider) {
+        const color = routeAltColor(selectedAlternativeIndex);
+        const split = splitRouteAtDistance(route.samples, distanceMeters);
+        features = [
+          {
+            type: 'Feature' as const,
+            properties: { index: 0, selected: 1, traveled: 1, color },
+            geometry: split.traveled,
           },
-          geometry: alt.geometry,
-        };
-      });
+          {
+            type: 'Feature' as const,
+            properties: { index: 0, selected: 1, traveled: 0, color },
+            geometry: split.remaining,
+          },
+        ].filter((f) => f.geometry.coordinates.length >= 2);
+      } else {
+        let alts: Array<{ geometry: RouteResult['geometry'] }>;
+        if (followRoad && route) {
+          alts = [route];
+        } else if (routeAlternatives.length > 0) {
+          alts = routeAlternatives;
+        } else if (route) {
+          alts = [route];
+        } else {
+          source.setData({ type: 'FeatureCollection', features: [] });
+          return;
+        }
 
-      // Draw unselected first so selected paints on top within filter layers.
-      features.sort((a, b) => a.properties.selected - b.properties.selected);
+        features = alts.map((alt, index) => {
+          const isSelected = showAlternatives
+            ? index === selectedAlternativeIndex
+            : true;
+          const colorIndex = showAlternatives ? index : index;
+          return {
+            type: 'Feature' as const,
+            properties: {
+              index,
+              selected: isSelected ? 1 : 0,
+              traveled: 0,
+              color: routeAltColor(colorIndex),
+            },
+            geometry: alt.geometry,
+          };
+        });
+
+        // Draw unselected first so selected paints on top within filter layers.
+        features.sort((a, b) => a.properties.selected - b.properties.selected);
+      }
 
       source.setData({
         type: 'FeatureCollection',
@@ -601,15 +803,27 @@ export function RouteMap({
     showAlternatives,
     followRoad,
     styleId,
+    rider,
+    distanceMeters,
   ]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !rider || !route || !followRoad) return;
+    if (!map || !rider || !route) return;
 
     const targetBearing = bearingAlongRoute(route.samples, distanceMeters);
     const nextBearing = lerpBearing(bearingRef.current, targetBearing, 0.28);
     bearingRef.current = nextBearing;
+
+    // In follow-road ride view the camera itself rotates to face travel
+    // direction (bearing below), so "up" on screen already means "forward" —
+    // the cone stays pointed up. In the flat overview the map stays
+    // north-up, so the cone rotates to show true travel direction.
+    if (riderHeadingElRef.current) {
+      riderHeadingElRef.current.style.transform = `rotate(${followRoad ? 0 : nextBearing}deg)`;
+    }
+
+    if (!followRoad) return;
 
     map.easeTo({
       center: [rider.lng, rider.lat],

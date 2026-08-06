@@ -1319,6 +1319,21 @@ select {
   transform: scale(1.1);
 }
 
+/* Soft ground shadow so pins read as sitting on the map, not floating on it. */
+.map-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  filter: blur(1.5px);
+  z-index: -1;
+}
+
 .map-pin-a {
   background: linear-gradient(135deg, #00f0ff 0%, #00b8ff 100%);
   color: #020b12;
@@ -1378,14 +1393,53 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
-.map-pin-rider {
+/* Rider marker: a fixed, always-upright bike-and-rider glyph (real vector
+   icon, not an emoji) plus a heading cone that rotates to show travel
+   direction on the flat overview map. */
+.rider-marker {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.rider-marker-cone {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transition: transform 0.25s linear;
+  pointer-events: none;
+}
+
+.rider-marker-cone::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 24px solid rgba(0, 240, 255, 0.32);
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.55));
+}
+
+.rider-marker-core {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #ffffff;
   color: var(--accent-ink);
-  border: 2.5px solid var(--accent);
-  padding: 6px 10px;
-  font-size: 1rem;
   border-radius: 50%;
-  box-shadow: 0 0 28px rgba(0, 240, 255, 0.95);
+  border: 2.5px solid var(--accent);
+  box-shadow: 0 0 22px rgba(0, 240, 255, 0.85);
   animation: pulse-rider 1.5s infinite alternate;
 }
 
