@@ -66,7 +66,14 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
     let patchRebuildInFlight = false;
     const disposePatch = (mesh: THREE.Mesh) => {
       mesh.geometry.dispose();
-      (mesh.material as THREE.Material).dispose();
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      // Disposing a material does NOT dispose its texture map — that's a
+      // separate GPU resource. Each rebuild allocates a brand-new
+      // CanvasTexture (up to ~1792x1792px); missing this leaked one full-size
+      // GPU texture per rebuild (every ~100m of travel) until VRAM ran out
+      // and crashed the WebGL context entirely.
+      material.map?.dispose();
+      material.dispose();
     };
     const requestPatchRebuild = (centerDistance: number, cx: number, cy: number, cz: number) => {
       patchRebuildInFlight = true;
