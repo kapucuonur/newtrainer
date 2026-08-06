@@ -1,0 +1,11 @@
+Models in this directory (trees/, rocks/, bushes/, houses/, sign.glb) are
+from Kenney's "Nature Kit" and "City Kit (Suburban)" asset packs.
+
+Source: https://kenney.nl/assets/nature-kit
+        https://kenney.nl/assets/city-kit-suburban
+
+License: CC0 1.0 Universal (Creative Commons Zero / Public Domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Free to use in personal, educational, and commercial projects with no
+attribution required. Credited here anyway per Kenney's request.

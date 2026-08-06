@@ -38,6 +38,7 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !route || route.samples.length < 2) return;
+    let cancelled = false;
 
     const localPoints: LocalRoutePoint[] = projectRouteToLocal(route.samples);
     const displayDistance = { current: distanceRef.current };
@@ -47,7 +48,12 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
     scene.fog = new THREE.Fog(SKY_COLOR, 55, 240);
 
     scene.add(buildRoadRibbon(localPoints));
-    scene.add(buildScenery(localPoints));
+    // Scenery loads real (CC0) GLB models over the network — don't block the
+    // rest of the scene (camera/avatar/render loop) on that; it pops in
+    // a moment later instead.
+    void buildScenery(localPoints).then((sceneryGroup) => {
+      if (!cancelled) scene.add(sceneryGroup);
+    });
 
     const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 260);
 
@@ -165,11 +171,15 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
     raf = requestAnimationFrame(tick);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
       renderer.dispose();
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
+        // Real-asset InstancedMeshes reference the asset loader's cached,
+        // shared geometry/material (reused across route changes) — disposing
+        // them here would corrupt the cache for the next ride.
+        if (obj instanceof THREE.Mesh && !obj.userData.sharedResource) {
           obj.geometry.dispose();
           const mat = obj.material;
           if (Array.isArray(mat)) mat.forEach((m) => m.dispose());

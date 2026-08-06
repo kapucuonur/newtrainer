@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { LocalRoutePoint } from './routeProjection';
+import { loadKenneyProps, type LoadedProp } from './assetLoader';
 
 /** Deterministic small PRNG so scenery is stable across re-renders of the same route. */
 function mulberry32(seed: number): () => number {
@@ -18,6 +19,22 @@ const WALL_COLORS = [0xe8dcc8, 0xd9c9a8, 0xc9b896];
 
 type Placement = { x: number; y: number; z: number; rotY: number; scale: number };
 type TerrainSampler = (x: number, z: number) => number;
+
+const TREE_ASSETS = [
+  'trees/pine-round.glb',
+  'trees/pine-tall.glb',
+  'trees/detailed.glb',
+  'trees/detailed-fall.glb',
+  'trees/oak.glb',
+  'trees/thin-dark.glb',
+];
+const ROCK_ASSETS = ['rocks/large-a.glb', 'rocks/large-d.glb', 'rocks/small-b.glb', 'rocks/tall-d.glb'];
+const BUSH_ASSETS = ['bushes/large.glb', 'bushes/detailed.glb', 'bushes/small.glb'];
+const HOUSE_ASSETS = ['houses/type-a.glb', 'houses/type-c.glb', 'houses/type-h.glb', 'houses/type-m.glb'];
+const SIGN_ASSETS = ['sign.glb'];
+
+/** Kenney's nature-kit models measure ~1 unit tall as authored — this brings a tree to roughly real size. */
+const PROP_SCALE = 3.6;
 
 /**
  * Height field for the ground away from the road: inverse-distance-weighted
@@ -86,12 +103,14 @@ function buildTerrainGround(points: LocalRoutePoint[], sampler: TerrainSampler):
 }
 
 /**
- * Scatters low-poly trees/bushes/rocks/houses along both shoulders of the
- * route (plus occasional signposts right at the edge) using InstancedMesh —
- * a handful of draw calls total regardless of route length. Deterministic
- * (seeded) so the same route always scatters the same way.
+ * Scatters trees/bushes/rocks/houses (real CC0 Kenney models — see
+ * public/assets/ride3d/LICENSE.txt — with a procedural fallback if any fail
+ * to load) along both shoulders of the route, plus occasional signposts
+ * right at the edge, using InstancedMesh — a handful of draw calls total
+ * regardless of route length. Deterministic (seeded) so the same route
+ * always scatters the same way.
  */
-export function buildScenery(points: LocalRoutePoint[]): THREE.Group {
+export async function buildScenery(points: LocalRoutePoint[]): Promise<THREE.Group> {
   const group = new THREE.Group();
   if (points.length === 0) return group;
 
@@ -139,26 +158,53 @@ export function buildScenery(points: LocalRoutePoint[]): THREE.Group {
       const offset = 6 + rand() * 14;
       const px = p.x + rightX * offset * side;
       const pz = p.z + rightZ * offset * side;
+      // Kenney's nature-kit models are authored small (~1 unit tall trees) —
+      // PROP_SCALE brings them up to roughly real size; per-item variance on
+      // top of that for natural-looking variety.
+      const baseScale = (0.85 + rand() * 0.5) * PROP_SCALE;
       const placement: Placement = {
         x: px,
         y: sampler(px, pz),
         z: pz,
         rotY: rand() * Math.PI * 2,
-        scale: 0.75 + rand() * 0.7,
+        scale: baseScale,
       };
       const roll = rand();
       if (roll < 0.55) trees.push(placement);
       else if (roll < 0.75) bushes.push(placement);
       else if (roll < 0.92) rocks.push(placement);
-      else houses.push({ ...placement, scale: 0.85 + rand() * 0.3 });
+      else houses.push({ ...placement, scale: (0.9 + rand() * 0.25) * PROP_SCALE });
     }
   }
+  signs.forEach((s) => {
+    s.scale = PROP_SCALE;
+  });
 
-  group.add(buildTreeInstances(trees));
-  if (bushes.length > 0) group.add(buildBushInstances(bushes));
-  if (rocks.length > 0) group.add(buildRockInstances(rocks));
-  if (houses.length > 0) group.add(buildHouseInstances(houses));
-  if (signs.length > 0) group.add(buildSignInstances(signs));
+  const [treeProps, rockProps, bushProps, houseProps, signProps] = await Promise.all([
+    loadKenneyProps(TREE_ASSETS),
+    loadKenneyProps(ROCK_ASSETS),
+    loadKenneyProps(BUSH_ASSETS),
+    loadKenneyProps(HOUSE_ASSETS),
+    loadKenneyProps(SIGN_ASSETS),
+  ]);
+
+  // Nature-kit trees/rocks/bushes/signs ship without a working texture (see
+  // assetLoader.ts) — recolor with our own flat palette instead of showing
+  // their untextured (wrong-looking) baked material. The suburban houses DO
+  // have a working baked texture, so those keep their real material.
+  if (!addModelInstances(group, trees, treeProps, LEAF_COLORS[1])) group.add(buildTreeInstancesFallback(trees));
+  if (bushes.length > 0 && !addModelInstances(group, bushes, bushProps, 0x40a75a)) {
+    group.add(buildBushInstancesFallback(bushes));
+  }
+  if (rocks.length > 0 && !addModelInstances(group, rocks, rockProps, 0x9a9a94)) {
+    group.add(buildRockInstancesFallback(rocks));
+  }
+  if (houses.length > 0 && !addModelInstances(group, houses, houseProps)) {
+    group.add(buildHouseInstancesFallback(houses));
+  }
+  if (signs.length > 0 && !addModelInstances(group, signs, signProps, 0x8a6a4a)) {
+    group.add(buildSignInstancesFallback(signs));
+  }
 
   return group;
 }
@@ -171,7 +217,62 @@ function applyPlacement(matrix: THREE.Matrix4, p: Placement, localOffsetY: numbe
   );
 }
 
-function buildTreeInstances(placements: Placement[]): THREE.Group {
+// Flat-colored materials for recoloring untextured nature-kit props, keyed
+// by hex so identical calls share one material instance instead of creating
+// a new one per prop category call.
+const recolorMaterialCache = new Map<number, THREE.MeshStandardMaterial>();
+function recolorMaterial(hex: number): THREE.MeshStandardMaterial {
+  let mat = recolorMaterialCache.get(hex);
+  if (!mat) {
+    mat = new THREE.MeshStandardMaterial({ color: hex, flatShading: true, roughness: 0.95 });
+    recolorMaterialCache.set(hex, mat);
+  }
+  return mat;
+}
+
+/**
+ * Builds one InstancedMesh per loaded model variant, splitting `placements`
+ * round-robin across whichever variants actually loaded. Returns false (adds
+ * nothing) if every variant failed, so the caller can fall back to a
+ * procedural shape instead of silently showing nothing.
+ *
+ * The geometry (and, when not recolored, material) here are the asset
+ * loader's cached, shared instances (reused across route changes) —
+ * `userData.sharedResource` marks them so CartoonRideScene's teardown skips
+ * disposing them.
+ */
+function addModelInstances(
+  group: THREE.Group,
+  placements: Placement[],
+  props: (LoadedProp | null)[],
+  recolorHex?: number,
+): boolean {
+  const valid = props.filter((p): p is LoadedProp => p !== null);
+  if (valid.length === 0 || placements.length === 0) return false;
+
+  const perVariant: Placement[][] = valid.map(() => []);
+  placements.forEach((p, i) => perVariant[i % valid.length].push(p));
+
+  const m = new THREE.Matrix4();
+  perVariant.forEach((list, vi) => {
+    if (list.length === 0) return;
+    const source = valid[vi];
+    const material = recolorHex !== undefined ? recolorMaterial(recolorHex) : source.material;
+    const instanced = new THREE.InstancedMesh(source.geometry, material, list.length);
+    instanced.userData.sharedResource = true;
+    list.forEach((p, i) => {
+      applyPlacement(m, p, 0);
+      instanced.setMatrixAt(i, m);
+    });
+    instanced.instanceMatrix.needsUpdate = true;
+    group.add(instanced);
+  });
+  return true;
+}
+
+// --- Procedural fallbacks (used only if the real asset fetch fails, e.g. offline) ---
+
+function buildTreeInstancesFallback(placements: Placement[]): THREE.Group {
   const group = new THREE.Group();
   if (placements.length === 0) return group;
 
@@ -180,8 +281,6 @@ function buildTreeInstances(placements: Placement[]): THREE.Group {
   const trunk = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, placements.length);
 
   const leafGeometry = new THREE.ConeGeometry(1.05, 2.1, 7);
-  // A single averaged leaf color (not per-tree) keeps this to one instanced
-  // draw call instead of one per color variant.
   const leafMaterial = new THREE.MeshStandardMaterial({ color: LEAF_COLORS[1], flatShading: true, roughness: 0.9 });
   const leaves = new THREE.InstancedMesh(leafGeometry, leafMaterial, placements.length);
 
@@ -199,7 +298,7 @@ function buildTreeInstances(placements: Placement[]): THREE.Group {
   return group;
 }
 
-function buildBushInstances(placements: Placement[]): THREE.InstancedMesh {
+function buildBushInstancesFallback(placements: Placement[]): THREE.InstancedMesh {
   const geometry = new THREE.IcosahedronGeometry(0.55, 0);
   const material = new THREE.MeshStandardMaterial({ color: 0x40a75a, flatShading: true, roughness: 1 });
   const mesh = new THREE.InstancedMesh(geometry, material, placements.length);
@@ -212,7 +311,7 @@ function buildBushInstances(placements: Placement[]): THREE.InstancedMesh {
   return mesh;
 }
 
-function buildRockInstances(placements: Placement[]): THREE.InstancedMesh {
+function buildRockInstancesFallback(placements: Placement[]): THREE.InstancedMesh {
   const geometry = new THREE.IcosahedronGeometry(0.6, 0);
   const material = new THREE.MeshStandardMaterial({ color: 0x9a9a94, flatShading: true, roughness: 1 });
   const mesh = new THREE.InstancedMesh(geometry, material, placements.length);
@@ -225,7 +324,7 @@ function buildRockInstances(placements: Placement[]): THREE.InstancedMesh {
   return mesh;
 }
 
-function buildHouseInstances(placements: Placement[]): THREE.Group {
+function buildHouseInstancesFallback(placements: Placement[]): THREE.Group {
   const group = new THREE.Group();
   if (placements.length === 0) return group;
 
@@ -255,7 +354,7 @@ function buildHouseInstances(placements: Placement[]): THREE.Group {
   return group;
 }
 
-function buildSignInstances(placements: Placement[]): THREE.Group {
+function buildSignInstancesFallback(placements: Placement[]): THREE.Group {
   const group = new THREE.Group();
   if (placements.length === 0) return group;
 
