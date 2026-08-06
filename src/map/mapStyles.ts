@@ -50,10 +50,15 @@ export function isMapStyleId(value: unknown): value is MapStyleId {
 
 /**
  * Real satellite imagery (Esri World Imagery — free, keyless XYZ tiles,
- * CORS-open) as a standalone raster basemap. No vector data, so route
- * planning still works (route/rider layers are added separately, not
- * sourced from the basemap) but 3D building extrusion has nothing to key
- * off and is skipped — same graceful fallback as any other style missing
+ * CORS-open) as a standalone raster basemap, with Esri's matching reference
+ * overlay (transparent PNG tiles carrying country/region/city/town place
+ * names, borders, and road labels — no basemap fill of its own, designed to
+ * composite over World_Imagery) drawn on top — otherwise satellite-only
+ * imagery has no text anywhere, no country/city/town names. Same free,
+ * keyless, CORS-open Esri service as the imagery layer. No vector data, so
+ * route planning still works (route/rider layers are added separately, not
+ * sourced from the basemap) but 3D building extrusion has nothing to key off
+ * and is skipped — same graceful fallback as any other style missing
  * building height attributes.
  */
 export function buildSatelliteStyle(): StyleSpecification {
@@ -69,12 +74,26 @@ export function buildSatelliteStyle(): StyleSpecification {
         attribution: 'Esri, Maxar, Earthstar Geographics',
         maxzoom: 19,
       },
+      'esri-labels': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        ],
+        tileSize: 256,
+        attribution: 'Esri',
+        maxzoom: 19,
+      },
     },
     layers: [
       {
         id: 'esri-satellite-layer',
         type: 'raster',
         source: 'esri-satellite',
+      },
+      {
+        id: 'esri-labels-layer',
+        type: 'raster',
+        source: 'esri-labels',
       },
     ],
   };
