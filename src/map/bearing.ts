@@ -19,6 +19,33 @@ export function lerpBearing(from: number, to: number, t: number): number {
   return (from + delta * t + 360) % 360;
 }
 
+/** Point `distanceMeters` from `from` along compass `bearingDeg` (great-circle). */
+export function destinationPoint(
+  from: LatLng,
+  bearingDeg: number,
+  distanceMeters: number,
+): LatLng {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const δ = distanceMeters / R;
+  const θ = toRad(bearingDeg);
+  const φ1 = toRad(from.lat);
+  const λ1 = toRad(from.lng);
+
+  const φ2 = Math.asin(
+    Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ),
+  );
+  const λ2 =
+    λ1 +
+    Math.atan2(
+      Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+      Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2),
+    );
+
+  return { lat: toDeg(φ2), lng: toDeg(λ2) };
+}
+
 /**
  * Bearing along the route at `distanceMeters`, looking ahead so the camera
  * faces the road direction rather than jittering on dense samples.

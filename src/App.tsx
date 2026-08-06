@@ -1336,6 +1336,7 @@ export default function App() {
               rider={telemetry.position}
               ridePhase={telemetry.phase}
               distanceMeters={telemetry.distanceMeters}
+              speedKmh={telemetry.speedKmh}
               onPick={onPick}
               pickMode={pickMode}
               pickingEnabled={canPlanRoute && !inGroup}

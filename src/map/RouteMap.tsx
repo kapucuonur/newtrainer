@@ -20,7 +20,7 @@ import type {
   RouteResult,
 } from '../routing/types';
 import { waypointLabel } from '../routing/waypoints';
-import { bearingAlongRoute, lerpBearing } from './bearing';
+import { bearingAlongRoute, destinationPoint, lerpBearing } from './bearing';
 import { MapStylePicker } from '../ui/MapStylePicker';
 import {
   loadStoredMapStyleId,
@@ -73,6 +73,8 @@ type Props = {
   rider: LatLng | null;
   ridePhase: RidePhase;
   distanceMeters: number;
+  /** Current speed — subtly widens the ride camera at higher speed for a sense of pace. */
+  speedKmh?: number;
   onPick: (point: LatLng) => void;
   /** When true, map clicks append the next waypoint. */
   pickMode: boolean;
@@ -227,6 +229,50 @@ function splitRouteAtDistance(
     traveled: { type: 'LineString', coordinates: traveledCoords },
     remaining: { type: 'LineString', coordinates: remainingCoords },
   };
+}
+
+/** Interpolated grade (%) at `distanceMeters`, from the same real DEM samples used for elevation. */
+function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number {
+  if (samples.length === 0) return 0;
+  if (distanceMeters <= samples[0].distanceMeters) return samples[0].gradePercent;
+  const last = samples[samples.length - 1];
+  if (distanceMeters >= last.distanceMeters) return last.gradePercent;
+
+  let lo = 0;
+  let hi = samples.length - 1;
+  while (lo < hi - 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (samples[mid].distanceMeters <= distanceMeters) lo = mid;
+    else hi = mid;
+  }
+  const a = samples[lo];
+  const b = samples[hi];
+  const span = b.distanceMeters - a.distanceMeters || 1;
+  const t = (distanceMeters - a.distanceMeters) / span;
+  return a.gradePercent + (b.gradePercent - a.gradePercent) * t;
+}
+
+// Ride-camera tuning: these exaggerate the *visual* framing of the same real
+// grade/speed data (no synthetic elevation) so climbs read as steep and
+// speed reads as fast, the way racing/training games bias their camera.
+const RIDE_BASE_PITCH = 62;
+const RIDE_MAX_PITCH = 78;
+const RIDE_BASE_ZOOM = 16.2;
+const RIDE_LOOK_AHEAD_METERS = 14;
+
+/** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
+function climbPitchBoost(gradePercent: number): number {
+  return Math.max(0, Math.min(gradePercent, 14)) * 0.85;
+}
+
+/** Nudges the camera in slightly on climbs, framing the "wall" ahead tighter. */
+function climbZoomBoost(gradePercent: number): number {
+  return Math.max(0, Math.min(gradePercent, 12)) * 0.035;
+}
+
+/** Pulls the camera back slightly at speed for a sense of covering ground fast. */
+function speedZoomOut(speedKmh: number): number {
+  return Math.max(0, Math.min(speedKmh - 15, 30)) * 0.012;
 }
 
 const BUILDING_SOURCE_LAYERS = new Set(['building', 'buildings']);
@@ -398,6 +444,7 @@ export function RouteMap({
   rider,
   ridePhase,
   distanceMeters,
+  speedKmh = 0,
   onPick,
   pickMode,
   pickingEnabled = true,
@@ -477,7 +524,7 @@ export function RouteMap({
         zoom: 11,
         pitch: 0,
         bearing: 0,
-        maxPitch: 70,
+        maxPitch: RIDE_MAX_PITCH,
         attributionControl: { compact: true },
         transformRequest: (url) => ({ url }),
       });
@@ -825,15 +872,23 @@ export function RouteMap({
 
     if (!followRoad) return;
 
+    const grade = gradeAtDistance(route.samples, distanceMeters);
+    const pitch = Math.min(RIDE_MAX_PITCH, RIDE_BASE_PITCH + climbPitchBoost(grade));
+    const zoom = RIDE_BASE_ZOOM + climbZoomBoost(grade) - speedZoomOut(speedKmh);
+    // Center a bit ahead of the rider (not on top of them) so the avatar
+    // sits low in frame with open road ahead — a chase camera, not a dot
+    // riding under a fixed crosshair.
+    const lookAhead = destinationPoint(rider, nextBearing, RIDE_LOOK_AHEAD_METERS);
+
     map.easeTo({
-      center: [rider.lng, rider.lat],
-      zoom: Math.max(map.getZoom(), 16.2),
-      pitch: 62,
+      center: [lookAhead.lng, lookAhead.lat],
+      zoom,
+      pitch,
       bearing: nextBearing,
       duration: ridePhase === 'paused' ? 0 : 320,
       essential: true,
     });
-  }, [rider, route, distanceMeters, followRoad, ridePhase]);
+  }, [rider, route, distanceMeters, followRoad, ridePhase, speedKmh]);
 
   useEffect(() => {
     const map = mapRef.current;
