@@ -138,13 +138,16 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
       rider.rearWheel.rotation.x -= spin;
       rider.crank.rotation.x -= spin * 1.4;
 
+      // Pulled back further than a literal "just behind the seat" distance —
+      // at close range the rider fills most of the frame and hides the road,
+      // which read as broken/amateurish rather than a proper chase cam.
       const behind = forwardFlat.clone().multiplyScalar(-1);
       const desiredPos = new THREE.Vector3(x, y, z)
-        .addScaledVector(behind, 4.6)
-        .add(new THREE.Vector3(0, 2.1, 0));
+        .addScaledVector(behind, 7.5)
+        .add(new THREE.Vector3(0, 3.2, 0));
       const desiredLookAt = new THREE.Vector3(x, y, z)
-        .addScaledVector(forwardFlat, 7)
-        .add(new THREE.Vector3(0, 1.3, 0));
+        .addScaledVector(forwardFlat, 11)
+        .add(new THREE.Vector3(0, 1.4, 0));
 
       if (!camInit) {
         cameraPos.copy(desiredPos);
