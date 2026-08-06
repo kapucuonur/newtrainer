@@ -13,7 +13,7 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-const AVATAR_VISUAL_SCALE = 16;
+const AVATAR_VISUAL_SCALE = 65;
 const WHEEL_TUBE = 0.042;
 const CRANK_RADIUS = 0.175;
 
@@ -122,6 +122,13 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.scene.add(this.anchor);
 
     this.heading.add(this.riderGroup);
+
+    // Ground Contact Shadow
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4 });
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(0, 0.01, 0);
+    this.riderGroup.add(shadow);
 
     // 3D Spinning Carbon Wheels
     this.rearWheel = createSpokeWheel();
