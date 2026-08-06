@@ -197,6 +197,7 @@ export const no: Messages = {
   'map.followGroup': ' · Gruppekart',
   'map.lockedBanner': 'Logg inn for å koble til enheter og plassere veipunkter på kartet',
   'map.stylePicker': 'Kartstil',
+  'map.styleSatellite': 'Satellitt',
   'map.styleOutdoors': 'Utendørs',
   'map.styleStreets': 'Gater',
   'map.styleLight': 'Lys',

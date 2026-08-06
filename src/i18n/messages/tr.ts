@@ -195,6 +195,7 @@ export const tr: Messages = {
   'map.followGroup': ' · Grup haritası',
   'map.lockedBanner': 'Cihaz bağlamak ve haritada ara nokta koymak için giriş yapın',
   'map.stylePicker': 'Harita stili',
+  'map.styleSatellite': 'Uydu',
   'map.styleOutdoors': 'Doğa',
   'map.styleStreets': 'Sokak',
   'map.styleLight': 'Açık',

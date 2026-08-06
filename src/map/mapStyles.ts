@@ -1,15 +1,23 @@
 /** Free MapLibre styles — no API key. OpenFreeMap / OpenStreetMap data. */
 
-export type MapStyleId = 'outdoors' | 'streets' | 'light';
+import type { StyleSpecification } from 'maplibre-gl';
+
+export type MapStyleId = 'satellite' | 'outdoors' | 'streets' | 'light';
 
 export type MapStylePreset = {
   id: MapStyleId;
-  /** OpenFreeMap style URL (free public tiles, no key). */
+  /** OpenFreeMap style URL (free public tiles, no key); empty for 'satellite', which is built inline. */
   url: string;
-  labelKey: 'map.styleOutdoors' | 'map.styleStreets' | 'map.styleLight';
+  labelKey: 'map.styleSatellite' | 'map.styleOutdoors' | 'map.styleStreets' | 'map.styleLight';
 };
 
 export const MAP_STYLE_PRESETS: readonly MapStylePreset[] = [
+  {
+    id: 'satellite',
+    // Real satellite photography — no vector data, built inline (see buildSatelliteStyle).
+    url: '',
+    labelKey: 'map.styleSatellite',
+  },
   {
     id: 'outdoors',
     // OSM Bright: saturated parks/woods, clear roads — best free outdoor/cycling read.
@@ -30,14 +38,46 @@ export const MAP_STYLE_PRESETS: readonly MapStylePreset[] = [
   },
 ] as const;
 
-export const DEFAULT_MAP_STYLE_ID: MapStyleId = 'outdoors';
+export const DEFAULT_MAP_STYLE_ID: MapStyleId = 'satellite';
 
 const STORAGE_KEY = 'roadlab.mapStyleId';
 
 export function isMapStyleId(value: unknown): value is MapStyleId {
   return (
-    value === 'outdoors' || value === 'streets' || value === 'light'
+    value === 'satellite' || value === 'outdoors' || value === 'streets' || value === 'light'
   );
+}
+
+/**
+ * Real satellite imagery (Esri World Imagery — free, keyless XYZ tiles,
+ * CORS-open) as a standalone raster basemap. No vector data, so route
+ * planning still works (route/rider layers are added separately, not
+ * sourced from the basemap) but 3D building extrusion has nothing to key
+ * off and is skipped — same graceful fallback as any other style missing
+ * building height attributes.
+ */
+export function buildSatelliteStyle(): StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      'esri-satellite': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        ],
+        tileSize: 256,
+        attribution: 'Esri, Maxar, Earthstar Geographics',
+        maxzoom: 19,
+      },
+    },
+    layers: [
+      {
+        id: 'esri-satellite-layer',
+        type: 'raster',
+        source: 'esri-satellite',
+      },
+    ],
+  };
 }
 
 export function getPresetById(id: MapStyleId): MapStylePreset {

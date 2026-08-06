@@ -197,6 +197,7 @@ export const ru: Messages = {
   'map.followGroup': ' · Групповая карта',
   'map.lockedBanner': 'Войдите, чтобы подключить устройства и ставить точки на карте',
   'map.stylePicker': 'Стиль карты',
+  'map.styleSatellite': 'Спутник',
   'map.styleOutdoors': 'Природа',
   'map.styleStreets': 'Улицы',
   'map.styleLight': 'Светлая',

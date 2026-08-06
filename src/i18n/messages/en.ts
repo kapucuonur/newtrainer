@@ -192,6 +192,7 @@ export const en = {
   'map.followGroup': ' · Group map',
   'map.lockedBanner': 'Sign in to connect devices and place waypoints on the map',
   'map.stylePicker': 'Map style',
+  'map.styleSatellite': 'Satellite',
   'map.styleOutdoors': 'Outdoors',
   'map.styleStreets': 'Streets',
   'map.styleLight': 'Light',

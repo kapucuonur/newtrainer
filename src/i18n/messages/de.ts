@@ -196,6 +196,7 @@ export const de: Messages = {
   'map.followGroup': ' · Gruppenkarte',
   'map.lockedBanner': 'Anmelden, um Geräte zu verbinden und Wegpunkte auf der Karte zu setzen',
   'map.stylePicker': 'Kartenstil',
+  'map.styleSatellite': 'Satellit',
   'map.styleOutdoors': 'Outdoor',
   'map.styleStreets': 'Straßen',
   'map.styleLight': 'Hell',

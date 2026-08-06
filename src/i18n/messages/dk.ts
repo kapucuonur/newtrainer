@@ -197,6 +197,7 @@ export const dk: Messages = {
   'map.followGroup': ' · Gruppekort',
   'map.lockedBanner': 'Log ind for at forbinde enheder og placere vejpoints på kortet',
   'map.stylePicker': 'Kortstil',
+  'map.styleSatellite': 'Satellit',
   'map.styleOutdoors': 'Udendørs',
   'map.styleStreets': 'Gader',
   'map.styleLight': 'Lys',

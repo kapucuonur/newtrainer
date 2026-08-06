@@ -197,6 +197,7 @@ export const it: Messages = {
   'map.followGroup': ' · Mappa di gruppo',
   'map.lockedBanner': 'Accedi per collegare i dispositivi e posizionare waypoint sulla mappa',
   'map.stylePicker': 'Stile mappa',
+  'map.styleSatellite': 'Satellite',
   'map.styleOutdoors': 'Outdoor',
   'map.styleStreets': 'Strade',
   'map.styleLight': 'Chiaro',

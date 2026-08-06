@@ -24,6 +24,7 @@ import { bearingAlongRoute, destinationPoint, lerpBearing } from './bearing';
 import type { RiderAvatarLayer } from './RiderAvatarLayer';
 import { MapStylePicker } from '../ui/MapStylePicker';
 import {
+  buildSatelliteStyle,
   loadStoredMapStyleId,
   resolveStyleUrl,
   storeMapStyleId,
@@ -49,6 +50,7 @@ const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 }
 
 async function loadMapStyle(styleId: MapStyleId): Promise<string | StyleSpecification> {
+  if (styleId === 'satellite') return buildSatelliteStyle();
   const url = resolveStyleUrl(styleId);
   try {
     const res = await fetch(url);
