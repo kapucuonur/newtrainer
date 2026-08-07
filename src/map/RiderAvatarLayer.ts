@@ -13,16 +13,16 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-const AVATAR_VISUAL_SCALE = 65;
+const AVATAR_VISUAL_SCALE = 100;
 const WHEEL_TUBE = 0.042;
 const CRANK_RADIUS = 0.175;
 
 function createSpokeWheel(): THREE.Group {
   const wheel = new THREE.Group();
 
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.85 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x22252b, roughness: 0.3, metalness: 0.6 });
-  const spokeMat = new THREE.MeshStandardMaterial({ color: 0x99a0aa, roughness: 0.2, metalness: 0.9 });
+  const tireMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.7 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0x333842, roughness: 0.25, metalness: 0.7 });
+  const spokeMat = new THREE.MeshStandardMaterial({ color: 0xc2c8d2, roughness: 0.1, metalness: 0.95 });
 
   // Tire
   const tire = new THREE.Mesh(new THREE.TorusGeometry(WHEEL_RADIUS, WHEEL_TUBE, 12, 32), tireMat);
@@ -74,6 +74,25 @@ function createSpokeWheel(): THREE.Group {
   return wheel;
 }
 
+function createGroundGlowTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
+    grad.addColorStop(0.35, 'rgba(0, 240, 255, 0.45)');
+    grad.addColorStop(0.7, 'rgba(0, 240, 255, 0.15)');
+    grad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
 export class RiderAvatarLayer implements CustomLayerInterface {
@@ -85,6 +104,9 @@ export class RiderAvatarLayer implements CustomLayerInterface {
   position: LatLng | null = null;
   bearingDeg = 0;
   speedKmh = 0;
+  /** Current rider elevation (metres ASL) — fed from real DEM samples so
+   * the avatar sits on the terrain mesh rather than at sea level. */
+  elevationMeters = 0;
 
   private map: Map | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
@@ -98,6 +120,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
   private frontWheel: THREE.Group | null = null;
   private rearWheel: THREE.Group | null = null;
   private crankGroup: THREE.Group | null = null;
+  private beaconRing: THREE.Mesh | null = null;
 
   private crankAngle = 0;
   private lastFrameTime = 0;
@@ -107,15 +130,15 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
     this.renderer.autoClear = false;
 
-    // Realistic outdoor lighting setup
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+    // High-visibility outdoor lighting setup
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(0.5, 1.2, 0.8);
     this.scene.add(sun);
 
-    const fillLight = new THREE.DirectionalLight(0x88bbff, 0.5);
-    fillLight.position.set(-0.5, 0.5, -0.8);
-    this.scene.add(fillLight);
+    const cyanRimLight = new THREE.DirectionalLight(0x00f0ff, 0.8);
+    cyanRimLight.position.set(-0.5, 0.5, -0.8);
+    this.scene.add(cyanRimLight);
 
     this.anchor.rotation.x = Math.PI / 2;
     this.anchor.add(this.heading);
@@ -124,11 +147,33 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.heading.add(this.riderGroup);
 
     // Ground Contact Shadow
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4 });
-    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), shadowMat);
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 });
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), shadowMat);
     shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(0, 0.01, 0);
+    shadow.position.set(0, 0.005, 0);
     this.riderGroup.add(shadow);
+
+    // Glowing Neon Ground Disc (High visibility pulse halo under bicycle)
+    const glowMat = new THREE.MeshBasicMaterial({
+      map: createGroundGlowTexture(),
+      transparent: true,
+      depthWrite: false,
+    });
+    const glowDisc = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), glowMat);
+    glowDisc.rotation.x = -Math.PI / 2;
+    glowDisc.position.set(0, 0.008, 0);
+    this.riderGroup.add(glowDisc);
+
+    // Glowing Neon Beacon Ring surrounding bicycle
+    const beaconMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.85,
+    });
+    this.beaconRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.035, 12, 48), beaconMat);
+    this.beaconRing.rotation.x = Math.PI / 2;
+    this.beaconRing.position.set(0, 0.012, 0);
+    this.riderGroup.add(this.beaconRing);
 
     // 3D Spinning Carbon Wheels
     this.rearWheel = createSpokeWheel();
@@ -140,8 +185,8 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     // 3D Rotating Crankset
     this.crankGroup = new THREE.Group();
     this.crankGroup.position.set(0, 0.35, -0.05);
-    const crankMat = new THREE.MeshStandardMaterial({ color: 0x20242b, roughness: 0.4, metalness: 0.6 });
-    const pedalMat = new THREE.MeshStandardMaterial({ color: 0x14171c, roughness: 0.5 });
+    const crankMat = new THREE.MeshStandardMaterial({ color: 0x282c35, roughness: 0.3, metalness: 0.7 });
+    const pedalMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.4 });
 
     const armR = new THREE.Mesh(new THREE.BoxGeometry(0.02, CRANK_RADIUS, 0.02), crankMat);
     armR.position.set(0.06, -CRANK_RADIUS * 0.5, 0);
@@ -192,8 +237,8 @@ export class RiderAvatarLayer implements CustomLayerInterface {
         transparent: true,
         alphaTest: 0.15,
         side: THREE.DoubleSide,
-        roughness: 0.4,
-        metalness: 0.1,
+        roughness: 0.3,
+        metalness: 0.15,
       });
 
       // Photorealistic Cyclist & Bike Plane Mesh
@@ -219,7 +264,10 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     const canvas = map.getCanvas();
     renderer.setSize(canvas.width, canvas.height, false);
 
-    const mercator = MercatorCoordinate.fromLngLat([this.position.lng, this.position.lat], 0);
+    const mercator = MercatorCoordinate.fromLngLat(
+      [this.position.lng, this.position.lat],
+      this.elevationMeters,
+    );
     const scale = mercator.meterInMercatorCoordinateUnits();
     const worldSize = 512 * Math.pow(2, map.getZoom());
     this.anchor.position.set(mercator.x * worldSize, mercator.y * worldSize, mercator.z * worldSize);
@@ -244,6 +292,15 @@ export class RiderAvatarLayer implements CustomLayerInterface {
       this.riderMesh.position.y = 0.98 + Math.abs(Math.sin(this.crankAngle * 2)) * 0.012;
       this.riderMesh.rotation.z = Math.sin(this.crankAngle) * 0.022;
       this.riderMesh.rotation.x = Math.sin(this.crankAngle * 2) * 0.008;
+    }
+
+    // Pulsing Neon Beacon Ring animation
+    if (this.beaconRing) {
+      const pulseScale = 1.0 + Math.sin(now * 0.004) * 0.08;
+      this.beaconRing.scale.set(pulseScale, pulseScale, pulseScale);
+      if (this.beaconRing.material instanceof THREE.MeshBasicMaterial) {
+        this.beaconRing.material.opacity = 0.65 + Math.sin(now * 0.004) * 0.25;
+      }
     }
 
     this.camera.projectionMatrix.fromArray(options.modelViewProjectionMatrix);

@@ -72,14 +72,9 @@ export function buildSatelliteStyle(): StyleSpecification {
         ],
         tileSize: 256,
         attribution: 'Esri, Maxar, Earthstar Geographics',
-        // Esri's high-zoom (17-19) imagery only covers select urban/mapped
-        // areas — real routes are often rural/mountain roads well outside
-        // that, and requesting tiles beyond a region's actual coverage gets
-        // back Esri's literal "Map data not yet available" placeholder
-        // image rather than a graceful blur. Capping here below the ride
-        // camera's zoom means MapLibre never asks past this level; it just
-        // overzooms (stretches) this tile instead — softer close-up, but
-        // real imagery everywhere instead of broken placeholder tiles.
+        // Esri high-zoom imagery only covers select urban/mapped areas — cap
+        // below the ride camera zoom so MapLibre overzooms (stretches) the
+        // tile rather than fetching Esri's "Map data not yet available" placeholder.
         maxzoom: 16,
       },
       'esri-labels': {
@@ -91,6 +86,27 @@ export function buildSatelliteStyle(): StyleSpecification {
         attribution: 'Esri',
         maxzoom: 16,
       },
+      // Free, keyless AWS/Mapzen Terrain Tiles (Terrarium RGB encoding).
+      // Decodes elevation as: height = (R*256 + G + B/256) − 32768 (metres).
+      // Used by MapLibre's terrain engine to extrude the ground mesh.
+      'terrain-dem': {
+        type: 'raster-dem',
+        encoding: 'terrarium',
+        tiles: [
+          'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+        ],
+        tileSize: 256,
+        maxzoom: 15,
+        attribution: 'Terrain Tiles · Mapzen · OpenStreetMap',
+      },
+    },
+    // Activate 3-D terrain — exaggeration 1.5 makes climbs read as visually
+    // steep without distorting flat sections too much. Included directly in
+    // the style spec so MapLibre enables it before the first frame renders,
+    // with no extra setTerrain() call needed after load.
+    terrain: {
+      source: 'terrain-dem',
+      exaggeration: 1.5,
     },
     layers: [
       {

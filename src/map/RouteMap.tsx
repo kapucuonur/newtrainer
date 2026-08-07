@@ -106,13 +106,13 @@ function pinClassForIndex(index: number, total: number): string {
 // vector bike-and-rider instead of the wobbly 🚴 emoji, small enough to read
 // at marker scale.
 const RIDER_BIKE_SVG = `
-<svg viewBox="0 0 32 32" width="19" height="19" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="16" cy="7" r="2.6" fill="currentColor"/>
-  <path d="M16 9.3 L13.5 15 L19 15 L16.6 20.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M13.5 15 L9 20.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-  <path d="M13.5 15 L21 22.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-  <circle cx="7" cy="22.5" r="4.3" stroke="currentColor" stroke-width="1.9"/>
-  <circle cx="21" cy="22.5" r="4.3" stroke="currentColor" stroke-width="1.9"/>
+<svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="7" r="2.8" fill="currentColor"/>
+  <path d="M16 9.3 L13.5 15 L19 15 L16.6 20.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13.5 15 L9 20.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M13.5 15 L21 22.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="7" cy="22.5" r="4.5" stroke="currentColor" stroke-width="2.2"/>
+  <circle cx="21" cy="22.5" r="4.5" stroke="currentColor" stroke-width="2.2"/>
 </svg>`.trim();
 
 /**
@@ -123,7 +123,7 @@ const RIDER_BIKE_SVG = `
 function createRiderMarkerElement(): { root: HTMLDivElement; heading: HTMLDivElement } {
   const root = document.createElement('div');
   root.className = 'rider-marker';
-  root.innerHTML = `<div class="rider-marker-cone"></div><div class="rider-marker-core">${RIDER_BIKE_SVG}</div>`;
+  root.innerHTML = `<div class="rider-marker-halo"></div><div class="rider-marker-cone"></div><div class="rider-marker-core">${RIDER_BIKE_SVG}</div>`;
   const heading = root.querySelector('.rider-marker-cone') as HTMLDivElement;
   return { root, heading };
 }
@@ -211,6 +211,60 @@ async function ensureRiderAvatarLayer(
   ref.current = layer;
 }
 
+/**
+ * Activates MapLibre 3D terrain + a sky atmosphere layer (satellite mode
+ * only — vector styles don't ship a terrain-dem source).
+ * Called after every style load so a style swap re-enables terrain.
+ */
+function ensureTerrainAndSky(map: Map, active: boolean): void {
+  try {
+    if (active) {
+      // terrain-dem is bundled inside buildSatelliteStyle(); setTerrain
+      // re-activates it after a style.load clears the previous terrain state.
+      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
+      if (!map.getLayer('sky-layer')) {
+        map.addLayer({
+          id: 'sky-layer',
+          type: 'sky',
+          paint: {
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 90.0],
+            'sky-atmosphere-sun-intensity': 15,
+            'sky-atmosphere-color': 'rgba(135, 206, 235, 1)',
+            'sky-atmosphere-halo-color': 'rgba(255, 255, 255, 0.5)',
+          },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as unknown as Parameters<Map['addLayer']>[0]);
+      }
+    } else {
+      map.setTerrain(null);
+      if (map.getLayer('sky-layer')) map.removeLayer('sky-layer');
+    }
+  } catch {
+    // Terrain/sky may not be supported on all WebGL contexts; ride still works.
+  }
+}
+
+/** Interpolated elevation (metres) at `distanceMeters` from real DEM samples. */
+function elevationAtDistance(samples: RoutePoint[], distanceMeters: number): number {
+  if (samples.length === 0) return 0;
+  if (distanceMeters <= samples[0].distanceMeters) return samples[0].elevationMeters;
+  const last = samples[samples.length - 1];
+  if (distanceMeters >= last.distanceMeters) return last.elevationMeters;
+  let lo = 0;
+  let hi = samples.length - 1;
+  while (lo < hi - 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (samples[mid].distanceMeters <= distanceMeters) lo = mid;
+    else hi = mid;
+  }
+  const a = samples[lo];
+  const b = samples[hi];
+  const span = b.distanceMeters - a.distanceMeters || 1;
+  const t = (distanceMeters - a.distanceMeters) / span;
+  return a.elevationMeters + (b.elevationMeters - a.elevationMeters) * t;
+}
+
 /** Interpolated grade (%) at `distanceMeters`, from the same real DEM samples used for elevation. */
 function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number {
   if (samples.length === 0) return 0;
@@ -246,8 +300,11 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // kilometers around it. Pulled back below the original (48/64/16.2) this
 // time — reliability over closeness until confirmed stable, then nudge
 // closer again incrementally with real-ride confirmation each step.
-const RIDE_BASE_PITCH = 46;
-const RIDE_MAX_PITCH = 58;
+// With 3D terrain active the camera can pitch higher without the
+// near-horizontal "show a huge tile footprint" problem that caused
+// placeholder tile spam on the flat satellite basemap. Raised accordingly.
+const RIDE_BASE_PITCH = 52;
+const RIDE_MAX_PITCH = 70;
 const RIDE_BASE_ZOOM = 15.8;
 const RIDE_LOOK_AHEAD_METERS = 14;
 
@@ -516,7 +573,9 @@ export function RouteMap({
         zoom: 11,
         pitch: 0,
         bearing: 0,
-        maxPitch: RIDE_MAX_PITCH,
+        // 85° is MapLibre's practical maximum when terrain is enabled;
+        // keeps manual pan/tilt fully available for non-ride views too.
+        maxPitch: 85,
         attributionControl: { compact: true },
         transformRequest: (url) => ({ url }),
       });
@@ -574,6 +633,7 @@ export function RouteMap({
         void ensureRiderAvatarLayer(activeMap, riderAvatarLayerRef);
         wireRouteClicks();
         tryEnable3dBuildings(activeMap);
+        ensureTerrainAndSky(activeMap, appliedStyleIdRef.current === 'satellite');
       });
 
       activeMap.on('style.load', () => {
@@ -581,6 +641,7 @@ export function RouteMap({
         setRiderTrailData(activeMap, riderTrailRef.current);
         void ensureRiderAvatarLayer(activeMap, riderAvatarLayerRef);
         tryEnable3dBuildings(activeMap);
+        ensureTerrainAndSky(activeMap, appliedStyleIdRef.current === 'satellite');
       });
 
       mapRef.current = activeMap;
@@ -861,6 +922,11 @@ export function RouteMap({
       avatarLayer.position = rider;
       avatarLayer.bearingDeg = nextBearing;
       avatarLayer.speedKmh = speedKmh;
+      // Pass real DEM elevation so the avatar sits ON the terrain mesh
+      // instead of floating at sea level when 3D terrain is active.
+      avatarLayer.elevationMeters = route
+        ? elevationAtDistance(route.samples, distanceMeters)
+        : 0;
       map.triggerRepaint();
     }
 

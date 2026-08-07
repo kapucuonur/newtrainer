@@ -1398,12 +1398,27 @@ select {
    direction on the flat overview map. */
 .rider-marker {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.rider-marker-halo {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 240, 255, 0.65);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+  pointer-events: none;
+  animation: pulse-halo 2s infinite ease-out;
+}
+
+@keyframes pulse-halo {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
 }
 
 .rider-marker-cone {
@@ -1417,35 +1432,35 @@ select {
 .rider-marker-cone::before {
   content: '';
   position: absolute;
-  top: -4px;
+  top: -6px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 11px solid transparent;
-  border-right: 11px solid transparent;
-  border-bottom: 24px solid rgba(0, 240, 255, 0.32);
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.55));
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-bottom: 28px solid rgba(0, 240, 255, 0.45);
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.85));
 }
 
 .rider-marker-core {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  color: var(--accent-ink);
+  color: #050b14;
   border-radius: 50%;
-  border: 2.5px solid var(--accent);
-  box-shadow: 0 0 22px rgba(0, 240, 255, 0.85);
-  animation: pulse-rider 1.5s infinite alternate;
+  border: 3px solid #00f0ff;
+  box-shadow: 0 0 28px rgba(0, 240, 255, 0.95), 0 0 8px #00f0ff;
+  animation: pulse-rider 1.5s infinite alternate ease-in-out;
 }
 
 @keyframes pulse-rider {
-  from { box-shadow: 0 0 16px rgba(0, 240, 255, 0.6); }
-  to { box-shadow: 0 0 32px rgba(0, 240, 255, 1); }
+  from { box-shadow: 0 0 20px rgba(0, 240, 255, 0.7), 0 0 6px #00f0ff; }
+  to { box-shadow: 0 0 38px rgba(0, 240, 255, 1), 0 0 14px #00f0ff; }
 }
 
 .map-style-picker {
