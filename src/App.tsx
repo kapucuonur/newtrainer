@@ -55,7 +55,6 @@ import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
 import { VideoPanel } from './ui/VideoPanel';
 import { RouvyVideoPlayer } from './ui/RouvyVideoPlayer';
-import { CartoonRideScene } from './ride3d/CartoonRideScene';
 
 const idleTelemetry: RideTelemetry = {
   phase: 'idle',
@@ -1374,40 +1373,32 @@ export default function App() {
             </div>
           ) : (
             <div className="viewer-map-pane">
-              {immersiveRide ? (
-                <CartoonRideScene
-                  route={route}
-                  distanceMeters={telemetry.distanceMeters}
-                  speedKmh={telemetry.speedKmh}
-                />
-              ) : (
-                <RouteMap
-                  waypoints={waypoints}
-                  nextWaypointLabel={
-                    canAddWaypoint(waypoints.length)
-                      ? nextWaypointLabel(waypoints.length)
-                      : null
-                  }
-                  route={route}
-                  routeAlternatives={routeAlternatives}
-                  selectedAlternativeIndex={selectedAltIndex}
-                  onSelectAlternative={
-                    canPlanRoute && !inGroup ? onSelectAlternative : undefined
-                  }
-                  rider={telemetry.position}
-                  ridePhase={telemetry.phase}
-                  distanceMeters={telemetry.distanceMeters}
-                  speedKmh={telemetry.speedKmh}
-                  onPick={onPick}
-                  pickMode={pickMode}
-                  pickingEnabled={canPlanRoute && !inGroup}
-                  peers={mapPeers}
-                  groupMode={groupMode}
-                  styleId={rideMapStyleId}
-                  onStyleIdChange={onMapStyleChange}
-                  showStylePicker={panelOpen && showMapStylePicker}
-                />
-              )}
+              <RouteMap
+                waypoints={waypoints}
+                nextWaypointLabel={
+                  canAddWaypoint(waypoints.length)
+                    ? nextWaypointLabel(waypoints.length)
+                    : null
+                }
+                route={route}
+                routeAlternatives={routeAlternatives}
+                selectedAlternativeIndex={selectedAltIndex}
+                onSelectAlternative={
+                  canPlanRoute && !inGroup ? onSelectAlternative : undefined
+                }
+                rider={telemetry.position}
+                ridePhase={telemetry.phase}
+                distanceMeters={telemetry.distanceMeters}
+                speedKmh={telemetry.speedKmh}
+                onPick={onPick}
+                pickMode={pickMode}
+                pickingEnabled={canPlanRoute && !inGroup}
+                peers={mapPeers}
+                groupMode={groupMode}
+                styleId={rideMapStyleId}
+                onStyleIdChange={onMapStyleChange}
+                showStylePicker={panelOpen && showMapStylePicker}
+              />
               {immersiveRide && (
                 <div className="bottom-dashboard-deck">
                   <ElevationProfile
