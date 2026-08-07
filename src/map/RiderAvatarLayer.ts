@@ -13,7 +13,7 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-const AVATAR_VISUAL_SCALE = 12;
+const AVATAR_VISUAL_SCALE = 55;
 const WHEEL_TUBE = 0.042;
 const CRANK_RADIUS = 0.175;
 
@@ -200,10 +200,12 @@ export class RiderAvatarLayer implements CustomLayerInterface {
       });
 
       // Photorealistic Cyclist & Bike Plane Mesh
-      const geometry = new THREE.PlaneGeometry(1.95, 1.85);
+      const geometry = new THREE.PlaneGeometry(2.1, 1.95);
       this.riderMesh = new THREE.Mesh(geometry, mat);
       this.riderMesh.position.set(0, 0.98, 0.02);
-      this.riderMesh.rotation.y = Math.PI / 2;
+      // Angled at side-three-quarter profile so the cyclist is fully visible
+      // from the ride camera instead of edge-on.
+      this.riderMesh.rotation.y = Math.PI / 3.4;
       this.riderGroup.add(this.riderMesh);
     };
 
