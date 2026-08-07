@@ -351,23 +351,35 @@ export class RideEngine {
     if (bike?.speedKmh != null && bike.speedKmh > 0.5) return bike.speedKmh;
 
     const power = bike?.powerWatts ?? 0;
-    if (power > 0) {
-      const at = this.route
-        ? gradeAtDistance(this.route.samples, this.distanceMeters)
-        : { gradePercent: 0 };
-      
-      const grade = at.gradePercent;
-      const m = 85; // kg (rider + bike)
-      const g = 9.81;
-      const sinTheta = grade / 100;
-      const Crr = 0.004;
-      const gravityResistance = m * g * (sinTheta + Crr);
+    const at = this.route
+      ? gradeAtDistance(this.route.samples, this.distanceMeters)
+      : { gradePercent: 0 };
+    const grade = at.gradePercent;
 
-      // Solve v (m/s) from P = m*g*v*(sinTheta + Crr) + 0.18*v^3
-      let v = 5.0;
+    const m = 85; // kg (rider + bike)
+    const g = 9.81;
+    const sinTheta = grade / 100;
+    const Crr = 0.004;
+    const CdA_rho = 0.18; // 0.5 * rho * CdA
+
+    // Downhill gravity acceleration force when slope is negative
+    if (grade < -0.5) {
+      const gravityPull = m * g * (Math.abs(sinTheta) - Crr);
+      if (gravityPull > 0) {
+        // Coasting base speed from gravity (m/s)
+        const coastingSpeedMs = Math.sqrt(gravityPull / CdA_rho);
+        // Extra speed boost from rider wattage on downhill
+        const extraSpeedMs = power > 0 ? (power / 180) * 2.5 : 0;
+        return Math.min(85, (coastingSpeedMs + extraSpeedMs) * 3.6);
+      }
+    }
+
+    if (power > 0) {
+      const gravityResistance = m * g * (sinTheta + Crr);
+      let v = 5.0; // initial guess
       for (let iter = 0; iter < 5; iter++) {
-        const fv = gravityResistance * v + 0.18 * Math.pow(v, 3) - power;
-        const dfv = gravityResistance + 0.54 * Math.pow(v, 2);
+        const fv = gravityResistance * v + CdA_rho * Math.pow(v, 3) - power;
+        const dfv = gravityResistance + (CdA_rho * 3) * Math.pow(v, 2);
         v = Math.max(0.8, v - fv / dfv);
       }
       return v * 3.6;
