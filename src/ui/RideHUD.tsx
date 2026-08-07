@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { RideTelemetry } from '../simulation/rideEngine';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration, formatGrade } from './format';
@@ -87,11 +87,7 @@ function isLiveRidePhase(phase: RideTelemetry['phase']): boolean {
 export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props) {
   const t = useT();
   const rideLive = isLiveRidePhase(telemetry.phase);
-  const [expanded, setExpanded] = useState(true);
-
-  useEffect(() => {
-    if (rideLive) setExpanded(true);
-  }, [rideLive]);
+  const [expanded, setExpanded] = useState(() => window.innerWidth > 1024);
 
   const watts = Math.max(0, Math.round(telemetry.powerWatts || 0));
   const wKg = (watts / riderWeightKg).toFixed(1);
