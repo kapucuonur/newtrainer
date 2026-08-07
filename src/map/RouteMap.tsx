@@ -212,15 +212,26 @@ async function ensureRiderAvatarLayer(
 }
 
 /**
- * Activates MapLibre 3D terrain (satellite mode only — other styles don't
- * ship a terrain-dem source). Called after every style load.
- * Note: MapLibre GL JS v6 does NOT support the 'sky' layer type — removed.
+ * Activates MapLibre 3D terrain (satellite mode only).
+ * Source is added dynamically after style load — keeping terrain-dem out of
+ * the style spec avoids a MapLibre v6 raster-dem conflict that renders a
+ * black map. Called after every style load so a style swap re-enables terrain.
  */
 function ensureTerrainAndSky(map: Map, active: boolean): void {
   try {
     if (active) {
-      // terrain-dem source is declared in buildSatelliteStyle(); setTerrain
-      // re-activates it after style.load resets the previous terrain state.
+      // Add the DEM source if not already present (cleared on style swap).
+      if (!map.getSource('terrain-dem')) {
+        map.addSource('terrain-dem', {
+          type: 'raster-dem',
+          encoding: 'terrarium',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          maxzoom: 15,
+        });
+      }
       map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
     } else {
       map.setTerrain(null);

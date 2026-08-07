@@ -86,24 +86,7 @@ export function buildSatelliteStyle(): StyleSpecification {
         attribution: 'Esri',
         maxzoom: 16,
       },
-      // Free, keyless AWS/Mapzen Terrain Tiles (Terrarium RGB encoding).
-      // Decodes elevation as: height = (R*256 + G + B/256) − 32768 (metres).
-      // Used by MapLibre's terrain engine to extrude the ground mesh.
-      'terrain-dem': {
-        type: 'raster-dem',
-        encoding: 'terrarium',
-        tiles: [
-          'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-        ],
-        tileSize: 256,
-        maxzoom: 15,
-        attribution: 'Terrain Tiles · Mapzen · OpenStreetMap',
-      },
     },
-    // terrain-dem source is declared here so it is available immediately after
-    // style load. Terrain is ACTIVATED via map.setTerrain() in the load/style.load
-    // handlers — NOT in the style spec itself, to avoid a MapLibre v6 conflict
-    // that renders satellite tiles black when both are set simultaneously.
     layers: [
       {
         id: 'esri-satellite-layer',
