@@ -279,13 +279,12 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // kilometers around it. Pulled back below the original (48/64/16.2) this
 // time — reliability over closeness until confirmed stable, then nudge
 // closer again incrementally with real-ride confirmation each step.
-// With 3D terrain active the camera can pitch higher without the
-// near-horizontal "show a huge tile footprint" problem that caused
-// placeholder tile spam on the flat satellite basemap. Raised accordingly.
-const RIDE_BASE_PITCH = 52;
-const RIDE_MAX_PITCH = 70;
-const RIDE_BASE_ZOOM = 15.8;
-const RIDE_LOOK_AHEAD_METERS = 14;
+// Ground-level Rouvy chase-camera tuning: places camera right behind rider's
+// back looking down the road, rather than a high-altitude drone satellite view.
+const RIDE_BASE_PITCH = 75;
+const RIDE_MAX_PITCH = 80;
+const RIDE_BASE_ZOOM = 19.1;
+const RIDE_LOOK_AHEAD_METERS = 3.5;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
 function climbPitchBoost(gradePercent: number): number {

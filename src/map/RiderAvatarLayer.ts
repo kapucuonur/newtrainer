@@ -13,7 +13,7 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-const AVATAR_VISUAL_SCALE = 100;
+const AVATAR_VISUAL_SCALE = 2.2;
 const WHEEL_TUBE = 0.042;
 const CRANK_RADIUS = 0.175;
 
@@ -74,25 +74,6 @@ function createSpokeWheel(): THREE.Group {
   return wheel;
 }
 
-function createGroundGlowTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grad.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
-    grad.addColorStop(0.35, 'rgba(0, 240, 255, 0.45)');
-    grad.addColorStop(0.7, 'rgba(0, 240, 255, 0.15)');
-    grad.addColorStop(1, 'rgba(0, 240, 255, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 128);
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
 export class RiderAvatarLayer implements CustomLayerInterface {
@@ -120,7 +101,6 @@ export class RiderAvatarLayer implements CustomLayerInterface {
   private frontWheel: THREE.Group | null = null;
   private rearWheel: THREE.Group | null = null;
   private crankGroup: THREE.Group | null = null;
-  private beaconRing: THREE.Mesh | null = null;
 
   private crankAngle = 0;
   private lastFrameTime = 0;
@@ -147,33 +127,11 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.heading.add(this.riderGroup);
 
     // Ground Contact Shadow
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 });
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55 });
     const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), shadowMat);
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(0, 0.005, 0);
     this.riderGroup.add(shadow);
-
-    // Glowing Neon Ground Disc (High visibility pulse halo under bicycle)
-    const glowMat = new THREE.MeshBasicMaterial({
-      map: createGroundGlowTexture(),
-      transparent: true,
-      depthWrite: false,
-    });
-    const glowDisc = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), glowMat);
-    glowDisc.rotation.x = -Math.PI / 2;
-    glowDisc.position.set(0, 0.008, 0);
-    this.riderGroup.add(glowDisc);
-
-    // Glowing Neon Beacon Ring surrounding bicycle
-    const beaconMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
-      transparent: true,
-      opacity: 0.85,
-    });
-    this.beaconRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.035, 12, 48), beaconMat);
-    this.beaconRing.rotation.x = Math.PI / 2;
-    this.beaconRing.position.set(0, 0.012, 0);
-    this.riderGroup.add(this.beaconRing);
 
     // 3D Spinning Carbon Wheels
     this.rearWheel = createSpokeWheel();
@@ -294,14 +252,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
       this.riderMesh.rotation.x = Math.sin(this.crankAngle * 2) * 0.008;
     }
 
-    // Pulsing Neon Beacon Ring animation
-    if (this.beaconRing) {
-      const pulseScale = 1.0 + Math.sin(now * 0.004) * 0.08;
-      this.beaconRing.scale.set(pulseScale, pulseScale, pulseScale);
-      if (this.beaconRing.material instanceof THREE.MeshBasicMaterial) {
-        this.beaconRing.material.opacity = 0.65 + Math.sin(now * 0.004) * 0.25;
-      }
-    }
+
 
     const projMat = Array.isArray(options)
       ? options
