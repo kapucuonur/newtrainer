@@ -14,65 +14,6 @@ import type { LatLng } from '../routing/types';
 
 const WHEEL_RADIUS = 0.34;
 const AVATAR_VISUAL_SCALE = 45;
-const WHEEL_TUBE = 0.042;
-const CRANK_RADIUS = 0.175;
-
-function createSpokeWheel(): THREE.Group {
-  const wheel = new THREE.Group();
-
-  const tireMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.7 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x333842, roughness: 0.25, metalness: 0.7 });
-  const spokeMat = new THREE.MeshStandardMaterial({ color: 0xc2c8d2, roughness: 0.1, metalness: 0.95 });
-
-  // Tire
-  const tire = new THREE.Mesh(new THREE.TorusGeometry(WHEEL_RADIUS, WHEEL_TUBE, 12, 32), tireMat);
-  tire.rotation.y = Math.PI / 2;
-  wheel.add(tire);
-
-  // Deep Aero Carbon Rim
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(WHEEL_RADIUS - WHEEL_TUBE * 1.5, WHEEL_TUBE * 0.7, 10, 32),
-    rimMat,
-  );
-  rim.rotation.y = Math.PI / 2;
-  wheel.add(rim);
-
-  // Disc Brake Rotor / Hub Center
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.04, 16), rimMat);
-  hub.rotation.z = Math.PI / 2;
-  wheel.add(hub);
-
-  const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.004, 16), spokeMat);
-  rotor.rotation.z = Math.PI / 2;
-  rotor.position.x = 0.025;
-  wheel.add(rotor);
-
-  // 24 Radiating Spokes in cross pattern
-  const spokeCount = 24;
-  for (let i = 0; i < spokeCount; i++) {
-    const a = (i / spokeCount) * Math.PI * 2;
-    const offset = i % 2 === 0 ? 0.015 : -0.015;
-    const target = new THREE.Vector3(
-      offset,
-      Math.sin(a) * (WHEEL_RADIUS - WHEEL_TUBE * 1.4),
-      Math.cos(a) * (WHEEL_RADIUS - WHEEL_TUBE * 1.4),
-    );
-    const spoke = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.003, 0.003, target.length(), 4),
-      spokeMat,
-    );
-    spoke.position.copy(target).multiplyScalar(0.5);
-    spoke.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), target.clone().normalize());
-    wheel.add(spoke);
-  }
-
-  // Valve Stem
-  const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 6), rimMat);
-  valve.position.set(0, WHEEL_RADIUS - WHEEL_TUBE * 1.2, 0);
-  wheel.add(valve);
-
-  return wheel;
-}
 
 export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
@@ -98,9 +39,6 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
   private riderGroup = new THREE.Group();
   private riderMesh: THREE.Mesh | null = null;
-  private frontWheel: THREE.Group | null = null;
-  private rearWheel: THREE.Group | null = null;
-  private crankGroup: THREE.Group | null = null;
 
   private crankAngle = 0;
   private lastFrameTime = 0;
@@ -126,39 +64,12 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
     this.heading.add(this.riderGroup);
 
-    // Ground Contact Shadow
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55 });
-    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.7), shadowMat);
+    // Ground Contact Shadow Disc
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 });
+    const shadow = new THREE.Mesh(new THREE.CircleGeometry(1.1, 24), shadowMat);
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(0, 0.005, 0);
     this.riderGroup.add(shadow);
-
-    // 3D Spinning Carbon Wheels
-    this.rearWheel = createSpokeWheel();
-    this.rearWheel.position.set(0, WHEEL_RADIUS, -0.82);
-    this.frontWheel = createSpokeWheel();
-    this.frontWheel.position.set(0, WHEEL_RADIUS, 0.82);
-    this.riderGroup.add(this.rearWheel, this.frontWheel);
-
-    // 3D Rotating Crankset
-    this.crankGroup = new THREE.Group();
-    this.crankGroup.position.set(0, 0.35, -0.05);
-    const crankMat = new THREE.MeshStandardMaterial({ color: 0x282c35, roughness: 0.3, metalness: 0.7 });
-    const pedalMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.4 });
-
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.02, CRANK_RADIUS, 0.02), crankMat);
-    armR.position.set(0.06, -CRANK_RADIUS * 0.5, 0);
-    const pedalR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.06), pedalMat);
-    pedalR.position.set(0.09, -CRANK_RADIUS, 0);
-    this.crankGroup.add(armR, pedalR);
-
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.02, CRANK_RADIUS, 0.02), crankMat);
-    armL.position.set(-0.06, CRANK_RADIUS * 0.5, 0);
-    const pedalL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.06), pedalMat);
-    pedalL.position.set(-0.09, CRANK_RADIUS, 0);
-    this.crankGroup.add(armL, pedalL);
-
-    this.riderGroup.add(this.crankGroup);
 
     // Load Photorealistic Real Cyclist Image Asset (Pre-processed transparent PNG)
     const textureLoader = new THREE.TextureLoader();
@@ -202,18 +113,11 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.anchor.scale.setScalar(scale * worldSize * AVATAR_VISUAL_SCALE);
     this.heading.rotation.y = THREE.MathUtils.degToRad(this.bearingDeg);
 
-    // Wheel spin physics directly tied to speed
+    // Pedaling cadence physics & riding motion
     const speedMs = this.speedKmh / 3.6;
-    const wheelSpin = (speedMs / WHEEL_RADIUS) * dt;
-
-    if (this.frontWheel) this.frontWheel.rotation.x -= wheelSpin;
-    if (this.rearWheel) this.rearWheel.rotation.x -= wheelSpin;
-
-    // Pedaling cadence physics
     const pedalSpeed = Math.max(speedMs > 0.5 ? speedMs : 0, 3.5);
     const pedalSpin = (pedalSpeed / WHEEL_RADIUS) * 0.7 * dt;
     this.crankAngle += pedalSpin;
-    if (this.crankGroup) this.crankGroup.rotation.x = -this.crankAngle;
 
     // Real Rider Pedaling & Body Motion (Micro-bob & Camera Billboard)
     if (this.riderMesh) {
