@@ -212,36 +212,21 @@ async function ensureRiderAvatarLayer(
 }
 
 /**
- * Activates MapLibre 3D terrain + a sky atmosphere layer (satellite mode
- * only — vector styles don't ship a terrain-dem source).
- * Called after every style load so a style swap re-enables terrain.
+ * Activates MapLibre 3D terrain (satellite mode only — other styles don't
+ * ship a terrain-dem source). Called after every style load.
+ * Note: MapLibre GL JS v6 does NOT support the 'sky' layer type — removed.
  */
 function ensureTerrainAndSky(map: Map, active: boolean): void {
   try {
     if (active) {
-      // terrain-dem is bundled inside buildSatelliteStyle(); setTerrain
-      // re-activates it after a style.load clears the previous terrain state.
+      // terrain-dem source is declared in buildSatelliteStyle(); setTerrain
+      // re-activates it after style.load resets the previous terrain state.
       map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-      if (!map.getLayer('sky-layer')) {
-        map.addLayer({
-          id: 'sky-layer',
-          type: 'sky',
-          paint: {
-            'sky-type': 'atmosphere',
-            'sky-atmosphere-sun': [0.0, 90.0],
-            'sky-atmosphere-sun-intensity': 15,
-            'sky-atmosphere-color': 'rgba(135, 206, 235, 1)',
-            'sky-atmosphere-halo-color': 'rgba(255, 255, 255, 0.5)',
-          },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as unknown as Parameters<Map['addLayer']>[0]);
-      }
     } else {
       map.setTerrain(null);
-      if (map.getLayer('sky-layer')) map.removeLayer('sky-layer');
     }
   } catch {
-    // Terrain/sky may not be supported on all WebGL contexts; ride still works.
+    // Terrain may not be available on all WebGL contexts; ride still works.
   }
 }
 
@@ -597,7 +582,13 @@ export function RouteMap({
         const errObj = e?.error;
         if (errObj && typeof errObj.message === 'string') {
           // Ignore harmless missing font/sprite warnings
-          if (!errObj.message.includes('sprite') && !errObj.message.includes('glyph')) {
+          // Suppress harmless built-in warnings (missing font/sprite/glyph
+          // resources) and sky-layer warnings (sky type unsupported in v6).
+          const ignore =
+            errObj.message.includes('sprite') ||
+            errObj.message.includes('glyph') ||
+            errObj.message.includes('sky');
+          if (!ignore) {
             console.warn('[RouteMap] MapLibre warning/error:', errObj.message);
           }
         }

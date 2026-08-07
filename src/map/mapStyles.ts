@@ -100,14 +100,10 @@ export function buildSatelliteStyle(): StyleSpecification {
         attribution: 'Terrain Tiles · Mapzen · OpenStreetMap',
       },
     },
-    // Activate 3-D terrain — exaggeration 1.5 makes climbs read as visually
-    // steep without distorting flat sections too much. Included directly in
-    // the style spec so MapLibre enables it before the first frame renders,
-    // with no extra setTerrain() call needed after load.
-    terrain: {
-      source: 'terrain-dem',
-      exaggeration: 1.5,
-    },
+    // terrain-dem source is declared here so it is available immediately after
+    // style load. Terrain is ACTIVATED via map.setTerrain() in the load/style.load
+    // handlers — NOT in the style spec itself, to avoid a MapLibre v6 conflict
+    // that renders satellite tiles black when both are set simultaneously.
     layers: [
       {
         id: 'esri-satellite-layer',
