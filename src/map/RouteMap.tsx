@@ -212,33 +212,12 @@ async function ensureRiderAvatarLayer(
 }
 
 /**
- * Activates MapLibre 3D terrain (satellite mode only).
- * Source is added dynamically after style load — keeping terrain-dem out of
- * the style spec avoids a MapLibre v6 raster-dem conflict that renders a
- * black map. Called after every style load so a style swap re-enables terrain.
+ * (placeholder kept for future terrain re-integration when a low-latency
+ * DEM CDN is available — do NOT call setTerrain() here, it blocks satellite
+ * tile rendering until DEM tiles arrive which makes the map appear black.)
  */
-function ensureTerrainAndSky(map: Map, active: boolean): void {
-  try {
-    if (active) {
-      // Add the DEM source if not already present (cleared on style swap).
-      if (!map.getSource('terrain-dem')) {
-        map.addSource('terrain-dem', {
-          type: 'raster-dem',
-          encoding: 'terrarium',
-          tiles: [
-            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-          ],
-          tileSize: 256,
-          maxzoom: 15,
-        });
-      }
-      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-    } else {
-      map.setTerrain(null);
-    }
-  } catch {
-    // Terrain may not be available on all WebGL contexts; ride still works.
-  }
+function ensureTerrainAndSky(_map: Map, _active: boolean): void {
+  // intentionally empty
 }
 
 /** Interpolated elevation (metres) at `distanceMeters` from real DEM samples. */
@@ -571,7 +550,7 @@ export function RouteMap({
         bearing: 0,
         // 85° is MapLibre's practical maximum when terrain is enabled;
         // keeps manual pan/tilt fully available for non-ride views too.
-        maxPitch: 85,
+        maxPitch: RIDE_MAX_PITCH,
         attributionControl: { compact: true },
         transformRequest: (url) => ({ url }),
       });
