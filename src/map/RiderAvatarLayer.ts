@@ -305,10 +305,18 @@ export class RiderAvatarLayer implements CustomLayerInterface {
       }
     }
 
-    this.camera.projectionMatrix.fromArray(options.modelViewProjectionMatrix);
+    const projMat = Array.isArray(options)
+      ? options
+      : (options as unknown as CustomRenderMethodInput)?.modelViewProjectionMatrix;
+
+    if (projMat && projMat.length === 16) {
+      this.camera.projectionMatrix.fromArray(projMat);
+    }
 
     renderer.resetState();
     renderer.render(this.scene, this.camera);
+    _gl.bindVertexArray?.(null);
+    _gl.useProgram?.(null);
     map.triggerRepaint();
   }
 
