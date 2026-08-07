@@ -1,12 +1,9 @@
 import * as THREE from 'three';
 import type { LocalRoutePoint } from './routeProjection';
 
-const ROAD_WIDTH = 6;
-const ROAD_COLOR = 0x4a4f58;
-const LINE_COLOR = 0xffd23f;
-const SHOULDER_COLOR = 0x6b7078;
+const ROAD_WIDTH = 5.6;
 
-/** Builds a stylized paved road ribbon (+ dashed center line) following the real route's shape. */
+/** Builds a paved asphalt road ribbon (+ white border lines + yellow dashed center line) following the real route's shape. */
 export function buildRoadRibbon(points: LocalRoutePoint[]): THREE.Group {
   const group = new THREE.Group();
   if (points.length < 2) return group;
@@ -14,17 +11,11 @@ export function buildRoadRibbon(points: LocalRoutePoint[]): THREE.Group {
   const up = new THREE.Vector3(0, 1, 0);
   const positions: number[] = [];
   const shoulderPositions: number[] = [];
+  const lineLeftPositions: number[] = [];
+  const lineRightPositions: number[] = [];
   const dirs: THREE.Vector3[] = [];
 
   for (let i = 0; i < points.length; i++) {
-    // Real mountain routes have genuine hairpin switchbacks (Alpe d'Huez has
-    // 21). Averaging the direction from i-1 to i+1 breaks down right at a
-    // hairpin apex — prev and next sit on nearly opposite sides of the bend,
-    // so that "average" direction points roughly *across* the road instead
-    // of along it, which rotates the left/right offset 90° and folds the
-    // ribbon into a spike. Blend the incoming/outgoing unit tangents instead,
-    // and when they're close to opposite (the turn is that sharp), just use
-    // one of them rather than trust an unstable average.
     const cur = points[i];
     const prevPt = points[Math.max(0, i - 1)];
     const nextPt = points[Math.min(points.length - 1, i + 1)];
@@ -51,17 +42,34 @@ export function buildRoadRibbon(points: LocalRoutePoint[]): THREE.Group {
     dirs.push(dir);
 
     const p = cur;
-    const lx = p.x + right.x * ROAD_WIDTH * 0.5;
-    const lz = p.z + right.z * ROAD_WIDTH * 0.5;
-    const rx = p.x - right.x * ROAD_WIDTH * 0.5;
-    const rz = p.z - right.z * ROAD_WIDTH * 0.5;
+    const halfW = ROAD_WIDTH * 0.5;
+
+    // Asphalt Main Surface
+    const lx = p.x + right.x * halfW;
+    const lz = p.z + right.z * halfW;
+    const rx = p.x - right.x * halfW;
+    const rz = p.z - right.z * halfW;
     positions.push(lx, p.y + 0.02, lz, rx, p.y + 0.02, rz);
 
-    const slx = p.x + right.x * ROAD_WIDTH * 0.9;
-    const slz = p.z + right.z * ROAD_WIDTH * 0.9;
-    const srx = p.x - right.x * ROAD_WIDTH * 0.9;
-    const srz = p.z - right.z * ROAD_WIDTH * 0.9;
-    shoulderPositions.push(slx, p.y, slz, srx, p.y, srz);
+    // White Edge Lines
+    const llx1 = p.x + right.x * (halfW - 0.05);
+    const llz1 = p.z + right.z * (halfW - 0.05);
+    const llx2 = p.x + right.x * (halfW - 0.22);
+    const llz2 = p.z + right.z * (halfW - 0.22);
+    lineLeftPositions.push(llx1, p.y + 0.03, llz1, llx2, p.y + 0.03, llz2);
+
+    const rrx1 = p.x - right.x * (halfW - 0.05);
+    const rrz1 = p.z - right.z * (halfW - 0.05);
+    const rrx2 = p.x - right.x * (halfW - 0.22);
+    const rrz2 = p.z - right.z * (halfW - 0.22);
+    lineRightPositions.push(rrx1, p.y + 0.03, rrz1, rrx2, p.y + 0.03, rrz2);
+
+    // Grass / Terrain Shoulder
+    const slx = p.x + right.x * (halfW + 4.5);
+    const slz = p.z + right.z * (halfW + 4.5);
+    const srx = p.x - right.x * (halfW + 4.5);
+    const srz = p.z - right.z * (halfW + 4.5);
+    shoulderPositions.push(slx, p.y - 0.04, slz, srx, p.y - 0.04, srz);
   }
 
   const buildStripGeometry = (verts: number[]): THREE.BufferGeometry => {
@@ -81,49 +89,68 @@ export function buildRoadRibbon(points: LocalRoutePoint[]): THREE.Group {
     return geometry;
   };
 
+  // Grass Shoulder
   const shoulderMesh = new THREE.Mesh(
     buildStripGeometry(shoulderPositions),
-    new THREE.MeshStandardMaterial({ color: SHOULDER_COLOR, flatShading: true, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: 0x364a27, roughness: 0.95, flatShading: true }),
   );
+  shoulderMesh.receiveShadow = true;
   group.add(shoulderMesh);
 
+  // Dark Asphalt Road
   const roadMesh = new THREE.Mesh(
     buildStripGeometry(positions),
-    new THREE.MeshStandardMaterial({ color: ROAD_COLOR, flatShading: true, roughness: 0.95 }),
+    new THREE.MeshStandardMaterial({ color: 0x22262d, roughness: 0.82, flatShading: false }),
   );
+  roadMesh.receiveShadow = true;
   group.add(roadMesh);
 
-  // Dashed center line — one InstancedMesh, however many dashes a long
-  // route needs, instead of a separate draw call per dash (a real ~2.5km
-  // test route alone produced 300+ individual dash meshes; a 50km route
-  // would produce thousands, which crashed the WebGL context).
-  const totalDistance = points[points.length - 1]?.distanceMeters ?? 0;
-  const dashSpacing = Math.max(8, totalDistance / 600);
-  const dashTransforms: { x: number; y: number; z: number; rotY: number }[] = [];
-  let nextDashAt = 0;
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    if (p.distanceMeters < nextDashAt) continue;
-    nextDashAt = p.distanceMeters + dashSpacing;
-    const dir = dirs[i];
-    dashTransforms.push({ x: p.x, y: p.y + 0.04, z: p.z, rotY: Math.atan2(dir.x, dir.z) });
-  }
+  // White Edge Border Lines
+  const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const lineLeftMesh = new THREE.Mesh(buildStripGeometry(lineLeftPositions), whiteLineMat);
+  const lineRightMesh = new THREE.Mesh(buildStripGeometry(lineRightPositions), whiteLineMat);
+  group.add(lineLeftMesh, lineRightMesh);
 
-  if (dashTransforms.length > 0) {
-    const dashGeometry = new THREE.BoxGeometry(0.35, 0.03, 2.2);
-    const dashMaterial = new THREE.MeshStandardMaterial({ color: LINE_COLOR, roughness: 0.6 });
-    const dashes = new THREE.InstancedMesh(dashGeometry, dashMaterial, dashTransforms.length);
-    const m = new THREE.Matrix4();
-    dashTransforms.forEach((d, i) => {
-      m.compose(
-        new THREE.Vector3(d.x, d.y, d.z),
-        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), d.rotY),
-        new THREE.Vector3(1, 1, 1),
-      );
-      dashes.setMatrixAt(i, m);
-    });
-    dashes.instanceMatrix.needsUpdate = true;
-    group.add(dashes);
+  // Yellow Dashed Center Line
+  const totalDistance = points[points.length - 1]?.distanceMeters ?? 0;
+  const dashLength = 3.5;
+  const gapLength = 4.0;
+  const dashPeriod = dashLength + gapLength;
+  const dashCount = Math.floor(totalDistance / dashPeriod);
+
+  if (dashCount > 0) {
+    const dashGeo = new THREE.PlaneGeometry(0.18, dashLength);
+    dashGeo.rotateX(-Math.PI / 2);
+    const dashMat = new THREE.MeshBasicMaterial({ color: 0xffcb2b, side: THREE.DoubleSide });
+
+    const instancedMesh = new THREE.InstancedMesh(dashGeo, dashMat, dashCount);
+    const dummy = new THREE.Object3D();
+    let idx = 0;
+
+    let pIdx = 0;
+    for (let d = 2.0; d < totalDistance - dashLength; d += dashPeriod) {
+      if (idx >= dashCount) break;
+      while (pIdx < points.length - 1 && points[pIdx + 1].distanceMeters < d) {
+        pIdx++;
+      }
+      const a = points[pIdx];
+      const b = points[Math.min(points.length - 1, pIdx + 1)];
+      const span = b.distanceMeters - a.distanceMeters || 1;
+      const t = (d - a.distanceMeters) / span;
+
+      const x = a.x + (b.x - a.x) * t;
+      const y = a.y + (b.y - a.y) * t + 0.04;
+      const z = a.z + (b.z - a.z) * t;
+
+      const dir = dirs[Math.min(dirs.length - 1, pIdx)];
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
+      dummy.updateMatrix();
+
+      instancedMesh.setMatrixAt(idx++, dummy.matrix);
+    }
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    group.add(instancedMesh);
   }
 
   return group;

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { EnrichedRoute } from '../routing/types';
 import { buildRoadRibbon } from './RoadRibbon';
 import { buildScenery, buildSatellitePatch } from './scenery';
-import { createToonGradientTexture, buildToonRiderModel, type ToonRiderModel } from './riderModel';
+import { buildToonRiderModel, type ToonRiderModel } from './riderModel';
 import { localPointAtDistance, projectRouteToLocal, type LocalRoutePoint } from './routeProjection';
 
 type Props = {
@@ -98,19 +98,34 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
         });
     };
 
-    const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 260);
+    const camera = new THREE.PerspectiveCamera(54, 16 / 9, 0.2, 350);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-    const sun = new THREE.DirectionalLight(0xfff2d8, 1.15);
-    sun.position.set(60, 90, 40);
+    // Warm Natural Outdoor Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const sun = new THREE.DirectionalLight(0xfff5e6, 1.4);
+    sun.position.set(40, 70, 30);
+    sun.castShadow = true;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 150;
+    sun.shadow.camera.left = -25;
+    sun.shadow.camera.right = 25;
+    sun.shadow.camera.top = 25;
+    sun.shadow.camera.bottom = -25;
     scene.add(sun);
 
-    const gradientMap = createToonGradientTexture();
-    const rider: ToonRiderModel = buildToonRiderModel(gradientMap);
+    const cyanRim = new THREE.DirectionalLight(0x00f0ff, 0.4);
+    cyanRim.position.set(-30, 40, -40);
+    scene.add(cyanRim);
+
+    const rider: ToonRiderModel = buildToonRiderModel();
     const headingGroup = new THREE.Group();
     headingGroup.add(rider.group);
     scene.add(headingGroup);
@@ -118,20 +133,12 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
     const cameraPos = new THREE.Vector3();
     const cameraLookAt = new THREE.Vector3();
     let camInit = false;
-    // Real GPS/elevation data occasionally has near-duplicate consecutive
-    // points (same lat/lng, different elevation) — the horizontal tangent
-    // degenerates to ~zero there. Hold the last good heading through those
-    // rather than snapping the camera to a straight-up/down look.
+    let crankAngle = 0;
     const lastForwardFlat = new THREE.Vector3(0, 0, -1);
 
     let raf = 0;
     let lastTime = performance.now();
 
-    // The container can report 0×0 for a frame or two right after mount,
-    // before the browser has finished layout (especially inside a Suspense
-    // boundary swapping in from another view) — sizing the renderer/camera
-    // off that would leave the aspect ratio wrong. Skip frames until the
-    // container actually has a size.
     const resize = (): boolean => {
       const w = container.clientWidth;
       const h = container.clientHeight;
@@ -168,14 +175,6 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
         requestPatchRebuild(displayDistance.current, x, y, z);
       }
 
-      // Chase camera: behind + above the rider, looking at a point ahead of them.
-      // Real elevation samples can be noisy or spaced very close together, which
-      // makes the raw 3D `forward` tangent swing toward near-vertical on steep
-      // or noisy sections — so aiming uses the horizontal direction only; real
-      // climbs/descents still show up naturally via each point's own height.
-      // When the horizontal component itself is ~zero (near-duplicate
-      // consecutive GPS points), keep the last good heading instead of
-      // collapsing to a zero vector, which pointed the camera straight up.
       const horizLen = Math.hypot(forward.x, forward.z);
       const forwardFlat =
         horizLen > 0.05
@@ -189,26 +188,27 @@ export function CartoonRideScene({ route, distanceMeters, speedKmh }: Props) {
       const spin = (speedMs / WHEEL_RADIUS) * dt;
       rider.frontWheel.rotation.x -= spin;
       rider.rearWheel.rotation.x -= spin;
-      rider.crank.rotation.x -= spin * 1.4;
+      
+      const pedalSpeed = Math.max(speedMs > 0.5 ? speedMs : 0, 3.2);
+      crankAngle += (pedalSpeed / WHEEL_RADIUS) * 0.7 * dt;
+      rider.crank.rotation.x = -crankAngle;
 
-      // Pulled back further than a literal "just behind the seat" distance —
-      // at close range the rider fills most of the frame and hides the road,
-      // which read as broken/amateurish rather than a proper chase cam.
+      // Realistic 3.rd Person Chase Camera (Ground Level)
       const behind = forwardFlat.clone().multiplyScalar(-1);
       const desiredPos = new THREE.Vector3(x, y, z)
-        .addScaledVector(behind, 7.5)
-        .add(new THREE.Vector3(0, 3.2, 0));
+        .addScaledVector(behind, 4.8)
+        .add(new THREE.Vector3(0, 2.1, 0));
       const desiredLookAt = new THREE.Vector3(x, y, z)
-        .addScaledVector(forwardFlat, 11)
-        .add(new THREE.Vector3(0, 1.4, 0));
+        .addScaledVector(forwardFlat, 9.0)
+        .add(new THREE.Vector3(0, 1.2, 0));
 
       if (!camInit) {
         cameraPos.copy(desiredPos);
         cameraLookAt.copy(desiredLookAt);
         camInit = true;
       } else {
-        cameraPos.lerp(desiredPos, Math.min(1, dt * 3.2));
-        cameraLookAt.lerp(desiredLookAt, Math.min(1, dt * 3.2));
+        cameraPos.lerp(desiredPos, Math.min(1, dt * 3.8));
+        cameraLookAt.lerp(desiredLookAt, Math.min(1, dt * 3.8));
       }
       camera.position.copy(cameraPos);
       camera.lookAt(cameraLookAt);
