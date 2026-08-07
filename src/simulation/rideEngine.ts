@@ -350,18 +350,29 @@ export class RideEngine {
     const bike = this.lastBike;
     if (bike?.speedKmh != null && bike.speedKmh > 0.5) return bike.speedKmh;
 
-    // Power → speed estimate when trainer omits Instantaneous Speed (moreData flag).
     const power = bike?.powerWatts ?? 0;
     if (power > 0) {
       const at = this.route
         ? gradeAtDistance(this.route.samples, this.distanceMeters)
         : { gradePercent: 0 };
-      const gradeFactor = 1 - Math.max(-0.3, Math.min(0.5, at.gradePercent / 14));
-      const speedMs = Math.max(1.2, (2.2 + Math.sqrt(power) * 0.35) * gradeFactor);
-      return speedMs * 3.6;
+      
+      const grade = at.gradePercent;
+      const m = 85; // kg (rider + bike)
+      const g = 9.81;
+      const sinTheta = grade / 100;
+      const Crr = 0.004;
+      const gravityResistance = m * g * (sinTheta + Crr);
+
+      // Solve v (m/s) from P = m*g*v*(sinTheta + Crr) + 0.18*v^3
+      let v = 5.0;
+      for (let iter = 0; iter < 5; iter++) {
+        const fv = gravityResistance * v + 0.18 * Math.pow(v, 3) - power;
+        const dfv = gravityResistance + 0.54 * Math.pow(v, 2);
+        v = Math.max(0.8, v - fv / dfv);
+      }
+      return v * 3.6;
     }
 
-    // Cadence-only trainers: rough flat-road estimate so the map still advances.
     const cadence = bike?.cadenceRpm ?? 0;
     if (cadence > 40) {
       return Math.max(8, (cadence / 70) * 25);

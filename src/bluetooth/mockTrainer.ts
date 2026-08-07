@@ -124,15 +124,33 @@ export class MockTrainer implements BikeTrainer {
         const speedMs = Math.max(1.8, 2.4 + Math.sqrt(Math.max(powerWatts, 1)) * 0.32);
         speedKmh = speedMs * 3.6;
       } else {
-        const gradeFactor = 1 - Math.max(-0.35, Math.min(0.55, this.gradePercent / 12));
-        const basePower = 90 + this.effort * 220;
-        powerWatts = Math.round(
-          Math.max(40, basePower * gradeFactor + Math.sin(now / 900) * 8),
-        );
-        cadenceRpm = Math.round(70 + this.effort * 25 + Math.sin(now / 700) * 3);
-        const flatSpeed = 8 + Math.sqrt(Math.max(powerWatts, 1)) * 1.15;
-        const speedMs = Math.max(1.5, flatSpeed * gradeFactor);
-        speedKmh = speedMs * 3.6;
+        // Realistic Cycling Physics: Power increases with climb effort, speed adjusts based on gravity & drag
+        const grade = this.gradePercent;
+        // Base effort power (160W - 360W) + slope resistance climb effort
+        const basePower = 150 + this.effort * 180;
+        const climbExtra = Math.max(0, grade * 18);
+        powerWatts = Math.round(Math.max(50, basePower + climbExtra + Math.sin(now / 800) * 10));
+
+        cadenceRpm = Math.round(75 + (this.effort * 20) - (grade > 0 ? grade * 1.5 : 0) + Math.sin(now / 700) * 3);
+        cadenceRpm = Math.max(55, Math.min(120, cadenceRpm));
+
+        // Solve realistic speed (m/s) from power & slope grade using gravity + rolling + air drag
+        // P = m*g*v*(sin(theta) + Crr) + 0.5*rho*CdA*v^3
+        const m = 85; // kg (rider + bike)
+        const g = 9.81;
+        const sinTheta = grade / 100;
+        const Crr = 0.004;
+        const gravityResistance = m * g * (sinTheta + Crr); // N
+
+        // Numerical solver for speed v (m/s) given power (W)
+        let v = 5.0; // initial guess (18 km/h)
+        for (let iter = 0; iter < 5; iter++) {
+          const fv = gravityResistance * v + 0.18 * Math.pow(v, 3) - powerWatts;
+          const dfv = gravityResistance + 0.54 * Math.pow(v, 2);
+          v = Math.max(0.8, v - fv / dfv);
+        }
+
+        speedKmh = v * 3.6;
       }
 
       if (this.riding) {

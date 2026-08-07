@@ -119,10 +119,9 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     const pedalSpin = (pedalSpeed / WHEEL_RADIUS) * 0.7 * dt;
     this.crankAngle += pedalSpin;
 
-    // Real Rider Pedaling & Body Motion (Micro-bob & Camera Billboard)
+    // Real Rider Pedaling & Body Motion (Micro-bob & 3/4 Profile View)
     if (this.riderMesh) {
-      this.riderMesh.quaternion.copy(this.camera.quaternion);
-      this.riderMesh.rotateY(-Math.PI / 4.2);
+      this.riderMesh.rotation.y = Math.PI / 3.2;
       this.riderMesh.position.y = 1.05 + Math.abs(Math.sin(this.crankAngle * 2)) * 0.015;
     }
 
