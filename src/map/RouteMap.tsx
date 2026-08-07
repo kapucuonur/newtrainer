@@ -279,12 +279,12 @@ function gradeAtDistance(samples: RoutePoint[], distanceMeters: number): number 
 // kilometers around it. Pulled back below the original (48/64/16.2) this
 // time — reliability over closeness until confirmed stable, then nudge
 // closer again incrementally with real-ride confirmation each step.
-// Ground-level Rouvy chase-camera tuning: places camera right behind rider's
-// back looking down the road, rather than a high-altitude drone satellite view.
-const RIDE_BASE_PITCH = 75;
-const RIDE_MAX_PITCH = 80;
-const RIDE_BASE_ZOOM = 19.1;
-const RIDE_LOOK_AHEAD_METERS = 3.5;
+// Clean MapLibre ride camera tuning: stable 48° pitch, zoom 16.2, 14m look-ahead
+// avoids flat satellite imagery stretching/blurring near the horizon.
+const RIDE_BASE_PITCH = 48;
+const RIDE_MAX_PITCH = 60;
+const RIDE_BASE_ZOOM = 16.2;
+const RIDE_LOOK_AHEAD_METERS = 14;
 
 /** Tilts the camera toward the horizon on climbs — a graded plane reads as a steeper wall the flatter the viewing angle. */
 function climbPitchBoost(gradePercent: number): number {
