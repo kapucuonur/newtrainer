@@ -13,7 +13,7 @@ import type { LatLng } from '../routing/types';
  */
 
 const WHEEL_RADIUS = 0.34;
-const AVATAR_VISUAL_SCALE = 55;
+const AVATAR_VISUAL_SCALE = 240;
 const WHEEL_TUBE = 0.042;
 const CRANK_RADIUS = 0.175;
 
