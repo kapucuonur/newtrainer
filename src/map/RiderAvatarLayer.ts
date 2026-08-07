@@ -266,9 +266,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
     const mercator = MercatorCoordinate.fromLngLat(
       [this.position.lng, this.position.lat],
-      // elevationMeters kept for future terrain re-integration; zero for now
-      // since setTerrain() is disabled (DEM tile latency blocks satellite render).
-      0,
+      this.elevationMeters,
     );
     const scale = mercator.meterInMercatorCoordinateUnits();
     const worldSize = 512 * Math.pow(2, map.getZoom());

@@ -212,12 +212,30 @@ async function ensureRiderAvatarLayer(
 }
 
 /**
- * (placeholder kept for future terrain re-integration when a low-latency
- * DEM CDN is available — do NOT call setTerrain() here, it blocks satellite
- * tile rendering until DEM tiles arrive which makes the map appear black.)
+ * Activates MapLibre 3D terrain (satellite mode only).
+ * Dynamically adds the AWS Terrarium DEM source and sets terrain exaggeration.
  */
-function ensureTerrainAndSky(_map: Map, _active: boolean): void {
-  // intentionally empty
+function ensureTerrainAndSky(map: Map, active: boolean): void {
+  try {
+    if (active) {
+      if (!map.getSource('terrain-dem')) {
+        map.addSource('terrain-dem', {
+          type: 'raster-dem',
+          encoding: 'terrarium',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          maxzoom: 15,
+        });
+      }
+      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
+    } else {
+      map.setTerrain(null);
+    }
+  } catch {
+    // Terrain may not be available on all WebGL contexts; ride still works.
+  }
 }
 
 /** Interpolated elevation (metres) at `distanceMeters` from real DEM samples. */
@@ -550,7 +568,7 @@ export function RouteMap({
         bearing: 0,
         // 85° is MapLibre's practical maximum when terrain is enabled;
         // keeps manual pan/tilt fully available for non-ride views too.
-        maxPitch: RIDE_MAX_PITCH,
+        maxPitch: 85,
         attributionControl: { compact: true },
         transformRequest: (url) => ({ url }),
       });
