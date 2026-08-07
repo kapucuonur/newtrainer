@@ -160,54 +160,22 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
     this.riderGroup.add(this.crankGroup);
 
-    // Load Photorealistic Real Cyclist Image & Process Cutout Transparency
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = '/assets/real_cyclist_cutout.png';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+    // Load Photorealistic Real Cyclist Image Asset (Pre-processed transparent PNG)
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load('/assets/real_cyclist_transparent.png');
+    texture.colorSpace = THREE.SRGBColorSpace;
 
-      ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, img.width, img.height);
-      const data = imgData.data;
+    const mat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.1,
+      side: THREE.DoubleSide,
+    });
 
-      // Chroma-key cutout: remove pure white studio background (RGB > 232)
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        if (r > 232 && g > 232 && b > 232) {
-          data[i + 3] = 0;
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-
-      const mat = new THREE.MeshStandardMaterial({
-        map: texture,
-        transparent: true,
-        alphaTest: 0.15,
-        side: THREE.DoubleSide,
-        roughness: 0.3,
-        metalness: 0.15,
-      });
-
-      // Photorealistic Cyclist & Bike Plane Mesh
-      const geometry = new THREE.PlaneGeometry(2.1, 1.95);
-      this.riderMesh = new THREE.Mesh(geometry, mat);
-      this.riderMesh.position.set(0, 0.98, 0.02);
-      // Angled at side-three-quarter profile so the cyclist is fully visible
-      // from the ride camera instead of edge-on.
-      this.riderMesh.rotation.y = Math.PI / 3.4;
-      this.riderGroup.add(this.riderMesh);
-    };
+    const geometry = new THREE.PlaneGeometry(2.4, 2.2);
+    this.riderMesh = new THREE.Mesh(geometry, mat);
+    this.riderMesh.position.set(0, 1.1, 0.02);
+    this.riderGroup.add(this.riderMesh);
 
     this.lastFrameTime = performance.now();
   }
@@ -247,11 +215,11 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.crankAngle += pedalSpin;
     if (this.crankGroup) this.crankGroup.rotation.x = -this.crankAngle;
 
-    // Real Rider Pedaling & Body Motion (Micro-bob & Hip Sway)
+    // Real Rider Pedaling & Body Motion (Micro-bob & Camera Billboard)
     if (this.riderMesh) {
-      this.riderMesh.position.y = 0.98 + Math.abs(Math.sin(this.crankAngle * 2)) * 0.012;
-      this.riderMesh.rotation.z = Math.sin(this.crankAngle) * 0.022;
-      this.riderMesh.rotation.x = Math.sin(this.crankAngle * 2) * 0.008;
+      this.riderMesh.quaternion.copy(this.camera.quaternion);
+      this.riderMesh.rotateY(-Math.PI / 4.2);
+      this.riderMesh.position.y = 1.05 + Math.abs(Math.sin(this.crankAngle * 2)) * 0.015;
     }
 
 
