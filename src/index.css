@@ -2514,3 +2514,124 @@ select {
     overflow-y: auto;
   }
 }
+
+/* ==========================================================================
+   Rouvy AR Real Video Sync Mode
+   ========================================================================== */
+.rouvy-video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #05080f;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rouvy-video-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.rouvy-video-element,
+.rouvy-iframe-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  pointer-events: none;
+}
+
+.rouvy-video-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(10, 16, 28, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  max-width: 92vw;
+  overflow-x: auto;
+}
+
+.rouvy-preset-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rouvy-url-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rouvy-url-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.8rem;
+  width: 180px;
+}
+
+.rouvy-pip-map {
+  position: absolute;
+  bottom: 120px;
+  right: 20px;
+  z-index: 15;
+  background: rgba(10, 16, 28, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rouvy-pip-open {
+  width: 280px;
+  height: 220px;
+}
+
+.rouvy-pip-collapsed {
+  width: 160px;
+  height: 38px;
+}
+
+.rouvy-pip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #00f0ff;
+}
+
+.rouvy-pip-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rouvy-pip-content {
+  width: 100%;
+  height: calc(100% - 32px);
+}
+

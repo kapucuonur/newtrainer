@@ -54,6 +54,7 @@ import { RideChrome } from './ui/RideChrome';
 import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
 import { VideoPanel } from './ui/VideoPanel';
+import { RouvyVideoPlayer } from './ui/RouvyVideoPlayer';
 
 const idleTelemetry: RideTelemetry = {
   phase: 'idle',
@@ -1325,38 +1326,38 @@ export default function App() {
         </div>
 
         <div
-          className={['viewer-stage', videoPanelOpen ? 'viewer-stage-split' : '']
+          className={['viewer-stage', videoPanelOpen && !immersiveRide ? 'viewer-stage-split' : '']
             .filter(Boolean)
             .join(' ')}
         >
-          <div className="viewer-map-pane">
-            <RouteMap
-              waypoints={waypoints}
-              nextWaypointLabel={
-                canAddWaypoint(waypoints.length)
-                  ? nextWaypointLabel(waypoints.length)
-                  : null
-              }
-              route={route}
-              routeAlternatives={routeAlternatives}
-              selectedAlternativeIndex={selectedAltIndex}
-              onSelectAlternative={
-                canPlanRoute && !inGroup ? onSelectAlternative : undefined
-              }
-              rider={telemetry.position}
-              ridePhase={telemetry.phase}
-              distanceMeters={telemetry.distanceMeters}
-              speedKmh={telemetry.speedKmh}
-              onPick={onPick}
-              pickMode={pickMode}
-              pickingEnabled={canPlanRoute && !inGroup}
-              peers={mapPeers}
-              groupMode={groupMode}
-              styleId={rideMapStyleId}
-              onStyleIdChange={onMapStyleChange}
-              showStylePicker={panelOpen && showMapStylePicker}
-            />
-            {immersiveRide && (
+          {immersiveRide && videoPanelOpen ? (
+            <div className="viewer-map-pane" style={{ position: 'relative' }}>
+              <RouvyVideoPlayer
+                telemetry={telemetry}
+                url={youtubeUrl}
+                onUrlChange={setYoutubeUrl}
+                pipMapNode={
+                  <RouteMap
+                    waypoints={waypoints}
+                    nextWaypointLabel={null}
+                    route={route}
+                    routeAlternatives={routeAlternatives}
+                    selectedAlternativeIndex={selectedAltIndex}
+                    rider={telemetry.position}
+                    ridePhase={telemetry.phase}
+                    distanceMeters={telemetry.distanceMeters}
+                    speedKmh={telemetry.speedKmh}
+                    onPick={onPick}
+                    pickMode={pickMode}
+                    pickingEnabled={false}
+                    peers={mapPeers}
+                    groupMode={groupMode}
+                    styleId={rideMapStyleId}
+                    onStyleIdChange={onMapStyleChange}
+                    showStylePicker={false}
+                  />
+                }
+              />
               <div className="bottom-dashboard-deck">
                 <ElevationProfile
                   route={route}
@@ -1369,13 +1370,58 @@ export default function App() {
                   ftpWatts={ftpWatts}
                 />
               </div>
-            )}
-          </div>
-          <VideoPanel
-            enabled={videoPanelOpen}
-            url={youtubeUrl}
-            onUrlChange={setYoutubeUrl}
-          />
+            </div>
+          ) : (
+            <div className="viewer-map-pane">
+              <RouteMap
+                waypoints={waypoints}
+                nextWaypointLabel={
+                  canAddWaypoint(waypoints.length)
+                    ? nextWaypointLabel(waypoints.length)
+                    : null
+                }
+                route={route}
+                routeAlternatives={routeAlternatives}
+                selectedAlternativeIndex={selectedAltIndex}
+                onSelectAlternative={
+                  canPlanRoute && !inGroup ? onSelectAlternative : undefined
+                }
+                rider={telemetry.position}
+                ridePhase={telemetry.phase}
+                distanceMeters={telemetry.distanceMeters}
+                speedKmh={telemetry.speedKmh}
+                onPick={onPick}
+                pickMode={pickMode}
+                pickingEnabled={canPlanRoute && !inGroup}
+                peers={mapPeers}
+                groupMode={groupMode}
+                styleId={rideMapStyleId}
+                onStyleIdChange={onMapStyleChange}
+                showStylePicker={panelOpen && showMapStylePicker}
+              />
+              {immersiveRide && (
+                <div className="bottom-dashboard-deck">
+                  <ElevationProfile
+                    route={route}
+                    currentDistanceMeters={telemetry.distanceMeters}
+                    currentElevationMeters={telemetry.elevationMeters}
+                  />
+                  <RideHUD
+                    telemetry={telemetry}
+                    riderWeightKg={user?.profile?.weightKg ?? 75}
+                    ftpWatts={ftpWatts}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {!immersiveRide && (
+            <VideoPanel
+              enabled={videoPanelOpen}
+              url={youtubeUrl}
+              onUrlChange={setYoutubeUrl}
+            />
+          )}
         </div>
 
         <footer className="app-footer">
