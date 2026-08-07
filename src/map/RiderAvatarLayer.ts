@@ -266,7 +266,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
 
     const mercator = MercatorCoordinate.fromLngLat(
       [this.position.lng, this.position.lat],
-      this.elevationMeters,
+      0,
     );
     const scale = mercator.meterInMercatorCoordinateUnits();
     const worldSize = 512 * Math.pow(2, map.getZoom());
