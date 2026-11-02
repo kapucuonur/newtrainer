@@ -59,7 +59,7 @@ import { VideoPanel } from './ui/VideoPanel';
 import { RouvyVideoPlayer } from './ui/RouvyVideoPlayer';
 import { StreetViewPane, type StreetViewStatus } from './ui/StreetViewPane';
 import { getMapillaryToken, loadStreetFrames } from './streetview/mapillary';
-import type { StreetFrame } from './streetview/pickFrames';
+import { streetCoverage, type StreetFrame } from './streetview/pickFrames';
 
 const idleTelemetry: RideTelemetry = {
   phase: 'idle',
@@ -160,7 +160,8 @@ export default function App() {
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>(() => loadStoredMapStyleId());
   const [routePeekOpen, setRoutePeekOpen] = useState(false);
   const [videoPanelOpen, setVideoPanelOpen] = useState(false);
-  const [streetViewOn, setStreetViewOn] = useState(false);
+  // Street-level photos are the default ride view where imagery exists; the map is the fallback.
+  const [streetViewOn, setStreetViewOn] = useState(true);
   const [streetFrames, setStreetFrames] = useState<StreetFrame[]>([]);
   const [streetStatus, setStreetStatus] = useState<StreetViewStatus>('loading');
   const streetFramesRouteRef = useRef<EnrichedRoute | null>(null);
@@ -1112,6 +1113,17 @@ export default function App() {
   // is hidden during a ride anyway, so they'd have no way to switch back).
   const rideMapStyleId: MapStyleId = followRoad ? 'satellite' : mapStyleId;
 
+  // Below this share of the route with photos, riding on the map beats a mostly-empty photo view.
+  const MIN_STREET_COVERAGE = 0.2;
+  const streetUsable =
+    streetStatus !== 'error' &&
+    !(
+      streetStatus === 'ready' &&
+      route != null &&
+      streetCoverage(streetFrames, route.distanceMeters) < MIN_STREET_COVERAGE
+    );
+  const showStreetView = immersiveRide && streetViewOn && Boolean(streetToken) && streetUsable;
+
   const pipRouteMap = (
     <RouteMap
       waypoints={waypoints}
@@ -1299,7 +1311,7 @@ export default function App() {
               onStop={() => void engineRef.current.stop()}
               onToggleRoutePeek={() => setRoutePeekOpen((open) => !open)}
               onToggleVideo={toggleVideoPanel}
-              streetViewOn={streetViewOn}
+              streetViewOn={showStreetView}
               onToggleStreetView={streetToken ? toggleStreetView : undefined}
             />
           )}
@@ -1355,7 +1367,7 @@ export default function App() {
             .filter(Boolean)
             .join(' ')}
         >
-          {immersiveRide && streetViewOn && streetToken && route ? (
+          {showStreetView && route ? (
             <div className="viewer-map-pane" style={{ position: 'relative' }}>
               <StreetViewPane
                 frames={streetFrames}

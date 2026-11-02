@@ -4,27 +4,44 @@ import * as THREE from 'three';
 import type { LatLng } from '../routing/types';
 
 /**
- * Photorealistic Real Cyclist and Bike Layer rendered inside MapLibre's WebGL context.
- * Features:
- * - Real human athlete & Specialized S-Works carbon road bike (cutout photorealistic asset).
- * - Automatic client-side canvas background removal (100% transparent background).
- * - 3D Spinning Roval deep-section carbon wheels with 24 spokes, disc rotors, and valve stems.
- * - Dynamic pedaling motion & upper-body riding sway synchronized with ride cadence & speed.
+ * Rider position marker rendered inside MapLibre's WebGL context: a
+ * navigation-style arrow lying flat on the road, pointing along the direction
+ * of travel, over a soft glow. The ride map is seen from above, so a flat
+ * marker reads as "on the road" — the previous upright photo cut-out looked
+ * like a sticker hovering over the satellite image at any scale.
  */
 
-const WHEEL_RADIUS = 0.34;
-// Exaggerated so the rider reads at the satellite ride zoom (~16.5), but kept
-// in proportion with houses/roads — 45× made a ~100m figure that looked
-// like it was hovering above the map instead of riding on the road.
-const AVATAR_VISUAL_SCALE = 18;
-const AVATAR_WIDTH = 2.4;
-const AVATAR_HEIGHT = 2.2;
-// real_cyclist_transparent.png has ~4.8% transparent padding under the
-// wheels; shift the plane down by that much so the tyres touch the ground.
-const AVATAR_BOTTOM_PADDING = 0.048 * AVATAR_HEIGHT;
+/** Marker size in metres per model unit — large enough to read at ride zoom (~16.5). */
+const MARKER_SCALE = 9;
+const ARROW_COLOR = 0x00f0ff;
 
-/** Soft-edged dark blob texture for the ground contact shadow. */
-function buildShadowTexture(): THREE.CanvasTexture {
+export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
+
+/** Arrow outline in model units, tip toward +Y (rotated to point north / +Z). */
+function arrowShape(scale = 1): THREE.Shape {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 1.25 * scale);
+  shape.lineTo(0.85 * scale, -0.85 * scale);
+  shape.lineTo(0, -0.4 * scale);
+  shape.lineTo(-0.85 * scale, -0.85 * scale);
+  shape.closePath();
+  return shape;
+}
+
+/** Flat arrow lying in the ground plane, tip toward local +Z (= north before heading). */
+function flatArrow(scale: number, color: number, lift: number): THREE.Mesh {
+  const geometry = new THREE.ShapeGeometry(arrowShape(scale));
+  geometry.rotateX(Math.PI / 2);
+  const mesh = new THREE.Mesh(
+    geometry,
+    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  mesh.position.y = lift;
+  return mesh;
+}
+
+/** Soft radial glow so the marker stays visible on dark or busy imagery. */
+function buildGlowTexture(): THREE.CanvasTexture {
   const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -32,16 +49,14 @@ function buildShadowTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (ctx) {
     const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, 'rgba(0,0,0,0.75)');
-    gradient.addColorStop(0.55, 'rgba(0,0,0,0.45)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    gradient.addColorStop(0, 'rgba(0,240,255,0.55)');
+    gradient.addColorStop(0.6, 'rgba(0,240,255,0.18)');
+    gradient.addColorStop(1, 'rgba(0,240,255,0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
   }
   return new THREE.CanvasTexture(canvas);
 }
-
-export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
 export class RiderAvatarLayer implements CustomLayerInterface {
   id = RIDER_AVATAR_LAYER_ID;
@@ -52,8 +67,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
   position: LatLng | null = null;
   bearingDeg = 0;
   speedKmh = 0;
-  /** Current rider elevation (metres ASL) — fed from real DEM samples so
-   * the avatar sits on the terrain mesh rather than at sea level. */
+  /** Current rider elevation (metres ASL); kept for RouteMap — the map is drawn flat. */
   elevationMeters = 0;
 
   private map: Map | null = null;
@@ -63,65 +77,27 @@ export class RiderAvatarLayer implements CustomLayerInterface {
   private readonly anchor = new THREE.Group();
   private readonly heading = new THREE.Group();
 
-  private riderGroup = new THREE.Group();
-  private riderMesh: THREE.Mesh | null = null;
-
-  private crankAngle = 0;
-  private lastFrameTime = 0;
-
   onAdd(map: Map, gl: WebGL2RenderingContext): void {
     this.map = map;
     this.renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
     this.renderer.autoClear = false;
 
-    // High-visibility outdoor lighting setup
-    this.scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-    sun.position.set(0.5, 1.2, 0.8);
-    this.scene.add(sun);
-
-    const cyanRimLight = new THREE.DirectionalLight(0x00f0ff, 0.8);
-    cyanRimLight.position.set(-0.5, 0.5, -0.8);
-    this.scene.add(cyanRimLight);
-
+    // Model Y is up; MapLibre's mercator space is Z-up.
     this.anchor.rotation.x = Math.PI / 2;
     this.anchor.add(this.heading);
     this.scene.add(this.anchor);
 
-    this.heading.add(this.riderGroup);
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.2, 4.2),
+      new THREE.MeshBasicMaterial({ map: buildGlowTexture(), transparent: true, depthWrite: false }),
+    );
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.y = 0.01;
+    this.heading.add(glow);
 
-    // Ground contact shadow: an ellipse along the bike's length, drawn before
-    // the rider and without depth writes so it reads as on the road surface.
-    const shadowMat = new THREE.MeshBasicMaterial({
-      map: buildShadowTexture(),
-      transparent: true,
-      depthWrite: false,
-    });
-    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 2.2), shadowMat);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.set(0, 0.01, 0);
-    shadow.renderOrder = 0;
-    this.riderGroup.add(shadow);
-
-    // Load Photorealistic Real Cyclist Image Asset (Pre-processed transparent PNG)
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load('/assets/real_cyclist_transparent.png');
-    texture.colorSpace = THREE.SRGBColorSpace;
-
-    const mat = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      alphaTest: 0.1,
-      side: THREE.DoubleSide,
-    });
-
-    const geometry = new THREE.PlaneGeometry(AVATAR_WIDTH, AVATAR_HEIGHT);
-    this.riderMesh = new THREE.Mesh(geometry, mat);
-    this.riderMesh.renderOrder = 1;
-    this.riderMesh.position.set(0, AVATAR_HEIGHT / 2 - AVATAR_BOTTOM_PADDING, 0.02);
-    this.riderGroup.add(this.riderMesh);
-
-    this.lastFrameTime = performance.now();
+    // White rim under the coloured arrow keeps it legible on bright roads.
+    this.heading.add(flatArrow(1.18, 0xffffff, 0.02));
+    this.heading.add(flatArrow(1, ARROW_COLOR, 0.03));
   }
 
   render(_gl: WebGL2RenderingContext, options: CustomRenderMethodInput): void {
@@ -129,42 +105,19 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     const renderer = this.renderer;
     if (!map || !renderer || !this.visible || !this.position) return;
 
-    const now = performance.now();
-    const dt = Math.min(0.25, (now - this.lastFrameTime) / 1000);
-    this.lastFrameTime = now;
-
     const canvas = map.getCanvas();
     renderer.setSize(canvas.width, canvas.height, false);
 
-    const mercator = MercatorCoordinate.fromLngLat(
-      [this.position.lng, this.position.lat],
-      0,
-    );
+    const mercator = MercatorCoordinate.fromLngLat([this.position.lng, this.position.lat], 0);
     const scale = mercator.meterInMercatorCoordinateUnits();
     const worldSize = 512 * Math.pow(2, map.getZoom());
     this.anchor.position.set(mercator.x * worldSize, mercator.y * worldSize, mercator.z * worldSize);
-    this.anchor.scale.setScalar(scale * worldSize * AVATAR_VISUAL_SCALE);
+    this.anchor.scale.setScalar(scale * worldSize * MARKER_SCALE);
     this.heading.rotation.y = THREE.MathUtils.degToRad(this.bearingDeg);
-
-    // Pedaling cadence physics & riding motion
-    const speedMs = this.speedKmh / 3.6;
-    const pedalSpeed = Math.max(speedMs > 0.5 ? speedMs : 0, 3.5);
-    const pedalSpin = (pedalSpeed / WHEEL_RADIUS) * 0.7 * dt;
-    this.crankAngle += pedalSpin;
-
-    // Real Rider Pedaling & Body Motion (Micro-bob & 3/4 Profile View)
-    if (this.riderMesh) {
-      this.riderMesh.rotation.y = Math.PI / 3.2;
-      this.riderMesh.position.y =
-        AVATAR_HEIGHT / 2 - AVATAR_BOTTOM_PADDING + Math.abs(Math.sin(this.crankAngle * 2)) * 0.015;
-    }
-
-
 
     const projMat = Array.isArray(options)
       ? options
       : (options as unknown as CustomRenderMethodInput)?.modelViewProjectionMatrix;
-
     if (projMat && projMat.length === 16) {
       this.camera.projectionMatrix.fromArray(projMat);
     }
@@ -181,7 +134,7 @@ export class RiderAvatarLayer implements CustomLayerInterface {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        // Material.dispose() does not free its texture — the rider PNG and shadow canvas.
+        // Material.dispose() does not free its texture (the glow canvas).
         mats.forEach((m) => {
           (m as THREE.MeshBasicMaterial).map?.dispose();
           m.dispose();
@@ -193,4 +146,3 @@ export class RiderAvatarLayer implements CustomLayerInterface {
     this.map = null;
   }
 }
-
