@@ -1738,6 +1738,13 @@ select {
   line-height: 1.1;
 }
 
+/* Narrow phones: keep power, speed, HR and grade in the strip; the rest is in the full panel. */
+@media (max-width: 480px) {
+  .hud-collapsed-optional {
+    display: none;
+  }
+}
+
 .bottom-dashboard-deck:has(.ride-hud-collapsed) {
   padding: 8px 12px;
   gap: 0;

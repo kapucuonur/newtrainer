@@ -87,7 +87,8 @@ function isLiveRidePhase(phase: RideTelemetry['phase']): boolean {
 export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props) {
   const t = useT();
   const rideLive = isLiveRidePhase(telemetry.phase);
-  const [expanded, setExpanded] = useState(() => window.innerWidth > 1024);
+  // Compact strip by default so the road view stays visible; the full panel is one tap away.
+  const [expanded, setExpanded] = useState(false);
 
   const watts = Math.max(0, Math.round(telemetry.powerWatts || 0));
   const wKg = (watts / riderWeightKg).toFixed(1);
@@ -143,10 +144,26 @@ export function RideHUD({ telemetry, riderWeightKg = 75, ftpWatts = 250 }: Props
         >
           <div className={`hud-collapsed-chip ${gradeClass}`}>
             <span className="hud-collapsed-metric">
+              <span className="hud-collapsed-k">{t('hud.power')}</span>
+              <span className="hud-collapsed-v">{watts} W</span>
+            </span>
+            <span className="hud-collapsed-metric">
+              <span className="hud-collapsed-k">{t('hud.speed')}</span>
+              <span className="hud-collapsed-v">{(telemetry.speedKmh || 0).toFixed(1)} km/h</span>
+            </span>
+            <span className="hud-collapsed-metric hud-collapsed-optional">
+              <span className="hud-collapsed-k">{t('hud.cadence')}</span>
+              <span className="hud-collapsed-v">{Math.round(telemetry.cadenceRpm || 0)} rpm</span>
+            </span>
+            <span className="hud-collapsed-metric">
+              <span className="hud-collapsed-k">{t('hud.heartRate')}</span>
+              <span className="hud-collapsed-v">{bpm ? `${bpm} bpm` : '—'}</span>
+            </span>
+            <span className="hud-collapsed-metric">
               <span className="hud-collapsed-k">{t('hud.grade')}</span>
               <span className="hud-collapsed-v">{formatGrade(gradePercent)}</span>
             </span>
-            <span className="hud-collapsed-metric">
+            <span className="hud-collapsed-metric hud-collapsed-optional">
               <span className="hud-collapsed-k">{controlLabel}</span>
               <span className="hud-collapsed-v">{controlValue}</span>
             </span>
