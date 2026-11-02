@@ -152,6 +152,14 @@ export function describeBluetoothError(error: unknown): string {
   return String(error);
 }
 
+/**
+ * User closed the device picker without choosing — not an error worth showing.
+ * Chrome: "User cancelled the requestDevice() chooser."; native plugin: "requestDevice cancelled."
+ */
+export function isBluetoothPickerCancel(error: unknown): boolean {
+  return /cancel/i.test(describeBluetoothError(error));
+}
+
 export function getBluetoothSupportCode(): BluetoothSupportCode {
   if (typeof navigator === 'undefined') {
     return 'bt.noBrowser';

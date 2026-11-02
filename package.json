@@ -11,10 +11,12 @@
     "preview": "vite preview",
     "test:parse": "npx tsx src/bluetooth/ftms.parse.test.ts",
     "test:map-style": "npx tsx src/map/sanitizeMapStyle.test.ts",
+    "test:native-ble": "npx tsx src/bluetooth/nativeBluetooth.test.ts",
     "build:android": "npm run build && npx cap sync android",
     "open:android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor-community/bluetooth-le": "8.2.0",
     "@capacitor/android": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@markw65/fit-file-writer": "^0.1.10",

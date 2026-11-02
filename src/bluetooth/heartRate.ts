@@ -7,6 +7,7 @@ import type {
 import {
   describeBluetoothError,
   gattSettle,
+  isBluetoothPickerCancel,
   isWebBluetoothSupported,
   requestBluetoothDevice,
   toBluetoothUuid,
@@ -122,7 +123,11 @@ export class HeartRateMonitor {
     } catch (error) {
       const message = describeBluetoothError(error);
       await this.cleanup();
-      this.setState('error', message);
+      if (isBluetoothPickerCancel(error)) {
+        this.setState('disconnected');
+      } else {
+        this.setState('error', message);
+      }
       throw error;
     }
   }

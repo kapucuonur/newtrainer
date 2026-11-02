@@ -9,6 +9,7 @@ import type {
 import {
   describeBluetoothError,
   gattSettle,
+  isBluetoothPickerCancel,
   isBluefyBrowser,
   isWebBluetoothSupported,
   requestBluetoothDevice,
@@ -306,7 +307,11 @@ export class FtmsTrainer implements BikeTrainer {
     } catch (error) {
       const message = describeBluetoothError(error);
       await this.cleanup();
-      this.setState('error', message);
+      if (isBluetoothPickerCancel(error)) {
+        this.setState('disconnected');
+      } else {
+        this.setState('error', message);
+      }
       throw error;
     }
   }
