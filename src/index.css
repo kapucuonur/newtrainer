@@ -2725,3 +2725,8 @@ select {
     height: 130px;
   }
 }
+
+/* The ride-camera banner is meaningful on the full map, not in a small inset. */
+.rouvy-pip-content .map-follow-banner {
+  display: none;
+}

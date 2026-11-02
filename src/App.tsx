@@ -1084,7 +1084,9 @@ export default function App() {
     const controller = new AbortController();
     setStreetStatus('loading');
     setStreetFrames([]);
-    loadStreetFrames(route.samples, streetToken, controller.signal)
+    loadStreetFrames(route.samples, streetToken, controller.signal, (partial) => {
+      if (!controller.signal.aborted) setStreetFrames(partial);
+    })
       .then((frames) => {
         streetFramesRouteRef.current = route;
         setStreetFrames(frames);

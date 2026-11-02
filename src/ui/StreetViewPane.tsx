@@ -76,12 +76,14 @@ export function StreetViewPane({ frames, status, distanceMeters, totalMeters, pi
 
   const coveragePct = Math.round(streetCoverage(frames, totalMeters) * 100);
   const current = layers[layers.length - 1];
+  // While a long route is still loading, photos already fetched are shown.
+  const loadingWithPhotos = status === 'loading' && frames.length > 0;
   const message =
-    status === 'loading'
+    status === 'loading' && !loadingWithPhotos
       ? t('street.loading')
       : status === 'error'
         ? t('street.error')
-        : !frame
+        : !frame && !loadingWithPhotos
           ? t('street.noCoverage')
           : null;
 
@@ -113,8 +115,10 @@ export function StreetViewPane({ frames, status, distanceMeters, totalMeters, pi
         </div>
       )}
 
-      {status === 'ready' && (
-        <div className="street-view-coverage">{t('street.coverage', { pct: coveragePct })}</div>
+      {(status === 'ready' || loadingWithPhotos) && (
+        <div className="street-view-coverage">
+          {loadingWithPhotos ? t('street.loading') : t('street.coverage', { pct: coveragePct })}
+        </div>
       )}
 
       {current && (

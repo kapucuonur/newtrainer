@@ -15,7 +15,7 @@ const CHUNK_METERS = 400;
 const BBOX_PADDING_DEG = 0.0003;
 /** Prototype cap: ~32 km of route, so a long route can't fire hundreds of requests. */
 const MAX_CHUNKS = 80;
-const CONCURRENCY = 3;
+const CONCURRENCY = 6;
 
 export function getMapillaryToken(): string {
   return import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN?.trim() ?? '';
@@ -89,7 +89,9 @@ function chunkBBoxes(samples: RoutePoint[]): BBox[] {
 }
 
 /**
- * Fetches photos around the route and picks one per few metres of travel.
+ * Fetches photos around the route (start first) and picks one per few metres
+ * of travel. `onProgress` gets the frames picked so far after each batch, so
+ * the ride can start showing photos before a long route finishes loading.
  * Individual chunk failures are skipped (that stretch just shows "no imagery");
  * if every chunk fails the error is rethrown so the UI can say so.
  */
@@ -97,6 +99,7 @@ export async function loadStreetFrames(
   samples: RoutePoint[],
   token: string,
   signal: AbortSignal,
+  onProgress?: (frames: StreetFrame[]) => void,
 ): Promise<StreetFrame[]> {
   const boxes = chunkBBoxes(samples);
   const images = new Map<string, StreetImage>();
@@ -115,6 +118,9 @@ export async function loadStreetFrames(
         failures += 1;
         lastError = result.reason;
       }
+    }
+    if (onProgress && i + CONCURRENCY < boxes.length) {
+      onProgress(pickStreetFrames(samples, [...images.values()]));
     }
   }
 
