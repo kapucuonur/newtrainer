@@ -24,6 +24,11 @@ export const de: Messages = {
   'bt.available':
     'Web Bluetooth ist verfügbar. Koppeln Sie Ihren FTMS-Trainer oder Herzfrequenzgurt bei Aufforderung.',
 
+  'bt.pickerScanning': 'Suche läuft…',
+  'bt.pickerCancel': 'Abbrechen',
+  'bt.pickerAvailable': 'Verfügbare Geräte',
+  'bt.pickerNoDevice': 'Kein Gerät gefunden',
+  'devices.sectionTitle': 'Hardware & Sensoren',
   'conn.unsupported': 'nicht unterstützt',
   'conn.disconnected': 'getrennt',
   'conn.connecting': 'verbindet',
@@ -79,19 +84,10 @@ export const de: Messages = {
     'WiFi-Trainer sind im Browser eingeschränkt. Koppeln Sie per Bluetooth-FTMS wenn möglich, oder nutzen Sie eine lokale Bridge für Netzwerk/ANT+.',
 
   'auth.cloudTitle': 'Cloud-Profil',
-  'auth.cloudDisabled':
-    'Für Geräte und Routen ist ein Cloud-Konto nötig. Setzen Sie VITE_API_URL auf Ihre Pi-API, dann registrieren oder anmelden.',
+  'auth.cloudDisabled': 'Cloud-Funktionen nicht verfügbar',
   'auth.accountTitle': 'Konto',
   'auth.accountHint':
-    'Melden Sie sich zuerst an oder registrieren Sie sich, um Geräte zu verbinden und A–B auf der Karte zu setzen.',
-  'devices.gateNoApi':
-    'Geräteverbindungen brauchen ein Cloud-Konto. Konfigurieren Sie VITE_API_URL für Ihre Pi-API, dann registrieren.',
-  'devices.gateLogin':
-    'Melden Sie sich zuerst an oder registrieren Sie sich, um Trainer, Herzfrequenzgurt oder WiFi-Bridge zu verbinden.',
-  'devices.helpTrainer':
-    'Nach der Anmeldung FTMS-Rollentrainer koppeln oder Demo-Trainer nutzen.',
-  'devices.helpHr': 'Nach der Anmeldung einen Bluetooth-Herzfrequenzgurt verbinden.',
-  'devices.helpWifi': 'Nach der Anmeldung die lokale WiFi/ANT+-Bridge prüfen.',
+    'Solo-Fahrten funktionieren ohne Konto. Fahrtzusammenfassungen speichern und Gruppenfahrten benötigen die Cloud-API.',
   'auth.login': 'Anmelden',
   'auth.register': 'Registrieren',
   'auth.displayName': 'Anzeigename',
@@ -166,11 +162,6 @@ export const de: Messages = {
   'route.loginToSave': 'Zum Speichern der Zusammenfassung anmelden',
   'route.alreadySaved': 'Diese Zusammenfassung ist bereits gespeichert',
   'route.saved': 'Zusammenfassung gespeichert (#{{id}})',
-  'route.gateNoApi':
-    'Routen und Geräte brauchen ein Cloud-Konto. Konfigurieren Sie VITE_API_URL für Ihre Pi-API, dann registrieren.',
-  'route.gateLogin':
-    'Melden Sie sich an oder registrieren Sie sich, um Geräte zu verbinden, Wegpunkte zu setzen und eine Route zu bauen.',
-  'route.gateCta': 'Konto öffnen',
   'route.alternatives': 'Routenoptionen',
   'route.pickAlternative': 'Route wählen',
   'route.alternativeN': 'Route {{n}}',
@@ -194,7 +185,6 @@ export const de: Messages = {
   'map.pickBanner': 'Tippen Sie auf die Karte für {{point}}',
   'map.followBanner': 'Straßenfolge · 3D-Kamerafahrt',
   'map.followGroup': ' · Gruppenkarte',
-  'map.lockedBanner': 'Anmelden, um Geräte zu verbinden und Wegpunkte auf der Karte zu setzen',
   'map.stylePicker': 'Kartenstil',
   'map.styleSatellite': 'Satellit',
   'map.styleOutdoors': 'Outdoor',

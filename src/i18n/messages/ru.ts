@@ -24,6 +24,11 @@ export const ru: Messages = {
   'bt.available':
     'Web Bluetooth доступен. Подключите FTMS-тренажёр или пульсометр по запросу.',
 
+  'bt.pickerScanning': 'Поиск…',
+  'bt.pickerCancel': 'Отмена',
+  'bt.pickerAvailable': 'Доступные устройства',
+  'bt.pickerNoDevice': 'Устройства не найдены',
+  'devices.sectionTitle': 'Оборудование и датчики',
   'conn.unsupported': 'не поддерживается',
   'conn.disconnected': 'отключено',
   'conn.connecting': 'подключение',
@@ -79,19 +84,10 @@ export const ru: Messages = {
     'WiFi-тренажёры ограничены в браузере. По возможности подключайтесь через Bluetooth FTMS или используйте локальный мост для сети/ANT+.',
 
   'auth.cloudTitle': 'Облачный профиль',
-  'auth.cloudDisabled':
-    'Для подключения устройств и маршрутов нужен облачный аккаунт. Укажите VITE_API_URL к API на Pi, затем зарегистрируйтесь или войдите.',
+  'auth.cloudDisabled': 'Облачные функции недоступны',
   'auth.accountTitle': 'Аккаунт',
   'auth.accountHint':
-    'Сначала войдите или зарегистрируйтесь, чтобы подключить устройства и выбрать A–B на карте.',
-  'devices.gateNoApi':
-    'Для подключения устройств нужен облачный аккаунт. Настройте VITE_API_URL к API на Pi, затем зарегистрируйтесь.',
-  'devices.gateLogin':
-    'Сначала войдите или зарегистрируйтесь, чтобы подключить тренажёр, пульсометр или WiFi-мост.',
-  'devices.helpTrainer':
-    'После входа подключите FTMS-тренажёр или используйте демо-тренажёр.',
-  'devices.helpHr': 'После входа подключите Bluetooth-пульсометр.',
-  'devices.helpWifi': 'После входа проверьте локальный WiFi/ANT+-мост.',
+    'Одиночные поездки работают без аккаунта. Для сохранения итогов поездок и групповых заездов нужен облачный API.',
   'auth.login': 'Вход',
   'auth.register': 'Регистрация',
   'auth.displayName': 'Имя',
@@ -167,11 +163,6 @@ export const ru: Messages = {
   'route.loginToSave': 'Войдите, чтобы сохранить сводку',
   'route.alreadySaved': 'Эта сводка уже сохранена',
   'route.saved': 'Сводка сохранена (#{{id}})',
-  'route.gateNoApi':
-    'Для маршрутов и устройств нужен облачный аккаунт. Настройте VITE_API_URL к API на Pi, затем зарегистрируйтесь.',
-  'route.gateLogin':
-    'Войдите или зарегистрируйтесь, чтобы подключить устройства, ставить точки и построить маршрут.',
-  'route.gateCta': 'Открыть аккаунт',
   'route.alternatives': 'Варианты маршрута',
   'route.pickAlternative': 'Выберите маршрут',
   'route.alternativeN': 'Маршрут {{n}}',
@@ -195,7 +186,6 @@ export const ru: Messages = {
   'map.pickBanner': 'Нажмите на карту, чтобы поставить {{point}}',
   'map.followBanner': 'Следование по дороге · 3D-камера',
   'map.followGroup': ' · Групповая карта',
-  'map.lockedBanner': 'Войдите, чтобы подключить устройства и ставить точки на карте',
   'map.stylePicker': 'Стиль карты',
   'map.styleSatellite': 'Спутник',
   'map.styleOutdoors': 'Природа',

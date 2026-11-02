@@ -969,9 +969,6 @@ export function RouteMap({
       {showStylePicker && (
         <MapStylePicker styleId={styleId} onChange={setStyleId} />
       )}
-      {!pickingEnabled && !followRoad && (
-        <div className="map-pick-banner map-lock-banner">{t('map.lockedBanner')}</div>
-      )}
       {activePickMode && nextWaypointLabel && (
         <div className="map-pick-banner">
           {t('map.pickBanner', { point: nextWaypointLabel })}

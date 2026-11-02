@@ -48,9 +48,7 @@ type Props = {
   completedDistanceMeters: number;
   completedElapsedSeconds: number;
   routePlanningEnabled: boolean;
-  gateMessage: string | null;
   isRoundTrip: boolean;
-  onOpenAccount: () => void;
   onSetPickMode: (active: boolean) => void;
   onAddWaypoint?: (point: LatLng) => void;
   onRemoveLastWaypoint?: () => void;
@@ -209,9 +207,7 @@ export function RouteControls({
   completedDistanceMeters,
   completedElapsedSeconds,
   routePlanningEnabled,
-  gateMessage,
   isRoundTrip,
-  onOpenAccount,
   onSetPickMode,
   onAddWaypoint,
   onRemoveLastWaypoint,
@@ -375,15 +371,6 @@ export function RouteControls({
               <span>{preset.name}</span>
             </button>
           ))}
-        </div>
-      )}
-
-      {gateMessage && (
-        <div className="auth-gate-banner" role="status">
-          <p>{gateMessage}</p>
-          <button type="button" className="btn btn-accent" onClick={onOpenAccount}>
-            {t('route.gateCta')}
-          </button>
         </div>
       )}
 

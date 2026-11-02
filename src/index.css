@@ -1519,8 +1519,7 @@ select {
 
 /* Map Banners */
 .map-pick-banner,
-.map-follow-banner,
-.map-lock-banner {
+.map-follow-banner {
   position: absolute;
   top: 16px;
   left: 50%;
@@ -1536,11 +1535,6 @@ select {
   color: var(--text);
   pointer-events: none;
   white-space: nowrap;
-}
-
-.map-lock-banner {
-  border-color: rgba(255, 159, 10, 0.35);
-  color: var(--warn);
 }
 
 /* Unified Bottom Dashboard Deck Container */

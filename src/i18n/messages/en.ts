@@ -22,6 +22,11 @@ export const en = {
   'bt.available':
     'Web Bluetooth is available. Pair your FTMS trainer or heart-rate strap when prompted.',
 
+  'bt.pickerScanning': 'Scanning…',
+  'bt.pickerCancel': 'Cancel',
+  'bt.pickerAvailable': 'Available devices',
+  'bt.pickerNoDevice': 'No device found',
+  'devices.sectionTitle': 'Hardware & Sensors',
   'conn.unsupported': 'unsupported',
   'conn.disconnected': 'disconnected',
   'conn.connecting': 'connecting',
@@ -77,18 +82,10 @@ export const en = {
     'WiFi trainers are browser-limited. Pair via Bluetooth FTMS when possible, or run a local bridge for network/ANT+ devices.',
 
   'auth.cloudTitle': 'Cloud profile',
-  'auth.cloudDisabled':
-    'Cloud account is required to connect devices and build routes. Set VITE_API_URL to your Pi API, then register or log in.',
+  'auth.cloudDisabled': 'Cloud features unavailable',
   'auth.accountTitle': 'Account',
   'auth.accountHint':
-    'Log in or register first to connect devices and pick A–B on the map to build a route.',
-  'devices.gateNoApi':
-    'Device connections require a cloud account. Configure VITE_API_URL to your Pi API, then register.',
-  'devices.gateLogin':
-    'Log in or register first to connect your trainer, heart-rate strap, or WiFi bridge.',
-  'devices.helpTrainer': 'Pair an FTMS bike trainer or use the demo trainer after you sign in.',
-  'devices.helpHr': 'Connect a Bluetooth heart-rate strap after you sign in.',
-  'devices.helpWifi': 'Probe a local WiFi/ANT+ bridge after you sign in.',
+    'Solo riding works without an account. Saving ride summaries and group rides need the cloud API.',
   'auth.login': 'Login',
   'auth.register': 'Register',
   'auth.displayName': 'Display name',
@@ -163,11 +160,6 @@ export const en = {
   'route.loginToSave': 'Log in to save ride summary',
   'route.alreadySaved': 'Already saved this summary',
   'route.saved': 'Summary saved (#{{id}})',
-  'route.gateNoApi':
-    'Routes and devices require a cloud account. Configure VITE_API_URL to your Pi API, then register.',
-  'route.gateLogin':
-    'Log in or register to connect devices, place waypoints, and build a route.',
-  'route.gateCta': 'Open Account',
   'route.alternatives': 'Route options',
   'route.pickAlternative': 'Choose a route',
   'route.alternativeN': 'Route {{n}}',
@@ -190,7 +182,6 @@ export const en = {
   'map.pickBanner': 'Tap the map to place {{point}}',
   'map.followBanner': 'Follow road · 3D ride camera',
   'map.followGroup': ' · Group map',
-  'map.lockedBanner': 'Sign in to connect devices and place waypoints on the map',
   'map.stylePicker': 'Map style',
   'map.styleSatellite': 'Satellite',
   'map.styleOutdoors': 'Outdoors',

@@ -24,6 +24,11 @@ export const es: Messages = {
   'bt.available':
     'Web Bluetooth disponible. Empareja tu rodillo FTMS o banda de pulso cuando se solicite.',
 
+  'bt.pickerScanning': 'Buscando…',
+  'bt.pickerCancel': 'Cancelar',
+  'bt.pickerAvailable': 'Dispositivos disponibles',
+  'bt.pickerNoDevice': 'No se encontró ningún dispositivo',
+  'devices.sectionTitle': 'Hardware y sensores',
   'conn.unsupported': 'no admitido',
   'conn.disconnected': 'desconectado',
   'conn.connecting': 'conectando',
@@ -79,19 +84,10 @@ export const es: Messages = {
     'Los rodillos WiFi están limitados en el navegador. Prefiere Bluetooth FTMS o un puente local para red/ANT+.',
 
   'auth.cloudTitle': 'Perfil en la nube',
-  'auth.cloudDisabled':
-    'Se requiere una cuenta en la nube para conectar dispositivos y crear rutas. Configura VITE_API_URL con tu API de Pi y regístrate o inicia sesión.',
+  'auth.cloudDisabled': 'Funciones en la nube no disponibles',
   'auth.accountTitle': 'Cuenta',
   'auth.accountHint':
-    'Inicia sesión o regístrate antes de conectar dispositivos y elegir A–B en el mapa.',
-  'devices.gateNoApi':
-    'Las conexiones de dispositivos requieren una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
-  'devices.gateLogin':
-    'Inicia sesión o regístrate primero para conectar el rodillo, la banda de FC o el puente WiFi.',
-  'devices.helpTrainer':
-    'Tras iniciar sesión, empareja un rodillo FTMS o usa el rodillo demo.',
-  'devices.helpHr': 'Tras iniciar sesión, conecta una banda de frecuencia cardíaca Bluetooth.',
-  'devices.helpWifi': 'Tras iniciar sesión, comprueba el puente local WiFi/ANT+.',
+    'Las salidas en solitario funcionan sin cuenta. Guardar resúmenes y las salidas en grupo requieren la API en la nube.',
   'auth.login': 'Entrar',
   'auth.register': 'Registrarse',
   'auth.displayName': 'Nombre visible',
@@ -167,11 +163,6 @@ export const es: Messages = {
   'route.loginToSave': 'Inicia sesión para guardar el resumen',
   'route.alreadySaved': 'Este resumen ya está guardado',
   'route.saved': 'Resumen guardado (#{{id}})',
-  'route.gateNoApi':
-    'Rutas y dispositivos requieren una cuenta en la nube. Configura VITE_API_URL hacia tu API de Pi y regístrate.',
-  'route.gateLogin':
-    'Inicia sesión o regístrate para conectar dispositivos, colocar waypoints y crear una ruta.',
-  'route.gateCta': 'Abrir cuenta',
   'route.alternatives': 'Opciones de ruta',
   'route.pickAlternative': 'Elige una ruta',
   'route.alternativeN': 'Ruta {{n}}',
@@ -195,7 +186,6 @@ export const es: Messages = {
   'map.pickBanner': 'Toca el mapa para colocar {{point}}',
   'map.followBanner': 'Seguir carretera · cámara 3D',
   'map.followGroup': ' · Mapa de grupo',
-  'map.lockedBanner': 'Inicia sesión para conectar dispositivos y colocar waypoints en el mapa',
   'map.stylePicker': 'Estilo del mapa',
   'map.styleSatellite': 'Satélite',
   'map.styleOutdoors': 'Exterior',

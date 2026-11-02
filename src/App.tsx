@@ -21,8 +21,10 @@ import { RoomSocket } from './api/roomSocket';
 import type { PeerRider, Room, User } from './api/types';
 import { FtmsTrainer } from './bluetooth/ftms';
 import { HeartRateMonitor } from './bluetooth/heartRate';
+import { setNativeBluetoothStrings } from './bluetooth/installNativeBluetooth';
 import { MockTrainer } from './bluetooth/mockTrainer';
 import type { BikeTrainer, ConnectionState } from './bluetooth/types';
+import { isBluetoothPickerCancel } from './bluetooth/webBluetooth';
 import { probeWifiBridge } from './bluetooth/wifiBridge';
 import { enrichRouteWithElevation } from './elevation/service';
 import { downloadRideFit, downloadRideGpx } from './export';
@@ -162,8 +164,6 @@ export default function App() {
   const telemetryPhaseRef = useRef(idleTelemetry.phase);
 
   const cloudEnabled = isCloudApiEnabled();
-  const canPlanRoute = Boolean(cloudEnabled && user);
-  const canUseDevices = canPlanRoute;
   const inGroup = Boolean(room && room.status !== 'ended');
   const groupMode = inGroup;
   const immersiveRide =
@@ -177,6 +177,15 @@ export default function App() {
       engine.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    setNativeBluetoothStrings({
+      scanning: t('bt.pickerScanning'),
+      cancel: t('bt.pickerCancel'),
+      availableDevices: t('bt.pickerAvailable'),
+      noDeviceFound: t('bt.pickerNoDevice'),
+    });
+  }, [t]);
 
   useEffect(() => {
     const hr = hrRef.current;
@@ -216,52 +225,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!canPlanRoute || inGroup) {
+    if (inGroup) {
       setPickMode(false);
       return;
     }
     if (waypoints.length === 0) {
       setPickMode(true);
     }
-  }, [canPlanRoute, inGroup, waypoints.length]);
-
-  useEffect(() => {
-    if (canUseDevices) return;
-    let cancelled = false;
-    void (async () => {
-      const trainer = activeTrainerRef.current;
-      if (trainer && trainer.getState() !== 'disconnected') {
-        try {
-          await trainer.disconnect();
-        } catch {
-          // ignore disconnect errors while locking devices
-        }
-      }
-      if (cancelled) return;
-      trainerUnsubRef.current?.();
-      trainerUnsubRef.current = null;
-      activeTrainerRef.current = null;
-      engineRef.current.attachTrainer(null);
-      setUsingMock(false);
-      setTrainerState('disconnected');
-      setTrainerName(t('trainer.defaultName'));
-
-      if (hrRef.current.getState() !== 'disconnected') {
-        try {
-          await hrRef.current.disconnect();
-        } catch {
-          // ignore
-        }
-      }
-      if (cancelled) return;
-      setHrBpm(null);
-      engineRef.current.setHeartRate(null);
-      setHrName(t('hr.defaultName'));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [canUseDevices, t]);
+  }, [inGroup, waypoints.length]);
 
   useEffect(() => {
     if (telemetry.phase === 'finished') {
@@ -458,7 +429,6 @@ export default function App() {
   }, []);
 
   const connectFtms = async () => {
-    if (!canUseDevices) return;
     try {
       setRouteError(null);
       // Do not await anything before requestDevice — Bluefy needs the tap gesture.
@@ -471,12 +441,12 @@ export default function App() {
         await mockRef.current.disconnect();
       }
     } catch (error) {
+      if (isBluetoothPickerCancel(error)) return;
       setRouteError(error instanceof Error ? error.message : t('trainer.connectFailed'));
     }
   };
 
   const enableMockTrainer = async () => {
-    if (!canUseDevices) return;
     try {
       setRouteError(null);
       const current = activeTrainerRef.current;
@@ -506,11 +476,11 @@ export default function App() {
   };
 
   const connectHr = async () => {
-    if (!canUseDevices) return;
     try {
       setRouteError(null);
       await hrRef.current.connect();
     } catch (error) {
+      if (isBluetoothPickerCancel(error)) return;
       setRouteError(error instanceof Error ? error.message : t('hr.connectFailed'));
     }
   };
@@ -533,7 +503,6 @@ export default function App() {
 
   const addWaypoint = useCallback(
     (point: LatLng) => {
-      if (!canPlanRoute) return;
       setWaypoints((prev) => {
         if (!canAddWaypoint(prev.length)) return prev;
         const next = [...prev, point];
@@ -543,32 +512,30 @@ export default function App() {
         return next;
       });
     },
-    [canPlanRoute],
+    [],
   );
 
   const removeLastWaypoint = useCallback(() => {
-    if (!canPlanRoute) return;
     setWaypoints((prev) => prev.slice(0, -1));
-  }, [canPlanRoute]);
+  }, []);
 
   const onPick = useCallback(
     (point: LatLng) => {
-      if (!canPlanRoute || !pickMode) return;
+      if (!pickMode) return;
       addWaypoint(point);
     },
-    [addWaypoint, canPlanRoute, pickMode],
+    [addWaypoint, pickMode],
   );
 
   const onSetPickMode = useCallback(
     (active: boolean) => {
-      if (!canPlanRoute) return;
       setPickMode(active);
     },
-    [canPlanRoute],
+    [],
   );
 
   const buildRoute = async (roundTripOverride?: boolean) => {
-    if (!canPlanRoute || !canBuildRoute(waypoints)) return;
+    if (!canBuildRoute(waypoints)) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
     const generation = ++altEnrichGenRef.current;
     setLoadingRoute(true);
@@ -598,7 +565,7 @@ export default function App() {
     nextWaypoints: LatLng[],
     roundTripOverride?: boolean,
   ) => {
-    if (!canPlanRoute || !canBuildRoute(nextWaypoints)) return;
+    if (!canBuildRoute(nextWaypoints)) return;
     const roundTrip = roundTripOverride ?? isRoundTrip;
     const generation = ++altEnrichGenRef.current;
     setWaypoints(nextWaypoints.slice(0, MAX_WAYPOINTS));
@@ -678,7 +645,7 @@ export default function App() {
     setEnrichedByAlt({});
     setElevatingAlt(false);
     setWaypoints([]);
-    setPickMode(canPlanRoute);
+    setPickMode(true);
     engineRef.current.setRoute(null);
     setTelemetry(idleTelemetry);
     setSavedRideId(null);
@@ -686,7 +653,6 @@ export default function App() {
   };
 
   const onProbeWifi = async () => {
-    if (!canUseDevices) return;
     const status = await probeWifiBridge();
     setWifiCode(status.code);
   };
@@ -742,18 +708,6 @@ export default function App() {
     if (telemetry.phase === 'ready') return t('phase.ready');
     return t('phase.idle');
   }, [t, telemetry.phase]);
-
-  const gateMessage = !cloudEnabled
-    ? t('route.gateNoApi')
-    : !user
-      ? t('route.gateLogin')
-      : null;
-
-  const deviceGateMessage = !cloudEnabled
-    ? t('devices.gateNoApi')
-    : !user
-      ? t('devices.gateLogin')
-      : null;
 
   const onDownloadFit = async () => {
     const ride = engineRef.current.getExport();
@@ -1199,8 +1153,6 @@ export default function App() {
       )}
 
       <ConnectionPanel
-        devicesEnabled={canUseDevices}
-        deviceGateMessage={deviceGateMessage}
         trainerState={trainerState}
         trainerName={trainerName}
         trainerErrorMessage={trainerErrorMessage}
@@ -1225,7 +1177,6 @@ export default function App() {
         onMockEffort={setMockEffort}
         onPowerModeChange={onPowerModeChange}
         onTargetPowerChange={onTargetPowerChange}
-        onOpenAccount={onOpenAccount}
         onClosePanel={closePanel}
       >
         <AuthPanel
@@ -1292,10 +1243,8 @@ export default function App() {
               hasExport={telemetry.hasExport}
               completedDistanceMeters={telemetry.distanceMeters}
               completedElapsedSeconds={telemetry.elapsedSeconds}
-              routePlanningEnabled={canPlanRoute && !inGroup}
-              gateMessage={gateMessage}
+              routePlanningEnabled={!inGroup}
               isRoundTrip={isRoundTrip}
-              onOpenAccount={onOpenAccount}
               onSetPickMode={onSetPickMode}
               onAddWaypoint={addWaypoint}
               onRemoveLastWaypoint={removeLastWaypoint}
@@ -1384,7 +1333,7 @@ export default function App() {
                 routeAlternatives={routeAlternatives}
                 selectedAlternativeIndex={selectedAltIndex}
                 onSelectAlternative={
-                  canPlanRoute && !inGroup ? onSelectAlternative : undefined
+                  !inGroup ? onSelectAlternative : undefined
                 }
                 rider={telemetry.position}
                 ridePhase={telemetry.phase}
@@ -1392,7 +1341,7 @@ export default function App() {
                 speedKmh={telemetry.speedKmh}
                 onPick={onPick}
                 pickMode={pickMode}
-                pickingEnabled={canPlanRoute && !inGroup}
+                pickingEnabled={!inGroup}
                 peers={mapPeers}
                 groupMode={groupMode}
                 styleId={rideMapStyleId}

@@ -1,11 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { ConnectionState } from '../bluetooth/types';
-import {
-  describeBluetoothError,
-  getBluetoothSupportCode,
-  isWebBluetoothSupported,
-  requestBluetoothDevice,
-} from '../bluetooth/webBluetooth';
+import { getBluetoothSupportCode, isWebBluetoothSupported } from '../bluetooth/webBluetooth';
 import { useT } from '../i18n';
 import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -23,8 +18,6 @@ import {
 } from 'lucide-react';
 
 type Props = {
-  devicesEnabled: boolean;
-  deviceGateMessage: string | null;
   trainerState: ConnectionState;
   trainerName: string;
   trainerErrorMessage: string | null;
@@ -49,7 +42,6 @@ type Props = {
   onMockEffort: (value: number) => void;
   onPowerModeChange: (mode: RidePowerMode) => void;
   onTargetPowerChange: (watts: number | null) => void;
-  onOpenAccount: () => void;
   onClosePanel?: () => void;
   children?: ReactNode;
 };
@@ -67,8 +59,6 @@ function StatusDot({ state }: { state: ConnectionState }) {
 }
 
 export function ConnectionPanel({
-  devicesEnabled,
-  deviceGateMessage,
   trainerState,
   trainerName,
   trainerErrorMessage,
@@ -93,7 +83,6 @@ export function ConnectionPanel({
   onMockEffort,
   onPowerModeChange,
   onTargetPowerChange,
-  onOpenAccount,
   onClosePanel,
   children,
 }: Props) {
@@ -102,26 +91,6 @@ export function ConnectionPanel({
   const trainerLabel = usingMock ? t('trainer.demoName') : trainerName;
   const trainerStatus = t(CONN_KEYS[trainerState]);
   const hrStatus = t(CONN_KEYS[hrState]);
-  const [debugResult, setDebugResult] = useState<string | null>(null);
-  const [debugBusy, setDebugBusy] = useState(false);
-
-  const runBareBluetoothTest = async () => {
-    setDebugBusy(true);
-    setDebugResult(null);
-    try {
-      // Spec requires optionalServices with acceptAllDevices; Bluefy rejects without them.
-      const device = await requestBluetoothDevice({
-        acceptAllDevices: true,
-        optionalServices: [0x1826, 0x180d, 0x180f, 0x180a],
-      });
-      setDebugResult(`OK: picker opened, chose "${device.name ?? device.id}"`);
-    } catch (error) {
-      setDebugResult(`FAIL: ${describeBluetoothError(error)}`);
-    } finally {
-      setDebugBusy(false);
-    }
-  };
-
   return (
     <aside className="connection-panel" id="connection-panel" aria-label={t('shell.controls')}>
       <div className="panel-sheet-handle" aria-hidden="true" />
@@ -164,39 +133,11 @@ export function ConnectionPanel({
         </div>
       </div>
 
-      {btOk && (
-        <div className="support-card">
-          <Bluetooth className="icon-sm icon-accent" />
-          <div>
-            <strong>Debug: bare Bluetooth test</strong>
-            <p>Opens the picker with no filters — isolates whether requestDevice() itself works here.</p>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              disabled={debugBusy}
-              onClick={() => void runBareBluetoothTest()}
-            >
-              {debugBusy ? '…' : 'Run test'}
-            </button>
-            {debugResult && <p className="device-error-text">{debugResult}</p>}
-          </div>
-        </div>
-      )}
-
-      {deviceGateMessage && (
-        <div className="auth-gate-banner" role="status">
-          <p>{deviceGateMessage}</p>
-          <button type="button" className="btn btn-accent" onClick={onOpenAccount}>
-            {t('route.gateCta')}
-          </button>
-        </div>
-      )}
-
       {/* Hardware Device Section */}
       <section className="device-section">
         <h2>
           <Radio className="icon-xs" />
-          Hardware & Sensors
+          {t('devices.sectionTitle')}
         </h2>
 
         {/* FTMS Smart Trainer Card */}
@@ -233,7 +174,7 @@ export function ConnectionPanel({
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                disabled={!devicesEnabled || !btOk || trainerState === 'connecting'}
+                disabled={!btOk || trainerState === 'connecting'}
                 onClick={onConnectTrainer}
               >
                 {trainerState === 'connecting' ? t('trainer.connecting') : t('trainer.connect')}
@@ -243,7 +184,6 @@ export function ConnectionPanel({
             <button
               type="button"
               className={`btn btn-sm ${usingMock ? 'btn-accent' : 'btn-ghost'}`}
-              disabled={!devicesEnabled}
               onClick={onUseMock}
             >
               {t('trainer.useDemo')}
@@ -316,7 +256,7 @@ export function ConnectionPanel({
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                disabled={!devicesEnabled || !btOk || hrState === 'connecting'}
+                disabled={!btOk || hrState === 'connecting'}
                 onClick={onConnectHr}
               >
                 {t('hr.connect')}
@@ -339,7 +279,6 @@ export function ConnectionPanel({
           <button
             type="button"
             className="btn btn-ghost btn-sm"
-            disabled={!devicesEnabled}
             onClick={onProbeWifi}
           >
             {t('wifi.probe')}
