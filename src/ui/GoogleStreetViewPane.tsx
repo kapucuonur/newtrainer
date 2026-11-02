@@ -15,8 +15,12 @@ type Props = {
   onUnavailable: () => void;
 };
 
-/** Move the panorama only after this much travel — fewer pano loads, steadier view. */
-const MOVE_EVERY_METERS = 10;
+/**
+ * Move the panorama only after this much travel and time: each move reloads the
+ * imagery low-res first, and moving every 10 m never let it sharpen.
+ */
+const MOVE_EVERY_METERS = 20;
+const MOVE_MIN_INTERVAL_MS = 2500;
 
 /**
  * Street-level ride view from Google Street View. One panorama object for the
@@ -28,6 +32,7 @@ export function GoogleStreetViewPane({ apiKey, samples, distanceMeters, onUnavai
   const containerRef = useRef<HTMLDivElement | null>(null);
   const panoramaRef = useRef<GoogleStreetViewPanorama | null>(null);
   const lastMovedAtRef = useRef(-Infinity);
+  const lastMoveTimeRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [noImageryHere, setNoImageryHere] = useState(false);
   const onUnavailableRef = useRef(onUnavailable);
@@ -82,9 +87,12 @@ export function GoogleStreetViewPane({ apiKey, samples, distanceMeters, onUnavai
   useEffect(() => {
     const panorama = panoramaRef.current;
     if (!panorama || Math.abs(distanceMeters - lastMovedAtRef.current) < MOVE_EVERY_METERS) return;
+    const now = performance.now();
+    if (now - lastMoveTimeRef.current < MOVE_MIN_INTERVAL_MS) return;
     const pose = routePoseAtDistance(samples, distanceMeters);
     if (!pose) return;
     lastMovedAtRef.current = distanceMeters;
+    lastMoveTimeRef.current = now;
     panorama.setPosition({ lat: pose.lat, lng: pose.lng });
     panorama.setPov({ heading: pose.headingDeg, pitch: 0 });
   }, [distanceMeters, samples]);
