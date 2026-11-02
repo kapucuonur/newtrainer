@@ -28,40 +28,54 @@ export function RideChrome({
   return (
     <div className="ride-chrome" role="toolbar" aria-label={t('ride.chromeAria')}>
       {phase === 'riding' && (
-        <button type="button" className="btn btn-secondary" onClick={onPause}>
-          <Pause className="icon-xs" />
-          {t('route.pause')}
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onPause}
+          aria-label={t('route.pause')}
+        >
+          <Pause className="icon-xs" aria-hidden="true" />
+          <span className="ride-chrome-label">{t('route.pause')}</span>
         </button>
       )}
       {phase === 'paused' && (
-        <button type="button" className="btn btn-accent btn-glow" onClick={onResume}>
-          <Play className="icon-xs" />
-          {t('route.resume')}
+        <button
+          type="button"
+          className="btn btn-accent btn-glow"
+          onClick={onResume}
+          aria-label={t('route.resume')}
+        >
+          <Play className="icon-xs" aria-hidden="true" />
+          <span className="ride-chrome-label">{t('route.resume')}</span>
         </button>
       )}
-      <button type="button" className="btn btn-danger" onClick={onStop}>
-        <Square className="icon-xs" />
-        {t('route.stop')}
+      <button type="button" className="btn btn-danger" onClick={onStop} aria-label={t('route.stop')}>
+        <Square className="icon-xs" aria-hidden="true" />
+        <span className="ride-chrome-label">{t('route.stop')}</span>
       </button>
       <button
         type="button"
         className={`btn ${routePeekOpen ? 'btn-primary' : 'btn-ghost'}`}
         onClick={onToggleRoutePeek}
         aria-pressed={routePeekOpen}
+        aria-label={routePeekOpen ? t('route.hidePanel') : t('route.showPanel')}
         title={routePeekOpen ? t('route.hidePanel') : t('route.showPanel')}
       >
-        <Route className="icon-xs" />
-        {routePeekOpen ? t('route.hidePanel') : t('route.showPanel')}
+        <Route className="icon-xs" aria-hidden="true" />
+        <span className="ride-chrome-label">
+          {routePeekOpen ? t('route.hidePanel') : t('route.showPanel')}
+        </span>
       </button>
       <button
         type="button"
         className={`btn ${videoPanelOpen ? 'btn-accent' : 'btn-ghost'}`}
         onClick={onToggleVideo}
         aria-pressed={videoPanelOpen}
+        aria-label={t('video.toggle')}
         title={t('video.toggle')}
       >
-        <Film className="icon-xs" />
-        {t('video.toggle')}
+        <Film className="icon-xs" aria-hidden="true" />
+        <span className="ride-chrome-label">{t('video.toggle')}</span>
       </button>
     </div>
   );

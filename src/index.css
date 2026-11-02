@@ -1215,6 +1215,26 @@ select {
   box-shadow: var(--shadow);
 }
 
+/* Phones: one row of icon-only controls so the ride map stays visible */
+@media (max-width: 640px) {
+  .ride-chrome {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .ride-chrome .btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 12px;
+    justify-content: center;
+  }
+
+  .ride-chrome-label {
+    display: none;
+  }
+}
+
 /* Optional personal YouTube pane (client-only) */
 .video-panel {
   display: flex;
