@@ -5,8 +5,10 @@ export type StreetImage = {
   id: string;
   lat: number;
   lng: number;
-  /** Camera heading, degrees clockwise from north. */
+  /** Camera heading, degrees clockwise from north (for a 360° panorama: its centre column). */
   compassAngle: number;
+  /** Equirectangular 360° photo — any travel direction can be cropped out of it. */
+  isPano: boolean;
   thumbUrl: string;
   sequenceId: string | null;
   creator: string | null;
@@ -16,6 +18,8 @@ export type StreetImage = {
 export type StreetFrame = {
   distanceMeters: number;
   image: StreetImage;
+  /** Direction of travel here — panoramas are cropped to face it. */
+  headingDeg: number;
 };
 
 const EARTH_RADIUS_M = 6371000;
@@ -105,7 +109,7 @@ export function pickStreetFrames(
         for (const image of buckets.get(`${row + dr}:${col + dc}`) ?? []) {
           const offset = distanceMeters(here.lat, here.lng, image.lat, image.lng);
           if (offset > MAX_OFFSET_M) continue;
-          const turn = angleDiff(image.compassAngle, heading);
+          const turn = image.isPano ? 0 : angleDiff(image.compassAngle, heading);
           if (turn > MAX_ANGLE_DEG) continue;
           const sameSequence =
             previous?.sequenceId != null && image.sequenceId === previous.sequenceId;
@@ -119,7 +123,7 @@ export function pickStreetFrames(
     }
 
     if (best && best.id !== previous?.id) {
-      frames.push({ distanceMeters: d, image: best });
+      frames.push({ distanceMeters: d, image: best, headingDeg: heading });
       previous = best;
     }
   }

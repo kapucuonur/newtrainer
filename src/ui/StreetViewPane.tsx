@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { MapPin } from 'lucide-react';
 import { useT } from '../i18n';
 import { frameAtDistance, streetCoverage, type StreetFrame } from '../streetview/pickFrames';
@@ -14,6 +14,29 @@ type Props = {
 };
 
 const PRELOAD_AHEAD = 3;
+/** Widest slice of a 360° panorama shown across the screen; narrower on tall screens. */
+const PANO_MAX_FOV_DEG = 100;
+
+type Size = { w: number; h: number };
+
+/**
+ * Crops an equirectangular panorama so the direction of travel sits at the
+ * centre of the view: the image is scaled to cover the pane at <= 100° of
+ * horizontal field of view and shifted so `headingDeg` is centred (Mapillary
+ * puts the panorama's compass angle at its centre column).
+ */
+function panoStyle(frame: StreetFrame, size: Size): CSSProperties {
+  const bgW = Math.max(2 * size.h, (size.w * 360) / PANO_MAX_FOV_DEG);
+  const bgH = bgW / 2;
+  const offset = (frame.headingDeg - frame.image.compassAngle) / 360;
+  const frac = (((0.5 + offset) % 1) + 1) % 1;
+  return {
+    backgroundImage: `url(${JSON.stringify(frame.image.thumbUrl)})`,
+    backgroundSize: `${bgW}px ${bgH}px`,
+    backgroundPosition: `${size.w / 2 - frac * bgW}px ${(size.h - bgH) / 2}px`,
+    backgroundRepeat: 'repeat-x',
+  };
+}
 
 /**
  * Street-level ride view: shows the Mapillary photo for the rider's position,
@@ -24,6 +47,16 @@ export function StreetViewPane({ frames, status, distanceMeters, totalMeters, pi
   const frame = frameAtDistance(frames, distanceMeters);
   // Keep the previous photo underneath so the new one fades in over it.
   const [layers, setLayers] = useState<StreetFrame[]>([]);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState<Size>({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!frame) return;
@@ -54,16 +87,24 @@ export function StreetViewPane({ frames, status, distanceMeters, totalMeters, pi
 
   return (
     <div className="street-view">
-      <div className={`street-view-stage ${frame ? '' : 'street-view-stage-dim'}`}>
-        {layers.map((layer) => (
-          <img
-            key={layer.image.id}
-            className="street-view-photo"
-            src={layer.image.thumbUrl}
-            alt=""
-            draggable={false}
-          />
-        ))}
+      <div ref={stageRef} className={`street-view-stage ${frame ? '' : 'street-view-stage-dim'}`}>
+        {layers.map((layer) =>
+          layer.image.isPano ? (
+            <div
+              key={layer.image.id}
+              className="street-view-photo"
+              style={size.w > 0 ? panoStyle(layer, size) : undefined}
+            />
+          ) : (
+            <img
+              key={layer.image.id}
+              className="street-view-photo"
+              src={layer.image.thumbUrl}
+              alt=""
+              draggable={false}
+            />
+          ),
+        )}
       </div>
 
       {message && (

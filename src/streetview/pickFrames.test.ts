@@ -20,9 +20,17 @@ const samples: RoutePoint[] = Array.from({ length: 41 }, (_, i) => ({
   gradePercent: 0,
 }));
 
-function image(id: string, northMeters: number, compassAngle: number, eastMeters = 0, seq = 'seq-a'): StreetImage {
+function image(
+  id: string,
+  northMeters: number,
+  compassAngle: number,
+  eastMeters = 0,
+  seq = 'seq-a',
+  isPano = false,
+): StreetImage {
   return {
     id,
+    isPano,
     lat: LAT0 + northMeters / METERS_PER_DEG_LAT,
     lng: LNG0 + eastMeters / (METERS_PER_DEG_LAT * Math.cos((LAT0 * Math.PI) / 180)),
     compassAngle,
@@ -69,6 +77,14 @@ assert(coverage > 0.45 && coverage < 0.75, `coverage expected ~0.5-0.7, got ${co
   const b2 = image('b2', 16, 0, -1, 'seq-b');
   const picked = pickStreetFrames(samples.slice(0, 4), [a, a2, b2]);
   assert(picked.some((f) => f.image.id === 'a2'), `expected same-sequence a2, got ${picked.map((f) => f.image.id)}`);
+}
+
+// A 360° panorama is usable whatever its compass angle (it is cropped to the heading).
+{
+  const pano = image('pano', 300, 180, 2, 'seq-p', true);
+  const picked = pickStreetFrames(samples, [pano]);
+  assert(picked.some((f) => f.image.id === 'pano'), 'a backwards-facing panorama should still be picked');
+  assert(picked.every((f) => Math.abs(f.headingDeg) < 1 || Math.abs(f.headingDeg - 360) < 1), 'heading ~north');
 }
 
 assert(pickStreetFrames(samples, []).length === 0, 'no images → no frames');

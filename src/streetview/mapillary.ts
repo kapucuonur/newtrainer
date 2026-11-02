@@ -23,7 +23,7 @@ export function getMapillaryToken(): string {
 
 type BBox = { minLng: number; minLat: number; maxLng: number; maxLat: number };
 
-/** Treat API output as untrusted: keep only well-formed, non-panorama, https photos. */
+/** Treat API output as untrusted: keep only well-formed https photos. */
 function parseImage(raw: unknown): StreetImage | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -33,13 +33,13 @@ function parseImage(raw: unknown): StreetImage | null {
   if (typeof lng !== 'number' || typeof lat !== 'number') return null;
   if (typeof r.compass_angle !== 'number' || !Number.isFinite(r.compass_angle)) return null;
   if (typeof r.thumb_1024_url !== 'string' || !r.thumb_1024_url.startsWith('https://')) return null;
-  if (r.is_pano === true) return null;
   const creator = (r.creator as { username?: unknown } | undefined)?.username;
   return {
     id: r.id,
     lat,
     lng,
     compassAngle: r.compass_angle,
+    isPano: r.is_pano === true,
     thumbUrl: r.thumb_1024_url,
     sequenceId: typeof r.sequence === 'string' ? r.sequence : null,
     creator: typeof creator === 'string' ? creator : null,
