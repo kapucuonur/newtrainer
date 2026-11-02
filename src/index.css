@@ -2737,3 +2737,8 @@ select {
 .rouvy-pip-content .map-follow-banner {
   display: none;
 }
+
+.street-view-google {
+  position: absolute;
+  inset: 0;
+}

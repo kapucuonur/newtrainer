@@ -130,6 +130,27 @@ export function pickStreetFrames(
   return frames;
 }
 
+/** Road position and direction of travel at `distanceMeters` along the route. */
+export function routePoseAtDistance(
+  samples: RoutePoint[],
+  distanceMeters: number,
+): { lat: number; lng: number; headingDeg: number } | null {
+  if (samples.length < 2) return null;
+  const total = samples[samples.length - 1].distanceMeters;
+  const d = Math.max(0, Math.min(distanceMeters, total));
+  const here = pointAtDistance(samples, d, { i: 0 });
+  const ahead = pointAtDistance(samples, Math.min(total, d + 10), { i: 0 });
+  // At the very end there is nothing ahead; look back instead and keep the same direction.
+  const headingDeg =
+    d + 10 <= total
+      ? bearingDeg(here.lat, here.lng, ahead.lat, ahead.lng)
+      : (() => {
+          const behind = pointAtDistance(samples, Math.max(0, d - 10), { i: 0 });
+          return bearingDeg(behind.lat, behind.lng, here.lat, here.lng);
+        })();
+  return { ...here, headingDeg };
+}
+
 /** Frame to show at `distanceMeters`, or null when the rider is in a gap with no photos. */
 export function frameAtDistance(frames: StreetFrame[], distanceMeters: number): StreetFrame | null {
   let lo = 0;

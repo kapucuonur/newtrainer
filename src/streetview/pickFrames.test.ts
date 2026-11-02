@@ -1,5 +1,11 @@
 import type { RoutePoint } from '../routing/types';
-import { frameAtDistance, pickStreetFrames, streetCoverage, type StreetImage } from './pickFrames';
+import {
+  frameAtDistance,
+  pickStreetFrames,
+  routePoseAtDistance,
+  streetCoverage,
+  type StreetImage,
+} from './pickFrames';
 
 /** `npx tsx src/streetview/pickFrames.test.ts` */
 
@@ -85,6 +91,16 @@ assert(coverage > 0.45 && coverage < 0.75, `coverage expected ~0.5-0.7, got ${co
   const picked = pickStreetFrames(samples, [pano]);
   assert(picked.some((f) => f.image.id === 'pano'), 'a backwards-facing panorama should still be picked');
   assert(picked.every((f) => Math.abs(f.headingDeg) < 1 || Math.abs(f.headingDeg - 360) < 1), 'heading ~north');
+}
+
+// Pose along the straight northbound road.
+{
+  const pose = routePoseAtDistance(samples, 105)!;
+  assert(Math.abs(pose.lat - (LAT0 + 105 / METERS_PER_DEG_LAT)) < 1e-6, `pose lat ${pose.lat}`);
+  assert(pose.headingDeg < 1 || pose.headingDeg > 359, `heading north, got ${pose.headingDeg}`);
+  const end = routePoseAtDistance(samples, 10_000)!;
+  assert(end.headingDeg < 1 || end.headingDeg > 359, `end heading keeps direction, got ${end.headingDeg}`);
+  assert(routePoseAtDistance(samples.slice(0, 1), 0) === null, 'single point → null');
 }
 
 assert(pickStreetFrames(samples, []).length === 0, 'no images → no frames');

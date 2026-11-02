@@ -58,6 +58,8 @@ import { RouteControls } from './ui/RouteControls';
 import { VideoPanel } from './ui/VideoPanel';
 import { RouvyVideoPlayer } from './ui/RouvyVideoPlayer';
 import { StreetViewPane, type StreetViewStatus } from './ui/StreetViewPane';
+import { GoogleStreetViewPane } from './ui/GoogleStreetViewPane';
+import { getGoogleMapsKey } from './streetview/googleMaps';
 import { getMapillaryToken, loadStreetFrames } from './streetview/mapillary';
 import { streetCoverage, type StreetFrame } from './streetview/pickFrames';
 
@@ -165,6 +167,7 @@ export default function App() {
   const [streetFrames, setStreetFrames] = useState<StreetFrame[]>([]);
   const [streetStatus, setStreetStatus] = useState<StreetViewStatus>('loading');
   const streetFramesRouteRef = useRef<EnrichedRoute | null>(null);
+  const [googleStreetFailed, setGoogleStreetFailed] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const roomSocketRef = useRef<RoomSocket | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -1073,6 +1076,9 @@ export default function App() {
     setStreetViewOn(false);
   };
   const streetToken = getMapillaryToken();
+  // Google Street View covers almost every road; Mapillary is the keyless fallback.
+  const googleKey = getGoogleMapsKey();
+  const useGoogleStreet = Boolean(googleKey) && !googleStreetFailed;
   const toggleStreetView = () => {
     setStreetViewOn((on) => !on);
     setVideoPanelOpen(false);
@@ -1080,7 +1086,7 @@ export default function App() {
 
   // Fetch street photos once per route, only when the rider turns street view on.
   useEffect(() => {
-    if (!streetViewOn || !route || !streetToken) return;
+    if (!streetViewOn || !route || !streetToken || useGoogleStreet) return;
     if (streetFramesRouteRef.current === route) return;
     const controller = new AbortController();
     setStreetStatus('loading');
@@ -1099,7 +1105,7 @@ export default function App() {
         setStreetStatus('error');
       });
     return () => controller.abort();
-  }, [streetViewOn, route, streetToken]);
+  }, [streetViewOn, route, streetToken, useGoogleStreet]);
   const followRoad =
     telemetry.phase === 'riding' || telemetry.phase === 'paused';
   const showMapStylePicker = !followRoad;
@@ -1115,14 +1121,15 @@ export default function App() {
 
   // Below this share of the route with photos, riding on the map beats a mostly-empty photo view.
   const MIN_STREET_COVERAGE = 0.2;
-  const streetUsable =
+  const mapillaryUsable =
+    Boolean(streetToken) &&
     streetStatus !== 'error' &&
     !(
       streetStatus === 'ready' &&
       route != null &&
       streetCoverage(streetFrames, route.distanceMeters) < MIN_STREET_COVERAGE
     );
-  const showStreetView = immersiveRide && streetViewOn && Boolean(streetToken) && streetUsable;
+  const showStreetView = immersiveRide && streetViewOn && (useGoogleStreet || mapillaryUsable);
 
   const pipRouteMap = (
     <RouteMap
@@ -1312,7 +1319,7 @@ export default function App() {
               onToggleRoutePeek={() => setRoutePeekOpen((open) => !open)}
               onToggleVideo={toggleVideoPanel}
               streetViewOn={showStreetView}
-              onToggleStreetView={streetToken ? toggleStreetView : undefined}
+              onToggleStreetView={googleKey || streetToken ? toggleStreetView : undefined}
             />
           )}
           {showRoutePanel && (
@@ -1369,13 +1376,23 @@ export default function App() {
         >
           {showStreetView && route ? (
             <div className="viewer-map-pane" style={{ position: 'relative' }}>
-              <StreetViewPane
-                frames={streetFrames}
-                status={streetStatus}
-                distanceMeters={telemetry.distanceMeters}
-                totalMeters={route.distanceMeters}
-                pipMapNode={pipRouteMap}
-              />
+              {useGoogleStreet ? (
+                // No inset map: Google's terms restrict Street View next to non-Google maps (EEA).
+                <GoogleStreetViewPane
+                  apiKey={googleKey}
+                  samples={route.samples}
+                  distanceMeters={telemetry.distanceMeters}
+                  onUnavailable={() => setGoogleStreetFailed(true)}
+                />
+              ) : (
+                <StreetViewPane
+                  frames={streetFrames}
+                  status={streetStatus}
+                  distanceMeters={telemetry.distanceMeters}
+                  totalMeters={route.distanceMeters}
+                  pipMapNode={pipRouteMap}
+                />
+              )}
               {rideDashboardDeck}
             </div>
           ) : immersiveRide && videoPanelOpen ? (
