@@ -1,27 +1,32 @@
 import type { RidePhase } from '../simulation/rideEngine';
 import { useT } from '../i18n';
-import { Film, Pause, Play, Route, Square } from 'lucide-react';
+import { Camera, Film, Pause, Play, Route, Square } from 'lucide-react';
 
 type Props = {
   phase: RidePhase;
   routePeekOpen: boolean;
   videoPanelOpen: boolean;
+  streetViewOn: boolean;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
   onToggleRoutePeek: () => void;
   onToggleVideo: () => void;
+  /** Omitted when no street imagery source is configured. */
+  onToggleStreetView?: () => void;
 };
 
 export function RideChrome({
   phase,
   routePeekOpen,
   videoPanelOpen,
+  streetViewOn,
   onPause,
   onResume,
   onStop,
   onToggleRoutePeek,
   onToggleVideo,
+  onToggleStreetView,
 }: Props) {
   const t = useT();
 
@@ -77,6 +82,19 @@ export function RideChrome({
         <Film className="icon-xs" aria-hidden="true" />
         <span className="ride-chrome-label">{t('video.toggle')}</span>
       </button>
+      {onToggleStreetView && (
+        <button
+          type="button"
+          className={`btn ${streetViewOn ? 'btn-accent' : 'btn-ghost'}`}
+          onClick={onToggleStreetView}
+          aria-pressed={streetViewOn}
+          aria-label={t('street.toggle')}
+          title={t('street.toggle')}
+        >
+          <Camera className="icon-xs" aria-hidden="true" />
+          <span className="ride-chrome-label">{t('street.toggle')}</span>
+        </button>
+      )}
     </div>
   );
 }

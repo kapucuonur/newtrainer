@@ -177,6 +177,12 @@ export const it: Messages = {
 
   'video.title': 'Video',
   'video.toggle': 'Pannello video',
+  'street.toggle': 'Vista strada',
+  'street.loading': 'Caricamento immagini stradali…',
+  'street.noCoverage': 'Nessuna immagine stradale in questo tratto',
+  'street.error': 'Immagini stradali non disponibili al momento',
+  'street.coverage': 'Immagini stradali: {{pct}}% del percorso',
+  'street.map': 'Mappa del percorso',
   'video.toggleHint': 'YouTube personale opzionale accanto alla mappa (non condiviso nelle uscite di gruppo)',
   'video.urlPlaceholder': 'Incolla un URL YouTube',
   'video.invalid': 'Non sembra un link YouTube valido',

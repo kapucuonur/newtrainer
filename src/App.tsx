@@ -57,6 +57,9 @@ import { RideHUD } from './ui/RideHUD';
 import { RouteControls } from './ui/RouteControls';
 import { VideoPanel } from './ui/VideoPanel';
 import { RouvyVideoPlayer } from './ui/RouvyVideoPlayer';
+import { StreetViewPane, type StreetViewStatus } from './ui/StreetViewPane';
+import { getMapillaryToken, loadStreetFrames } from './streetview/mapillary';
+import type { StreetFrame } from './streetview/pickFrames';
 
 const idleTelemetry: RideTelemetry = {
   phase: 'idle',
@@ -157,6 +160,10 @@ export default function App() {
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>(() => loadStoredMapStyleId());
   const [routePeekOpen, setRoutePeekOpen] = useState(false);
   const [videoPanelOpen, setVideoPanelOpen] = useState(false);
+  const [streetViewOn, setStreetViewOn] = useState(false);
+  const [streetFrames, setStreetFrames] = useState<StreetFrame[]>([]);
+  const [streetStatus, setStreetStatus] = useState<StreetViewStatus>('loading');
+  const streetFramesRouteRef = useRef<EnrichedRoute | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const roomSocketRef = useRef<RoomSocket | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -1060,7 +1067,36 @@ export default function App() {
   }, [enrichedByAlt]);
 
   const showRoutePanel = !immersiveRide || routePeekOpen;
-  const toggleVideoPanel = () => setVideoPanelOpen((open) => !open);
+  const toggleVideoPanel = () => {
+    setVideoPanelOpen((open) => !open);
+    setStreetViewOn(false);
+  };
+  const streetToken = getMapillaryToken();
+  const toggleStreetView = () => {
+    setStreetViewOn((on) => !on);
+    setVideoPanelOpen(false);
+  };
+
+  // Fetch street photos once per route, only when the rider turns street view on.
+  useEffect(() => {
+    if (!streetViewOn || !route || !streetToken) return;
+    if (streetFramesRouteRef.current === route) return;
+    const controller = new AbortController();
+    setStreetStatus('loading');
+    setStreetFrames([]);
+    loadStreetFrames(route.samples, streetToken, controller.signal)
+      .then((frames) => {
+        streetFramesRouteRef.current = route;
+        setStreetFrames(frames);
+        setStreetStatus('ready');
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.warn('[street-view] failed to load imagery', error);
+        setStreetStatus('error');
+      });
+    return () => controller.abort();
+  }, [streetViewOn, route, streetToken]);
   const followRoad =
     telemetry.phase === 'riding' || telemetry.phase === 'paused';
   const showMapStylePicker = !followRoad;
@@ -1073,6 +1109,42 @@ export default function App() {
   // vector style the user had picked for route planning (the style picker
   // is hidden during a ride anyway, so they'd have no way to switch back).
   const rideMapStyleId: MapStyleId = followRoad ? 'satellite' : mapStyleId;
+
+  const pipRouteMap = (
+    <RouteMap
+      waypoints={waypoints}
+      nextWaypointLabel={null}
+      route={route}
+      routeAlternatives={routeAlternatives}
+      selectedAlternativeIndex={selectedAltIndex}
+      rider={telemetry.position}
+      ridePhase={telemetry.phase}
+      distanceMeters={telemetry.distanceMeters}
+      speedKmh={telemetry.speedKmh}
+      onPick={onPick}
+      pickMode={pickMode}
+      pickingEnabled={false}
+      peers={mapPeers}
+      groupMode={groupMode}
+      styleId={rideMapStyleId}
+      onStyleIdChange={onMapStyleChange}
+      showStylePicker={false}
+    />
+  );
+  const rideDashboardDeck = (
+    <div className="bottom-dashboard-deck">
+      <ElevationProfile
+        route={route}
+        currentDistanceMeters={telemetry.distanceMeters}
+        currentElevationMeters={telemetry.elevationMeters}
+      />
+      <RideHUD
+        telemetry={telemetry}
+        riderWeightKg={user?.profile?.weightKg ?? 75}
+        ftpWatts={ftpWatts}
+      />
+    </div>
+  );
 
   const shellClass = [
     'app-shell',
@@ -1225,6 +1297,8 @@ export default function App() {
               onStop={() => void engineRef.current.stop()}
               onToggleRoutePeek={() => setRoutePeekOpen((open) => !open)}
               onToggleVideo={toggleVideoPanel}
+              streetViewOn={streetViewOn}
+              onToggleStreetView={streetToken ? toggleStreetView : undefined}
             />
           )}
           {showRoutePanel && (
@@ -1279,46 +1353,26 @@ export default function App() {
             .filter(Boolean)
             .join(' ')}
         >
-          {immersiveRide && videoPanelOpen ? (
+          {immersiveRide && streetViewOn && streetToken && route ? (
+            <div className="viewer-map-pane" style={{ position: 'relative' }}>
+              <StreetViewPane
+                frames={streetFrames}
+                status={streetStatus}
+                distanceMeters={telemetry.distanceMeters}
+                totalMeters={route.distanceMeters}
+                pipMapNode={pipRouteMap}
+              />
+              {rideDashboardDeck}
+            </div>
+          ) : immersiveRide && videoPanelOpen ? (
             <div className="viewer-map-pane" style={{ position: 'relative' }}>
               <RouvyVideoPlayer
                 telemetry={telemetry}
                 url={youtubeUrl}
                 onUrlChange={setYoutubeUrl}
-                pipMapNode={
-                  <RouteMap
-                    waypoints={waypoints}
-                    nextWaypointLabel={null}
-                    route={route}
-                    routeAlternatives={routeAlternatives}
-                    selectedAlternativeIndex={selectedAltIndex}
-                    rider={telemetry.position}
-                    ridePhase={telemetry.phase}
-                    distanceMeters={telemetry.distanceMeters}
-                    speedKmh={telemetry.speedKmh}
-                    onPick={onPick}
-                    pickMode={pickMode}
-                    pickingEnabled={false}
-                    peers={mapPeers}
-                    groupMode={groupMode}
-                    styleId={rideMapStyleId}
-                    onStyleIdChange={onMapStyleChange}
-                    showStylePicker={false}
-                  />
-                }
+                pipMapNode={pipRouteMap}
               />
-              <div className="bottom-dashboard-deck">
-                <ElevationProfile
-                  route={route}
-                  currentDistanceMeters={telemetry.distanceMeters}
-                  currentElevationMeters={telemetry.elevationMeters}
-                />
-                <RideHUD
-                  telemetry={telemetry}
-                  riderWeightKg={user?.profile?.weightKg ?? 75}
-                  ftpWatts={ftpWatts}
-                />
-              </div>
+              {rideDashboardDeck}
             </div>
           ) : (
             <div className="viewer-map-pane">
@@ -1348,20 +1402,7 @@ export default function App() {
                 onStyleIdChange={onMapStyleChange}
                 showStylePicker={panelOpen && showMapStylePicker}
               />
-              {immersiveRide && (
-                <div className="bottom-dashboard-deck">
-                  <ElevationProfile
-                    route={route}
-                    currentDistanceMeters={telemetry.distanceMeters}
-                    currentElevationMeters={telemetry.elevationMeters}
-                  />
-                  <RideHUD
-                    telemetry={telemetry}
-                    riderWeightKg={user?.profile?.weightKg ?? 75}
-                    ftpWatts={ftpWatts}
-                  />
-                </div>
-              )}
+              {immersiveRide && rideDashboardDeck}
             </div>
           )}
           {!immersiveRide && (

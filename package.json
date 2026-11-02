@@ -12,6 +12,7 @@
     "test:parse": "npx tsx src/bluetooth/ftms.parse.test.ts",
     "test:map-style": "npx tsx src/map/sanitizeMapStyle.test.ts",
     "test:native-ble": "npx tsx src/bluetooth/nativeBluetooth.test.ts",
+    "test:street-view": "npx tsx src/streetview/pickFrames.test.ts",
     "build:android": "npm run build && npx cap sync android",
     "open:android": "npx cap open android"
   },

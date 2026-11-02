@@ -177,6 +177,12 @@ export const no: Messages = {
 
   'video.title': 'Video',
   'video.toggle': 'Videopanel',
+  'street.toggle': 'Gatevisning',
+  'street.loading': 'Laster gatebilder…',
+  'street.noCoverage': 'Ingen gatebilder på denne strekningen',
+  'street.error': 'Gatebilder er ikke tilgjengelige akkurat nå',
+  'street.coverage': 'Gatebilder: {{pct}} % av ruten',
+  'street.map': 'Rutekart',
   'video.toggleHint': 'Valgfri personlig YouTube ved siden av kartet (deles ikke i gruppeturer)',
   'video.urlPlaceholder': 'Lim inn en YouTube-URL',
   'video.invalid': 'Dette ser ikke ut som en gyldig YouTube-lenke',

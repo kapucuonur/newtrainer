@@ -177,6 +177,12 @@ export const se: Messages = {
 
   'video.title': 'Video',
   'video.toggle': 'Videopanel',
+  'street.toggle': 'Gatuvy',
+  'street.loading': 'Laddar gatubilder…',
+  'street.noCoverage': 'Inga gatubilder på den här sträckan',
+  'street.error': 'Gatubilder är inte tillgängliga just nu',
+  'street.coverage': 'Gatubilder: {{pct}} % av rutten',
+  'street.map': 'Ruttkarta',
   'video.toggleHint': 'Valfri personlig YouTube bredvid kartan (delas inte i grupprundor)',
   'video.urlPlaceholder': 'Klistra in en YouTube-URL',
   'video.invalid': 'Det ser inte ut som en giltig YouTube-länk',

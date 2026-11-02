@@ -176,6 +176,12 @@ export const tr: Messages = {
 
   'video.title': 'Video',
   'video.toggle': 'Video paneli',
+  'street.toggle': 'Sokak görünümü',
+  'street.loading': 'Sokak görüntüleri yükleniyor…',
+  'street.noCoverage': 'Bu kesimde sokak görüntüsü yok',
+  'street.error': 'Sokak görüntüleri şu an alınamıyor',
+  'street.coverage': 'Sokak görüntüsü: rotanın %{{pct}}',
+  'street.map': 'Rota haritası',
   'video.toggleHint': 'İsteğe bağlı kişisel YouTube (grup sürüşünde paylaşılmaz)',
   'video.urlPlaceholder': 'YouTube bağlantısı yapıştırın',
   'video.invalid': 'Geçerli bir YouTube bağlantısı gibi görünmüyor',

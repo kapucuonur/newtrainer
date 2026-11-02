@@ -2619,3 +2619,109 @@ select {
   height: calc(100% - 32px);
 }
 
+
+/* Street-level ride view (Mapillary photos) */
+.street-view {
+  position: absolute;
+  inset: 0;
+  background: #05080f;
+  overflow: hidden;
+}
+
+.street-view-stage {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.4s ease;
+}
+
+.street-view-stage-dim {
+  opacity: 0.35;
+}
+
+.street-view-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  animation:
+    street-fade-in 0.45s ease-out both,
+    street-push-in 1.8s ease-out both;
+}
+
+@keyframes street-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A slight push-in on each new photo reads as forward motion between frames. */
+@keyframes street-push-in {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .street-view-photo {
+    animation: street-fade-in 0.2s ease-out both;
+  }
+}
+
+.street-view-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  max-width: min(86vw, 420px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(10, 16, 28, 0.88);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-weight: 600;
+  text-align: center;
+}
+
+.street-view-coverage,
+.street-view-attribution {
+  position: absolute;
+  z-index: 5;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(10, 16, 28, 0.75);
+  color: #e6edf3;
+  font-size: 0.72rem;
+}
+
+.street-view-coverage {
+  top: 12px;
+  right: 12px;
+}
+
+.street-view-attribution {
+  left: 12px;
+  bottom: 150px;
+  text-decoration: none;
+}
+
+.street-view-pip {
+  top: 56px;
+  bottom: auto;
+  right: 12px;
+}
+
+@media (max-width: 640px) {
+  .street-view-pip.rouvy-pip-open {
+    width: 150px;
+    height: 130px;
+  }
+}

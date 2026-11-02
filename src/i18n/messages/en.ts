@@ -174,6 +174,12 @@ export const en = {
 
   'video.title': 'Video',
   'video.toggle': 'Video panel',
+  'street.toggle': 'Street view',
+  'street.loading': 'Loading street imagery…',
+  'street.noCoverage': 'No street imagery on this stretch',
+  'street.error': 'Street imagery is unavailable right now',
+  'street.coverage': 'Street imagery: {{pct}}% of route',
+  'street.map': 'Route map',
   'video.toggleHint': 'Optional personal YouTube beside the map (not shared in group rides)',
   'video.urlPlaceholder': 'Paste a YouTube URL',
   'video.invalid': 'That does not look like a valid YouTube link',

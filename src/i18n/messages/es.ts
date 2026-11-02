@@ -177,6 +177,12 @@ export const es: Messages = {
 
   'video.title': 'Vídeo',
   'video.toggle': 'Panel de vídeo',
+  'street.toggle': 'Vista de calle',
+  'street.loading': 'Cargando imágenes de calle…',
+  'street.noCoverage': 'No hay imágenes de calle en este tramo',
+  'street.error': 'Las imágenes de calle no están disponibles ahora',
+  'street.coverage': 'Imágenes de calle: {{pct}} % de la ruta',
+  'street.map': 'Mapa de la ruta',
   'video.toggleHint': 'YouTube personal opcional junto al mapa (no se comparte en salidas en grupo)',
   'video.urlPlaceholder': 'Pega una URL de YouTube',
   'video.invalid': 'Eso no parece un enlace de YouTube válido',

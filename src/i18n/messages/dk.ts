@@ -177,6 +177,12 @@ export const dk: Messages = {
 
   'video.title': 'Video',
   'video.toggle': 'Videopanel',
+  'street.toggle': 'Gadevisning',
+  'street.loading': 'Indlæser gadebilleder…',
+  'street.noCoverage': 'Ingen gadebilleder på denne strækning',
+  'street.error': 'Gadebilleder er ikke tilgængelige lige nu',
+  'street.coverage': 'Gadebilleder: {{pct}} % af ruten',
+  'street.map': 'Rutekort',
   'video.toggleHint': 'Valgfrit personligt YouTube ved siden af kortet (deles ikke i gruppeture)',
   'video.urlPlaceholder': 'Indsæt en YouTube-URL',
   'video.invalid': 'Det ligner ikke et gyldigt YouTube-link',

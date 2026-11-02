@@ -177,6 +177,12 @@ export const ru: Messages = {
 
   'video.title': 'Видео',
   'video.toggle': 'Видеопанель',
+  'street.toggle': 'Вид улицы',
+  'street.loading': 'Загрузка уличных фото…',
+  'street.noCoverage': 'На этом участке нет уличных фото',
+  'street.error': 'Уличные фото сейчас недоступны',
+  'street.coverage': 'Уличные фото: {{pct}}% маршрута',
+  'street.map': 'Карта маршрута',
   'video.toggleHint': 'Личный YouTube рядом с картой (не шарится в групповых заездах)',
   'video.urlPlaceholder': 'Вставьте ссылку YouTube',
   'video.invalid': 'Это не похоже на действительную ссылку YouTube',
