@@ -104,6 +104,11 @@ export const en = {
   'auth.accountCreated': 'Account created',
   'auth.loggedOut': 'Logged out',
   'auth.profileSaved': 'Profile saved',
+  'auth.deleteAccount': 'Delete account',
+  'auth.deleteAccountHint': 'This permanently deletes your account, profile and saved ride summaries. Enter your password to confirm.',
+  'auth.deleteAccountConfirm': 'Delete permanently',
+  'auth.cancel': 'Cancel',
+  'auth.accountDeleted': 'Account deleted',
   'auth.requestFailed': 'Request failed',
   'auth.rideHistory': 'Ride history',
   'auth.rideHistoryHint':

@@ -7,6 +7,7 @@ import Fastify from 'fastify';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  deleteUser,
   getMeRow,
   openDb,
   toPublicRide,
@@ -338,6 +339,31 @@ app.get('/api/me', { preHandler: requireAuth }, async (request, reply) => {
   if (!user) return reply.code(404).send({ error: 'User not found' });
   return { user };
 });
+
+// Account deletion (Play policy + GDPR). Password re-check so a stolen token alone cannot wipe an account.
+app.delete(
+  '/api/me',
+  {
+    preHandler: requireAuth,
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  },
+  async (request, reply) => {
+    const userId = Number(request.user.sub);
+    const body = /** @type {{ password?: unknown }} */ (request.body || {});
+    if (typeof body.password !== 'string' || !body.password) {
+      return reply.code(400).send({ error: 'Password is required' });
+    }
+    const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+    if (!row) return reply.code(404).send({ error: 'User not found' });
+    if (!(await verifyPassword(body.password, row.password_hash))) {
+      return reply.code(401).send({ error: 'Invalid password' });
+    }
+    deleteUser(db, userId);
+    request.log.info({ userId }, 'account deleted');
+    clearAuthCookie(reply);
+    return { ok: true };
+  },
+);
 
 app.patch('/api/me/profile', { preHandler: requireAuth }, async (request, reply) => {
   const userId = Number(request.user.sub);

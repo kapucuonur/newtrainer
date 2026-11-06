@@ -10,6 +10,7 @@ import {
   leaveRoom,
   login as apiLogin,
   logout as apiLogout,
+  deleteAccount as apiDeleteAccount,
   register as apiRegister,
   saveRide,
   setStoredToken,
@@ -940,6 +941,28 @@ export default function App() {
     }
   };
 
+  const onDeleteAccount = async (password: string) => {
+    setAuthBusy(true);
+    setAuthMessage(null);
+    try {
+      if (roomRef.current && roomRef.current.status !== 'ended') {
+        try {
+          await leaveRoom(roomRef.current.id);
+        } catch {
+          // room is removed with the account anyway
+        }
+      }
+      await apiDeleteAccount(password);
+      resetGroupState();
+      setUser(null);
+      setAuthMessage(t('auth.accountDeleted'));
+    } catch (error) {
+      setAuthMessage(withAuthError(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
   const onSaveProfile = async (fields: {
     displayName: string;
     weightKg: string;
@@ -1280,6 +1303,7 @@ export default function App() {
           onLogin={onLogin}
           onRegister={onRegister}
           onLogout={onLogout}
+          onDeleteAccount={onDeleteAccount}
           onSaveProfile={onSaveProfile}
         />
         <GroupRidePanel

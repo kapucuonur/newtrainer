@@ -106,6 +106,11 @@ export const es: Messages = {
   'auth.accountCreated': 'Cuenta creada',
   'auth.loggedOut': 'Sesión cerrada',
   'auth.profileSaved': 'Perfil guardado',
+  'auth.deleteAccount': 'Eliminar cuenta',
+  'auth.deleteAccountHint': 'Tu cuenta, perfil y resúmenes de salidas guardados se eliminarán de forma permanente. Introduce tu contraseña para confirmar.',
+  'auth.deleteAccountConfirm': 'Eliminar definitivamente',
+  'auth.cancel': 'Cancelar',
+  'auth.accountDeleted': 'Cuenta eliminada',
   'auth.requestFailed': 'Solicitud fallida',
 
   'auth.rideHistory': 'Historial de rutas',

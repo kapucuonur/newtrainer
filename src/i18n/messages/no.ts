@@ -106,6 +106,11 @@ export const no: Messages = {
   'auth.accountCreated': 'Konto opprettet',
   'auth.loggedOut': 'Utlogget',
   'auth.profileSaved': 'Profil lagret',
+  'auth.deleteAccount': 'Slett konto',
+  'auth.deleteAccountHint': 'Kontoen, profilen og lagrede turoppsummeringer slettes permanent. Skriv inn passordet ditt for å bekrefte.',
+  'auth.deleteAccountConfirm': 'Slett permanent',
+  'auth.cancel': 'Avbryt',
+  'auth.accountDeleted': 'Kontoen er slettet',
   'auth.requestFailed': 'Forespørsel mislyktes',
 
   'auth.rideHistory': 'Økthistorikk',

@@ -136,6 +136,11 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function deleteAccount(password: string): Promise<void> {
+  await apiRequest<{ ok: boolean }>('/api/me', { method: 'DELETE', json: { password } });
+  setStoredToken(null);
+}
+
 export async function fetchMe(): Promise<User> {
   const data = await apiRequest<{ user: User }>('/api/me');
   return data.user;

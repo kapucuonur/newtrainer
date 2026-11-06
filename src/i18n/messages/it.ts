@@ -106,6 +106,11 @@ export const it: Messages = {
   'auth.accountCreated': 'Account creato',
   'auth.loggedOut': 'Disconnesso',
   'auth.profileSaved': 'Profilo salvato',
+  'auth.deleteAccount': 'Elimina account',
+  'auth.deleteAccountHint': 'Account, profilo e riepiloghi delle uscite salvati verranno eliminati definitivamente. Inserisci la password per confermare.',
+  'auth.deleteAccountConfirm': 'Elimina definitivamente',
+  'auth.cancel': 'Annulla',
+  'auth.accountDeleted': 'Account eliminato',
   'auth.requestFailed': 'Richiesta non riuscita',
 
   'auth.rideHistory': 'Cronologia corse',

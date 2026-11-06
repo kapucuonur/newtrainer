@@ -106,6 +106,11 @@ export const tr: Messages = {
   'auth.accountCreated': 'Hesap oluşturuldu',
   'auth.loggedOut': 'Çıkış yapıldı',
   'auth.profileSaved': 'Profil kaydedildi',
+  'auth.deleteAccount': 'Hesabı sil',
+  'auth.deleteAccountHint': 'Hesabın, profilin ve kayıtlı sürüş özetlerin kalıcı olarak silinir. Onaylamak için şifreni gir.',
+  'auth.deleteAccountConfirm': 'Kalıcı olarak sil',
+  'auth.cancel': 'Vazgeç',
+  'auth.accountDeleted': 'Hesap silindi',
   'auth.requestFailed': 'İstek başarısız',
   'auth.rideHistory': 'Sürüş geçmişi',
   'auth.rideHistoryHint':

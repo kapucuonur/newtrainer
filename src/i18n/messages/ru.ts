@@ -106,6 +106,11 @@ export const ru: Messages = {
   'auth.accountCreated': 'Аккаунт создан',
   'auth.loggedOut': 'Выход выполнен',
   'auth.profileSaved': 'Профиль сохранён',
+  'auth.deleteAccount': 'Удалить аккаунт',
+  'auth.deleteAccountHint': 'Аккаунт, профиль и сохранённые сводки поездок будут удалены навсегда. Введите пароль для подтверждения.',
+  'auth.deleteAccountConfirm': 'Удалить навсегда',
+  'auth.cancel': 'Отмена',
+  'auth.accountDeleted': 'Аккаунт удалён',
   'auth.requestFailed': 'Запрос не выполнен',
 
   'auth.rideHistory': 'История заездов',

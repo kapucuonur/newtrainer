@@ -165,6 +165,16 @@ export function getMeRow(db, userId) {
 }
 
 /**
+ * Delete a user and (via ON DELETE CASCADE) their profile, rides, hosted rooms and memberships.
+ * @param {import('better-sqlite3').Database} db
+ * @param {number} userId
+ * @returns {boolean} true when a user row was deleted
+ */
+export function deleteUser(db, userId) {
+  return db.prepare('DELETE FROM users WHERE id = ?').run(userId).changes === 1;
+}
+
+/**
  * @param {ReturnType<typeof getMeRow>} row
  */
 export function toPublicUser(row) {

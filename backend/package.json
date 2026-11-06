@@ -6,7 +6,8 @@
   "description": "ROADLAB self-hosted API for Raspberry Pi 5 (profiles + ride summaries)",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node --test 'src/**/*.test.js'"
   },
   "engines": {
     "node": ">=20"

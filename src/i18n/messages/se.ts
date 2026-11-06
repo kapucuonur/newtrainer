@@ -106,6 +106,11 @@ export const se: Messages = {
   'auth.accountCreated': 'Konto skapat',
   'auth.loggedOut': 'Utloggad',
   'auth.profileSaved': 'Profil sparad',
+  'auth.deleteAccount': 'Radera konto',
+  'auth.deleteAccountHint': 'Ditt konto, din profil och sparade passammanfattningar raderas permanent. Ange ditt lösenord för att bekräfta.',
+  'auth.deleteAccountConfirm': 'Radera permanent',
+  'auth.cancel': 'Avbryt',
+  'auth.accountDeleted': 'Kontot raderat',
   'auth.requestFailed': 'Begäran misslyckades',
 
   'auth.rideHistory': 'Passhistorik',

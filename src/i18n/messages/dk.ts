@@ -106,6 +106,11 @@ export const dk: Messages = {
   'auth.accountCreated': 'Konto oprettet',
   'auth.loggedOut': 'Logget ud',
   'auth.profileSaved': 'Profil gemt',
+  'auth.deleteAccount': 'Slet konto',
+  'auth.deleteAccountHint': 'Din konto, profil og gemte turoversigter slettes permanent. Indtast din adgangskode for at bekræfte.',
+  'auth.deleteAccountConfirm': 'Slet permanent',
+  'auth.cancel': 'Annuller',
+  'auth.accountDeleted': 'Kontoen er slettet',
   'auth.requestFailed': 'Anmodning mislykkedes',
 
   'auth.rideHistory': 'Turhistorik',

@@ -106,6 +106,11 @@ export const de: Messages = {
   'auth.accountCreated': 'Konto erstellt',
   'auth.loggedOut': 'Abgemeldet',
   'auth.profileSaved': 'Profil gespeichert',
+  'auth.deleteAccount': 'Konto löschen',
+  'auth.deleteAccountHint': 'Dein Konto, Profil und gespeicherte Fahrtzusammenfassungen werden dauerhaft gelöscht. Gib zur Bestätigung dein Passwort ein.',
+  'auth.deleteAccountConfirm': 'Endgültig löschen',
+  'auth.cancel': 'Abbrechen',
+  'auth.accountDeleted': 'Konto gelöscht',
   'auth.requestFailed': 'Anfrage fehlgeschlagen',
   'auth.rideHistory': 'Fahrthistorie',
   'auth.rideHistoryHint':

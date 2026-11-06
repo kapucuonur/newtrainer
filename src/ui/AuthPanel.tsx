@@ -17,6 +17,7 @@ import {
   UserPlus,
   LogIn,
   Download,
+  Trash2,
 } from 'lucide-react';
 
 type Props = {
@@ -27,6 +28,7 @@ type Props = {
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (email: string, password: string, displayName: string) => Promise<void>;
   onLogout: () => Promise<void>;
+  onDeleteAccount: (password: string) => Promise<void>;
   onSaveProfile: (fields: {
     displayName: string;
     weightKg: string;
@@ -69,6 +71,7 @@ export function AuthPanel({
   onLogin,
   onRegister,
   onLogout,
+  onDeleteAccount,
   onSaveProfile,
 }: Props) {
   const t = useT();
@@ -84,6 +87,8 @@ export function AuthPanel({
   const [ridesLoading, setRidesLoading] = useState(false);
   const [exportBusyId, setExportBusyId] = useState<number | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   const onDownloadSummaryFit = async (ride: RideSummary) => {
     setExportBusyId(ride.id);
@@ -253,6 +258,62 @@ export function AuthPanel({
             </ul>
           )}
           {exportMessage && <p className="auth-message">{exportMessage}</p>}
+        </div>
+
+        <div className="history-section">
+          {!deleteOpen ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="icon-xs" />
+              {t('auth.deleteAccount')}
+            </button>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void onDeleteAccount(deletePassword);
+              }}
+            >
+              <p className="device-info-text">{t('auth.deleteAccountHint')}</p>
+              <div className="input-group">
+                <label htmlFor="del-pw">
+                  <Lock className="icon-xs" />
+                  {t('auth.password')}
+                </label>
+                <input
+                  id="del-pw"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                />
+              </div>
+              <div className="btn-row">
+                <button
+                  type="submit"
+                  className="btn btn-danger btn-sm"
+                  disabled={busy || !deletePassword}
+                >
+                  <Trash2 className="icon-xs" />
+                  {t('auth.deleteAccountConfirm')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setDeleteOpen(false);
+                    setDeletePassword('');
+                  }}
+                >
+                  {t('auth.cancel')}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {message && <p className="auth-message">{message}</p>}
