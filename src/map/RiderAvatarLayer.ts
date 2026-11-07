@@ -13,7 +13,7 @@ import type { LatLng } from '../routing/types';
 
 /** Marker size in metres per model unit — large enough to read at ride zoom (~16.5). */
 const MARKER_SCALE = 9;
-const ARROW_COLOR = 0x00f0ff;
+const ARROW_COLOR = 0xff8a3d;
 
 export const RIDER_AVATAR_LAYER_ID = 'rider-avatar-3d';
 
@@ -49,9 +49,9 @@ function buildGlowTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (ctx) {
     const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, 'rgba(0,240,255,0.55)');
-    gradient.addColorStop(0.6, 'rgba(0,240,255,0.18)');
-    gradient.addColorStop(1, 'rgba(0,240,255,0)');
+    gradient.addColorStop(0, 'rgba(255,138,61,0.55)');
+    gradient.addColorStop(0.6, 'rgba(255,138,61,0.18)');
+    gradient.addColorStop(1, 'rgba(255,138,61,0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
   }

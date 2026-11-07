@@ -14,7 +14,6 @@ import {
   Sliders,
   X,
   ShieldCheck,
-  Zap,
   Radio,
 } from 'lucide-react';
 
@@ -99,9 +98,8 @@ export function ConnectionPanel({
       <header className="panel-header">
         <div className="panel-header-row">
           <div className="brand-badge">
-            <Zap className="icon-sm icon-accent" />
+            <img src="/favicon.svg" alt="" width="22" height="22" />
             <span className="brand-mark">ROADLAB</span>
-            <span className="brand-tag">PRO</span>
           </div>
           <div className="panel-header-actions">
             <LanguageSwitcher />

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" fill="none">
   <defs>
-    <linearGradient id="rim" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#3DD6C6"/><stop offset="1" stop-color="#7CFFB2"/></linearGradient>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14231F"/><stop offset="1" stop-color="#070C0B"/></linearGradient>
-    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB454" stop-opacity=".55"/><stop offset="1" stop-color="#FFB454" stop-opacity="0"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF6A1A"/><stop offset="1" stop-color="#FFB454"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E232A"/><stop offset="1" stop-color="#08090B"/></linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEF1F5" stop-opacity=".35"/><stop offset="1" stop-color="#EEF1F5" stop-opacity="0"/></linearGradient>
     <clipPath id="wheel"><circle cx="54" cy="46" r="26"/></clipPath>
   </defs>
   <rect width="108" height="108" rx="24" fill="url(#bg)"/>
@@ -10,10 +10,10 @@
     <circle cx="54" cy="46" r="30" stroke="url(#rim)" stroke-width="8"/>
     <g clip-path="url(#wheel)">
       <path d="M24 59 L38 49 L47 54 L59 36 L68 45 L84 33 V80 H24 Z" fill="url(#hill)"/>
-      <path d="M24 59 L38 49 L47 54 L59 36 L68 45 L84 33" stroke="#FFB454" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M24 59 L38 49 L47 54 L59 36 L68 45 L84 33" stroke="#EEF1F5" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <circle cx="59" cy="36" r="4.2" fill="#E7F3EE"/>
-    <rect x="47" y="73" width="14" height="9" rx="3" fill="#E7F3EE"/>
-    <path d="M45 80 L32 90 M63 80 L76 90 M24 90 H84" stroke="#E7F3EE" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="59" cy="36" r="4.6" fill="#FF8A3D" stroke="#0D0F12" stroke-width="1.5"/>
+    <rect x="47" y="73" width="14" height="9" rx="3" fill="#EEF1F5"/>
+    <path d="M45 80 L32 90 M63 80 L76 90 M24 90 H84" stroke="#EEF1F5" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

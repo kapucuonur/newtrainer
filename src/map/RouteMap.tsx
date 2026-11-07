@@ -174,15 +174,15 @@ function ensureRiderTrailOverlay(map: Map): void {
     layout: { 'line-join': 'round', 'line-cap': 'round' },
     paint: {
       'line-width': 5,
-      'line-color': '#00f0ff',
+      'line-color': '#FF8A3D',
       'line-gradient': [
         'interpolate',
         ['linear'],
         ['line-progress'],
         0,
-        'rgba(0,240,255,0)',
+        'rgba(255,138,61,0)',
         1,
-        'rgba(0,240,255,0.85)',
+        'rgba(255,138,61,0.85)',
       ],
     },
   });
@@ -961,7 +961,7 @@ export function RouteMap({
           <p style={{ opacity: 0.7, marginTop: '8px', wordBreak: 'break-all' }}>{mapError}</p>
           <button
             type="button"
-            style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '8px', background: '#00f0ff', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+            style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '8px', background: '#FF8A3D', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700 }}
             onClick={() => { setMapError(null); mapRef.current?.remove(); mapRef.current = null; appliedStyleIdRef.current = null; }}
           >Retry</button>
         </div>
