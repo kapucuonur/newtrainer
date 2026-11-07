@@ -80,7 +80,7 @@ ROADLAB bir antrenman aracıdır, tıbbi cihaz değildir. Kendini iyi hissetmezs
 
 **App access:** All functionality is available without special access. (Reviewers can use *Menu → Use demo trainer*; account is optional.)
 
-**Target audience:** 18 and over only (keeps the app out of the Families program). Not designed to appeal to children.
+**Target audience:** 16-17 and 18+ (matches the 16+ account age in the Terms; nothing under 13, which keeps the app out of the Families program). Not designed to appeal to children.
 
 **Content rating (IARC questionnaire):** Category *All other app types*. Answer **No** to violence, sexual content, language, controlled substances, gambling. Users can interact: **Yes**, limited, since group riders see each other's display name and position; no chat or free text messaging. Shares user location: **No**. Digital purchases: **No**. Expected rating: Everyone / PEGI 3.
 
