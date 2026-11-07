@@ -6,7 +6,7 @@ Everything to paste into Play Console. Graphics are in this folder.
 |---|---|
 | App icon 512×512 | `icon-512.png` |
 | Feature graphic 1024×500 | `feature-graphic-1024x500.png` |
-| Phone screenshots 1080×1920 | `screenshots/1-ride.png` … `4-map.png` |
+| Phone screenshots 1080×1920 | `screenshots/1-ride.png`, `2-ride-stats.png`, `3-devices.png`, `4-route.png` |
 | Privacy policy URL | https://newtrainer.trihonor.com/privacy.html |
 | Account deletion URL | https://newtrainer.trihonor.com/privacy.html#delete-account |
 
