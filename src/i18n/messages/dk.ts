@@ -111,6 +111,9 @@ export const dk: Messages = {
   'auth.deleteAccountConfirm': 'Slet permanent',
   'auth.cancel': 'Annuller',
   'auth.accountDeleted': 'Kontoen er slettet',
+  'legal.privacy': 'Privatlivspolitik',
+  'legal.terms': 'Brugsvilkår',
+  'auth.registerConsent': 'Ved at oprette en konto accepterer du brugsvilkårene og privatlivspolitikken:',
   'auth.requestFailed': 'Anmodning mislykkedes',
 
   'auth.rideHistory': 'Turhistorik',

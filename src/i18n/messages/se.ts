@@ -111,6 +111,9 @@ export const se: Messages = {
   'auth.deleteAccountConfirm': 'Radera permanent',
   'auth.cancel': 'Avbryt',
   'auth.accountDeleted': 'Kontot raderat',
+  'legal.privacy': 'Integritetspolicy',
+  'legal.terms': 'Användarvillkor',
+  'auth.registerConsent': 'Genom att skapa ett konto godkänner du användarvillkoren och integritetspolicyn:',
   'auth.requestFailed': 'Begäran misslyckades',
 
   'auth.rideHistory': 'Passhistorik',

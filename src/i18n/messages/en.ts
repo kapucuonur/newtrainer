@@ -109,6 +109,9 @@ export const en = {
   'auth.deleteAccountConfirm': 'Delete permanently',
   'auth.cancel': 'Cancel',
   'auth.accountDeleted': 'Account deleted',
+  'legal.privacy': 'Privacy Policy',
+  'legal.terms': 'Terms of Use',
+  'auth.registerConsent': 'By creating an account you accept the Terms of Use and the Privacy Policy:',
   'auth.requestFailed': 'Request failed',
   'auth.rideHistory': 'Ride history',
   'auth.rideHistoryHint':

@@ -111,6 +111,9 @@ export const ru: Messages = {
   'auth.deleteAccountConfirm': 'Удалить навсегда',
   'auth.cancel': 'Отмена',
   'auth.accountDeleted': 'Аккаунт удалён',
+  'legal.privacy': 'Политика конфиденциальности',
+  'legal.terms': 'Условия использования',
+  'auth.registerConsent': 'Создавая аккаунт, вы принимаете Условия использования и Политику конфиденциальности:',
   'auth.requestFailed': 'Запрос не выполнен',
 
   'auth.rideHistory': 'История заездов',

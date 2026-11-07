@@ -111,6 +111,9 @@ export const de: Messages = {
   'auth.deleteAccountConfirm': 'Endgültig löschen',
   'auth.cancel': 'Abbrechen',
   'auth.accountDeleted': 'Konto gelöscht',
+  'legal.privacy': 'Datenschutzerklärung',
+  'legal.terms': 'Nutzungsbedingungen',
+  'auth.registerConsent': 'Mit dem Erstellen eines Kontos akzeptierst du die Nutzungsbedingungen und die Datenschutzerklärung:',
   'auth.requestFailed': 'Anfrage fehlgeschlagen',
   'auth.rideHistory': 'Fahrthistorie',
   'auth.rideHistoryHint':

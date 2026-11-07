@@ -6,6 +6,7 @@ import type { MessageKey } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ErgControls } from './ErgControls';
 import type { RidePowerMode } from '../simulation/rideEngine';
+import { LegalLinks } from './LegalLinks';
 import {
   Bluetooth,
   Wifi,
@@ -288,6 +289,7 @@ export function ConnectionPanel({
 
       {/* Account & Group Ride Children */}
       {children}
+      <LegalLinks />
       </div>
     </aside>
   );

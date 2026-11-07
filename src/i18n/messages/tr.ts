@@ -111,6 +111,9 @@ export const tr: Messages = {
   'auth.deleteAccountConfirm': 'Kalıcı olarak sil',
   'auth.cancel': 'Vazgeç',
   'auth.accountDeleted': 'Hesap silindi',
+  'legal.privacy': 'Gizlilik Politikası',
+  'legal.terms': 'Kullanım Koşulları',
+  'auth.registerConsent': 'Hesap oluşturarak Kullanım Koşulları ve Gizlilik Politikasını kabul edersin:',
   'auth.requestFailed': 'İstek başarısız',
   'auth.rideHistory': 'Sürüş geçmişi',
   'auth.rideHistoryHint':

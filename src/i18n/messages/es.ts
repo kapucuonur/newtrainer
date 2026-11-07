@@ -111,6 +111,9 @@ export const es: Messages = {
   'auth.deleteAccountConfirm': 'Eliminar definitivamente',
   'auth.cancel': 'Cancelar',
   'auth.accountDeleted': 'Cuenta eliminada',
+  'legal.privacy': 'Política de privacidad',
+  'legal.terms': 'Términos de uso',
+  'auth.registerConsent': 'Al crear una cuenta aceptas los Términos de uso y la Política de privacidad:',
   'auth.requestFailed': 'Solicitud fallida',
 
   'auth.rideHistory': 'Historial de rutas',

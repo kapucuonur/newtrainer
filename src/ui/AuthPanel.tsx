@@ -5,6 +5,7 @@ import type { RideSummary, User } from '../api/types';
 import { downloadRideSummaryFit } from '../export';
 import { useT } from '../i18n';
 import { formatDistance, formatDuration } from './format';
+import { LegalLinks } from './LegalLinks';
 import {
   User as UserIcon,
   Lock,
@@ -405,6 +406,12 @@ export function AuthPanel({
               ? t('auth.logIn')
               : t('auth.createAccount')}
         </button>
+        {mode === 'register' && (
+          <>
+            <p className="device-info-text">{t('auth.registerConsent')}</p>
+            <LegalLinks />
+          </>
+        )}
       </form>
 
       {message && <p className="auth-message">{message}</p>}

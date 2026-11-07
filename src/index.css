@@ -2742,3 +2742,15 @@ select {
   position: absolute;
   inset: 0;
 }
+
+.legal-links {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.legal-links a {
+  display: inline-block;
+  padding: 10px 4px;
+  color: inherit;
+  text-decoration: underline;
+}

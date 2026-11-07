@@ -111,6 +111,9 @@ export const no: Messages = {
   'auth.deleteAccountConfirm': 'Slett permanent',
   'auth.cancel': 'Avbryt',
   'auth.accountDeleted': 'Kontoen er slettet',
+  'legal.privacy': 'Personvernerklæring',
+  'legal.terms': 'Bruksvilkår',
+  'auth.registerConsent': 'Ved å opprette en konto godtar du bruksvilkårene og personvernerklæringen:',
   'auth.requestFailed': 'Forespørsel mislyktes',
 
   'auth.rideHistory': 'Økthistorikk',
