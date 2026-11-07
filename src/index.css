@@ -2748,9 +2748,12 @@ select {
 
 /* Ride mode on phones/tablets: ride controls sit right under Menu, not mid-screen */
 @media (max-width: 1024px) {
-  /* .stage-top is positioned inside the stage (below the 56px header); Menu is fixed to the viewport */
+  /* Ride controls share the top row with Menu. .stage-top sits inside the stage (below the
+     56px header) while Menu is fixed to the viewport, hence the header offset. */
   .app-shell.app-shell-immersive:not(.panel-open) .stage-top {
-    top: calc(var(--shell-chrome-inset-y) - 8px);
+    top: calc(var(--shell-chrome-inset-y) - 62px);
+    left: calc(var(--shell-chrome-inset-x) + 112px);
+    right: auto;
   }
 
   .app-shell-immersive .map-follow-banner {
@@ -2810,13 +2813,22 @@ select {
 /* Ride HUD: expanded = frosted glass so Street View shows through; compact strip stays solid
    (Google's logo sits just above it and must stay clearly visible). */
 .app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) {
-  background: rgba(13, 15, 18, 0.58);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 45%, rgba(13, 15, 18, 0.22));
+  backdrop-filter: blur(5px) saturate(1.5);
+  -webkit-backdrop-filter: blur(5px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 18px 48px rgba(0, 0, 0, 0.3);
 }
 
-.app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) .hud-stat {
-  background: rgba(8, 9, 11, 0.38);
+.app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) :is(.hud-stat, .elevation-profile-container) {
+  background: rgba(8, 9, 11, 0.26);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Keep numbers readable over bright sky/road imagery */
+.app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) :is(.hud-value, .hud-label, .hud-value small, .hud-grade-chip, .elevation-profile-container, .elevation-profile-container *) {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.45);
 }
 
 .app-shell-immersive .bottom-dashboard-deck:has(.ride-hud-collapsed) {
@@ -2827,7 +2839,24 @@ select {
 @media (max-width: 1024px) {
   /* Leave room for Menu + ride controls above an expanded HUD */
   .app-shell-immersive .bottom-dashboard-deck {
-    max-height: calc(100% - 136px);
+    max-height: calc(100% - 80px);
     overflow-y: auto;
+  }
+}
+
+/* Phones in ride mode: icon-only Menu so the ride controls fit beside it */
+@media (max-width: 640px) {
+  .app-shell-immersive .shell-open-panel-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .app-shell-immersive .shell-open-panel-btn > span {
+    display: none;
+  }
+
+  .app-shell.app-shell-immersive:not(.panel-open) .stage-top {
+    left: calc(var(--shell-chrome-inset-x) + 52px);
   }
 }
