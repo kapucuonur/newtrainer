@@ -314,7 +314,7 @@ select {
   padding: 10px 16px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(var(--accent-rgb), 0.14);
+  background: linear-gradient(rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.16)), var(--panel-solid);
   color: var(--accent);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -328,7 +328,7 @@ select {
 }
 
 .shell-open-panel-btn:hover {
-  background: rgba(var(--accent-rgb), 0.22);
+  background: linear-gradient(rgba(var(--accent-rgb), 0.26), rgba(var(--accent-rgb), 0.26)), var(--panel-solid);
 }
 
 .shell-open-panel-btn:active {
@@ -2263,18 +2263,6 @@ select {
 }
 
 /* Footer */
-.app-footer {
-  position: absolute;
-  bottom: 4px;
-  right: 12px;
-  z-index: 10;
-  display: flex;
-  gap: 12px;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.3);
-  pointer-events: none;
-}
-
 /* Desktop: Close collapses the sidebar; Menu reopens it */
 @media (min-width: 1025px) {
   .app-shell:not(.panel-open) {

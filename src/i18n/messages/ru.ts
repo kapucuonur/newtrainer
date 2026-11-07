@@ -260,9 +260,4 @@ export const ru: Messages = {
   'hud.descent': 'Спуск',
   'hud.collapseAria': 'Свернуть HUD заезда',
   'hud.expandAria': 'Развернуть HUD заезда',
-
-  'footer.protocols':
-    'Протоколы: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Тест: Chrome/Edge + FTMS · Демо-тренажёр без железа · iOS Safari: нет Web Bluetooth',
 };

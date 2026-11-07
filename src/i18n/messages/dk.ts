@@ -260,9 +260,4 @@ export const dk: Messages = {
   'hud.descent': 'Ned',
   'hud.collapseAria': 'Skjul tur-HUD',
   'hud.expandAria': 'Vis tur-HUD',
-
-  'footer.protocols':
-    'Protokoller: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Test: Chrome/Edge + FTMS-trainer · Demo-trainer uden hardware · iOS Safari: ingen Web Bluetooth',
 };

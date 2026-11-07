@@ -256,11 +256,6 @@ export const en = {
   'hud.descent': 'Descent',
   'hud.collapseAria': 'Collapse ride HUD',
   'hud.expandAria': 'Expand ride HUD',
-
-  'footer.protocols':
-    'Protocols: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Test: Chrome/Edge + FTMS trainer · Demo trainer works without hardware · iOS Safari: no Web Bluetooth',
 } as const;
 
 export type MessageKey = keyof typeof en;

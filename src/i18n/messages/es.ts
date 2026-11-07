@@ -260,9 +260,4 @@ export const es: Messages = {
   'hud.descent': 'Bajada',
   'hud.collapseAria': 'Contraer el HUD de la ruta',
   'hud.expandAria': 'Expandir el HUD de la ruta',
-
-  'footer.protocols':
-    'Protocolos: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Prueba: Chrome/Edge + rodillo FTMS · Rodillo demo sin hardware · iOS Safari: sin Web Bluetooth',
 };

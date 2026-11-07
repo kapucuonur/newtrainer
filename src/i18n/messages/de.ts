@@ -259,9 +259,4 @@ export const de: Messages = {
   'hud.descent': 'Abfahrt',
   'hud.collapseAria': 'Fahr-HUD einklappen',
   'hud.expandAria': 'Fahr-HUD ausklappen',
-
-  'footer.protocols':
-    'Protokolle: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Test: Chrome/Edge + FTMS-Trainer · Demo-Trainer ohne Hardware · iOS Safari: kein Web Bluetooth',
 };

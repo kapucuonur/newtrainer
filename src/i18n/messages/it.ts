@@ -260,9 +260,4 @@ export const it: Messages = {
   'hud.descent': 'Discesa',
   'hud.collapseAria': 'Comprimi HUD di corsa',
   'hud.expandAria': 'Espandi HUD di corsa',
-
-  'footer.protocols':
-    'Protocolli: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Test: Chrome/Edge + trainer FTMS · Trainer demo senza hardware · iOS Safari: no Web Bluetooth',
 };

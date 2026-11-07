@@ -260,9 +260,4 @@ export const se: Messages = {
   'hud.descent': 'Nedför',
   'hud.collapseAria': 'Minimera pass-HUD',
   'hud.expandAria': 'Expandera pass-HUD',
-
-  'footer.protocols':
-    'Protokoll: FTMS (0x1826) · HR (0x180D) · OSRM · Open-Meteo DEM · OpenTopoData · MapLibre / OpenFreeMap',
-  'footer.test':
-    'Test: Chrome/Edge + FTMS-trainer · Demo-trainer utan hårdvara · iOS Safari: ingen Web Bluetooth',
 };

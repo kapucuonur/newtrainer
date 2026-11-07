@@ -1469,10 +1469,6 @@ export default function App() {
           )}
         </div>
 
-        <footer className="app-footer">
-          <span>{t('footer.protocols')}</span>
-          <span>{t('footer.test')}</span>
-        </footer>
       </main>
     </div>
   );
