@@ -1562,7 +1562,7 @@ select {
   left: 14px;
   right: 14px;
   z-index: 30;
-  background: rgba(10, 14, 22, 0.96);
+  background: rgba(13, 15, 18, 0.96);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border: 1px solid rgba(var(--accent-rgb), 0.22);
@@ -2744,4 +2744,90 @@ select {
   padding: 10px 4px;
   color: inherit;
   text-decoration: underline;
+}
+
+/* Ride mode on phones/tablets: ride controls sit right under Menu, not mid-screen */
+@media (max-width: 1024px) {
+  /* .stage-top is positioned inside the stage (below the 56px header); Menu is fixed to the viewport */
+  .app-shell.app-shell-immersive:not(.panel-open) .stage-top {
+    top: calc(var(--shell-chrome-inset-y) - 8px);
+  }
+
+  .app-shell-immersive .map-follow-banner {
+    display: none;
+  }
+}
+
+/* Ride mode: the immersive (desktop-sized) HUD numbers do not fit 4 columns on phones */
+@media (max-width: 640px) {
+  .app-shell-immersive .hud-value {
+    font-size: 1.75rem;
+  }
+
+  .app-shell-immersive .hud-stat {
+    min-height: 0;
+    padding: 8px 10px;
+    gap: 2px;
+  }
+
+  .app-shell-immersive .bottom-dashboard-deck {
+    padding: 12px;
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+  }
+
+  .app-shell-immersive .hud-label,
+  .app-shell-immersive .hud-value small {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell-immersive .hud-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .app-shell-immersive .hud-value {
+    font-size: 1.6rem;
+  }
+
+  .app-shell-immersive .hud-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+  }
+
+  .app-shell-immersive .hud-grade-chip {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .app-shell-immersive .hud-grade-chip-v {
+    font-size: 1.2rem;
+  }
+}
+
+/* Ride HUD: expanded = frosted glass so Street View shows through; compact strip stays solid
+   (Google's logo sits just above it and must stay clearly visible). */
+.app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) {
+  background: rgba(13, 15, 18, 0.58);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.app-shell-immersive .bottom-dashboard-deck:not(:has(.ride-hud-collapsed)) .hud-stat {
+  background: rgba(8, 9, 11, 0.38);
+}
+
+.app-shell-immersive .bottom-dashboard-deck:has(.ride-hud-collapsed) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 1024px) {
+  /* Leave room for Menu + ride controls above an expanded HUD */
+  .app-shell-immersive .bottom-dashboard-deck {
+    max-height: calc(100% - 136px);
+    overflow-y: auto;
+  }
 }
