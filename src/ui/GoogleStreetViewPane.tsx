@@ -5,6 +5,7 @@ import {
   loadGoogleStreetView,
   type GoogleStreetViewPanorama,
 } from '../streetview/googleMaps';
+import { streetViewBottomInset } from '../streetview/layout';
 import { routePoseAtDistance } from '../streetview/pickFrames';
 
 type Props = {
@@ -83,6 +84,25 @@ export function GoogleStreetViewPane({ apiKey, samples, distanceMeters, onUnavai
       panoramaRef.current = null;
     };
   }, [apiKey, samples]);
+
+  // Keep Google's logo/credits above the ride HUD deck that overlays this pane.
+  useEffect(() => {
+    const container = containerRef.current;
+    const pane = container?.closest('.viewer-map-pane');
+    if (!container || !pane || typeof ResizeObserver === 'undefined') return;
+    const update = () => {
+      const deck = pane.querySelector('.bottom-dashboard-deck');
+      const p = pane.getBoundingClientRect();
+      const inset = streetViewBottomInset(p.bottom, p.height, deck ? deck.getBoundingClientRect().top : null);
+      container.style.bottom = `${inset}px`;
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(pane);
+    const deck = pane.querySelector('.bottom-dashboard-deck');
+    if (deck) observer.observe(deck);
+    update();
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const panorama = panoramaRef.current;

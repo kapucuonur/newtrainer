@@ -108,7 +108,7 @@ Do **not** tick Location: the app never reads device location (Bluetooth scan us
 
 ## Release
 
-1. Testing → **Internal testing** → Create release → upload `android/app/build/outputs/bundle/release/app-release.aab`.
+1. Build with `npm run release:android` (bakes in the production API URL and the Maps key from Google Cloud and fails if either is missing; never use a plain `bundleRelease`). Then Testing → **Internal testing** → Create release → upload `android/app/build/outputs/bundle/release/app-release.aab`.
 2. Release notes:
    ```
    <en-US>
